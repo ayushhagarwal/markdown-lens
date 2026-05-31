@@ -246,13 +246,13 @@ export function MarkdownLensApp() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <a
-              href="https://github.com/"
+              href="https://github.com/ayushhagarwal/markdown-lens"
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-panel px-3 text-sm font-medium text-panel-foreground transition hover:border-ring hover:bg-muted"
             >
               <Github className="h-4 w-4" aria-hidden />
-              GitHub
+              ayushhagarwal/markdown-lens
             </a>
             <button
               type="button"
@@ -355,6 +355,21 @@ export function MarkdownLensApp() {
             hiddenOnMobile={mobilePane !== "preview"}
           />
         </section>
+
+        <footer className="border-t border-border py-4 text-sm text-muted-foreground">
+          <p>
+            Want to improve Markdown Lens?{" "}
+            <a
+              href="https://github.com/ayushhagarwal/markdown-lens"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-accent underline-offset-4 hover:underline"
+            >
+              Star or contribute on GitHub
+            </a>
+            .
+          </p>
+        </footer>
       </div>
     </main>
   );
