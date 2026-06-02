@@ -271,7 +271,7 @@ export function MarkdownLensApp() {
         <section className="grid gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">
-              Online Markdown Viewer
+              Online Markdown Editor and Viewer
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
               Preview Markdown instantly with GitHub-style rendering, Mermaid diagrams, code
