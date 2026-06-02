@@ -23,6 +23,7 @@ import {
   Sparkles,
   Sun,
   Trash2,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -226,38 +227,39 @@ export function MarkdownLensApp() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="app-shell mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-4 border-b border-border pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="app-shell mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-4 sm:px-6 lg:px-8">
+        <header className="flex min-h-16 flex-col gap-3 border-b border-border/80 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-panel shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-surface shadow-sm">
               <Eye className="h-5 w-5 text-accent" aria-hidden />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-lg font-semibold tracking-normal">Markdown Lens</p>
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                <span className="rounded-full border border-accent/25 bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
                   Open Source
                 </span>
               </div>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Beautiful, privacy-first Markdown preview for AI notes, READMEs, and docs.
+              <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
+                Private Markdown preview for notes, READMEs, changelogs, and docs.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             <a
               href="https://github.com/ayushhagarwal/markdown-lens"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-panel px-3 text-sm font-medium text-panel-foreground transition hover:border-ring hover:bg-muted"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <Github className="h-4 w-4" aria-hidden />
-              ayushhagarwal/markdown-lens
+              <span className="hidden sm:inline">ayushhagarwal/markdown-lens</span>
+              <span className="sm:hidden">GitHub</span>
             </a>
             <button
               type="button"
               onClick={toggleTheme}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-panel text-panel-foreground transition hover:border-ring hover:bg-muted"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/80 bg-surface text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
               title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
@@ -266,37 +268,37 @@ export function MarkdownLensApp() {
           </div>
         </header>
 
-        <section className="grid gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <section className="grid gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
-            <h1 className="text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+            <h1 className="text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">
               Online Markdown Viewer
             </h1>
-            <p className="mt-2 max-w-3xl text-base leading-7 text-muted-foreground">
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
               Preview Markdown instantly with GitHub-style rendering, Mermaid diagrams, code
               highlighting, math, tables, and dark mode.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-panel px-3 py-2 text-sm text-muted-foreground">
-            <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-300" aria-hidden />
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-border/80 bg-surface px-3 py-2 text-sm text-muted-foreground shadow-sm">
+            <ShieldCheck className="h-4 w-4 text-accent" aria-hidden />
             <span>Drafts stay in localStorage on this device.</span>
           </div>
         </section>
 
-        <section className="sticky top-0 z-20 -mx-4 border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="hidden items-center gap-1 rounded-lg border border-border bg-panel p-1 lg:flex">
+        <section className="sticky top-0 z-20 -mx-4 border-y border-border/80 bg-background/92 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="grid gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
+            <div className="hidden w-fit items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:flex">
               <ModeButton icon={PanelLeft} label="Split" active={viewMode === "split"} onClick={() => setViewMode("split")} />
               <ModeButton icon={Code2} label="Editor" active={viewMode === "editor"} onClick={() => setViewMode("editor")} />
               <ModeButton icon={PanelRight} label="Preview" active={viewMode === "preview"} onClick={() => setViewMode("preview")} />
             </div>
 
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-panel p-1 lg:hidden">
+            <div className="flex w-full items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:hidden">
               <ModeButton icon={Code2} label="Editor" active={mobilePane === "editor"} onClick={() => setMobilePane("editor")} />
               <ModeButton icon={Eye} label="Preview" active={mobilePane === "preview"} onClick={() => setMobilePane("preview")} />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <ToolbarButton icon={Sparkles} label="Load sample" onClick={handleLoadSample} />
+            <div className="flex flex-wrap items-center gap-2 xl:justify-center">
+              <ToolbarButton icon={Sparkles} label="Load sample" onClick={handleLoadSample} emphasis />
               <ToolbarButton
                 icon={copyState === "markdown" ? Check : Clipboard}
                 label={
@@ -326,7 +328,7 @@ export function MarkdownLensApp() {
               <ToolbarButton icon={Trash2} label="Clear" onClick={handleClear} disabled={isEmpty} tone="danger" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground xl:justify-end">
               <Stat label="Words" value={stats.words.toLocaleString()} />
               <Stat label="Chars" value={stats.characters.toLocaleString()} />
               <Stat label="Read" value={`${stats.minutes} min`} />
@@ -389,13 +391,13 @@ function EditorPanel({
   return (
     <section
       className={cn(
-        "panel-height overflow-hidden rounded-lg border border-border bg-panel shadow-panel",
+        "panel-height overflow-hidden rounded-lg border border-border/80 bg-panel shadow-panel ring-1 ring-black/[0.02] dark:ring-white/[0.04]",
         hiddenOnMobile && "hidden lg:block",
         hiddenOnDesktop && "lg:hidden",
       )}
       aria-label="Markdown editor"
     >
-      <div className="flex h-11 items-center justify-between border-b border-border px-4">
+      <div className="flex h-11 items-center justify-between border-b border-border/80 bg-surface px-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <Code2 className="h-4 w-4 text-accent" aria-hidden />
           Editor
@@ -407,7 +409,7 @@ function EditorPanel({
         onChange={(event) => onChange(event.target.value)}
         spellCheck={false}
         placeholder={placeholder}
-        className="h-[calc(100%-2.75rem)] w-full resize-none bg-transparent p-5 font-mono text-sm leading-6 text-panel-foreground outline-none placeholder:text-muted-foreground/70"
+        className="h-[calc(100%-2.75rem)] w-full resize-none bg-transparent p-5 font-mono text-sm leading-6 text-panel-foreground caret-accent outline-none selection:bg-accent/15 placeholder:text-muted-foreground/65 sm:p-6"
       />
     </section>
   );
@@ -432,13 +434,13 @@ function PreviewPanel({
   return (
     <section
       className={cn(
-        "panel-height overflow-hidden rounded-lg border border-border bg-panel shadow-panel",
+        "panel-height overflow-hidden rounded-lg border border-border/80 bg-panel shadow-panel ring-1 ring-black/[0.02] dark:ring-white/[0.04]",
         hiddenOnMobile && "hidden lg:block",
         hiddenOnDesktop && "lg:hidden",
       )}
       aria-label="Markdown preview"
     >
-      <div className="flex h-11 items-center justify-between border-b border-border px-4">
+      <div className="flex h-11 items-center justify-between border-b border-border/80 bg-surface px-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <Eye className="h-4 w-4 text-accent" aria-hidden />
           Preview
@@ -449,7 +451,7 @@ function PreviewPanel({
         {isEmpty ? (
           <EmptyState />
         ) : (
-          <div ref={previewRef} className="print-area markdown-body px-5 py-6 sm:px-7">
+          <div ref={previewRef} className="print-area markdown-body mx-auto w-full max-w-[980px] px-5 py-7 sm:px-8 lg:px-10">
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[
@@ -471,12 +473,12 @@ function EmptyState() {
   return (
     <div className="flex h-full min-h-[420px] items-center justify-center p-6">
       <div className="max-w-sm text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg border border-border bg-muted">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg border border-border/80 bg-accent-soft">
           <FileCode2 className="h-6 w-6 text-accent" aria-hidden />
         </div>
-        <h2 className="mt-5 text-xl font-semibold tracking-normal">Start previewing Markdown</h2>
+        <h2 className="mt-5 text-xl font-semibold tracking-normal">No preview yet</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Paste Markdown on the left or load a sample to see GitHub-style output instantly.
+          Your rendered document will appear here.
         </p>
       </div>
     </div>
@@ -587,7 +589,7 @@ function ModeButton({
   active,
   onClick,
 }: {
-  icon: typeof PanelLeft;
+  icon: LucideIcon;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -597,9 +599,9 @@ function ModeButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-8 items-center gap-2 rounded-md px-3 text-sm font-medium transition",
+        "inline-flex h-8 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface lg:flex-none",
         active
-          ? "bg-foreground text-background"
+          ? "bg-foreground text-background shadow-sm"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
@@ -615,12 +617,14 @@ function ToolbarButton({
   onClick,
   disabled,
   tone = "default",
+  emphasis = false,
 }: {
-  icon: typeof Clipboard;
+  icon: LucideIcon;
   label: string;
   onClick: () => void;
   disabled?: boolean;
   tone?: "default" | "danger";
+  emphasis?: boolean;
 }) {
   return (
     <button
@@ -628,7 +632,8 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "inline-flex h-9 items-center gap-2 rounded-md border border-border bg-panel px-3 text-sm font-medium text-panel-foreground transition hover:border-ring hover:bg-muted disabled:cursor-not-allowed disabled:opacity-45",
+        "inline-flex h-9 items-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:border-border/60 disabled:bg-muted/60 disabled:text-muted-foreground disabled:shadow-none",
+        emphasis && "border-accent/30 bg-accent-soft text-accent hover:bg-accent-soft/80",
         tone === "danger" && "hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-700 dark:hover:text-red-200",
       )}
     >
@@ -640,7 +645,7 @@ function ToolbarButton({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-panel px-2.5">
+    <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/80 bg-surface px-2.5 shadow-sm">
       <span>{label}</span>
       <span className="text-foreground">{value}</span>
     </span>

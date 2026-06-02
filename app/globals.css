@@ -3,28 +3,32 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 30% 98%;
+  --background: 210 26% 97%;
   --foreground: 218 35% 11%;
-  --border: 214 24% 88%;
-  --muted: 210 25% 94%;
-  --muted-foreground: 215 13% 43%;
+  --border: 214 22% 86%;
+  --muted: 210 22% 93%;
+  --muted-foreground: 216 12% 42%;
   --panel: 0 0% 100%;
   --panel-foreground: 218 35% 11%;
+  --surface: 210 30% 99%;
   --accent: 174 84% 32%;
   --accent-foreground: 0 0% 100%;
+  --accent-soft: 174 76% 92%;
   --ring: 175 70% 36%;
 }
 
 .dark {
-  --background: 220 20% 8%;
+  --background: 222 22% 7%;
   --foreground: 210 28% 94%;
-  --border: 218 16% 20%;
-  --muted: 220 15% 14%;
-  --muted-foreground: 215 13% 67%;
-  --panel: 220 19% 10%;
+  --border: 220 16% 20%;
+  --muted: 220 16% 15%;
+  --muted-foreground: 215 12% 68%;
+  --panel: 222 20% 10%;
   --panel-foreground: 210 28% 94%;
+  --surface: 222 18% 12%;
   --accent: 174 72% 45%;
   --accent-foreground: 220 20% 8%;
+  --accent-soft: 174 72% 16%;
   --ring: 174 72% 45%;
 }
 
@@ -39,7 +43,11 @@ html {
 body {
   margin: 0;
   overflow-x: hidden;
+  background:
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface)) 44rem);
   font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -48,33 +56,64 @@ textarea {
 }
 
 .panel-height {
-  height: min(72vh, calc(100vh - 19rem));
-  min-height: 520px;
+  height: min(76vh, calc(100dvh - 15.75rem));
+  min-height: 560px;
+}
+
+::selection {
+  background: hsl(var(--accent) / 0.18);
+}
+
+textarea::-webkit-scrollbar,
+.markdown-body::-webkit-scrollbar,
+section ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+textarea::-webkit-scrollbar-track,
+section ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb,
+section ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: hsl(var(--muted-foreground) / 0.32);
+  background-clip: padding-box;
+}
+
+textarea::-webkit-scrollbar-thumb:hover,
+section ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.46);
+  background-clip: padding-box;
 }
 
 .markdown-body {
   color: hsl(var(--panel-foreground));
+  font-size: 0.985rem;
 }
 
 .markdown-body :where(h1, h2, h3, h4, h5, h6) {
-  margin: 1.35em 0 0.65em;
+  margin: 1.55em 0 0.7em;
   scroll-margin-top: 5rem;
-  font-weight: 700;
-  line-height: 1.2;
+  font-weight: 720;
+  line-height: 1.16;
   letter-spacing: 0;
 }
 
 .markdown-body h1 {
   margin-top: 0;
-  padding-bottom: 0.35em;
+  padding-bottom: 0.42em;
   border-bottom: 1px solid hsl(var(--border));
-  font-size: 2rem;
+  font-size: 2.1rem;
 }
 
 .markdown-body h2 {
-  padding-bottom: 0.3em;
+  padding-bottom: 0.34em;
   border-bottom: 1px solid hsl(var(--border));
-  font-size: 1.5rem;
+  font-size: 1.55rem;
 }
 
 .markdown-body h3 {
@@ -87,11 +126,11 @@ textarea {
 .markdown-body blockquote,
 .markdown-body table,
 .markdown-body pre {
-  margin: 1rem 0;
+  margin: 1.05rem 0;
 }
 
 .markdown-body p {
-  line-height: 1.75;
+  line-height: 1.78;
 }
 
 .markdown-body ul,
@@ -108,8 +147,8 @@ textarea {
 }
 
 .markdown-body li {
-  margin: 0.35rem 0;
-  line-height: 1.65;
+  margin: 0.38rem 0;
+  line-height: 1.68;
 }
 
 .markdown-body input[type="checkbox"] {
@@ -117,11 +156,11 @@ textarea {
 }
 
 .markdown-body blockquote {
-  border-left: 4px solid hsl(var(--accent));
-  border-radius: 0 0.375rem 0.375rem 0;
-  background: hsl(var(--muted));
-  padding: 0.6rem 1rem;
-  color: hsl(var(--muted-foreground));
+  border-left: 3px solid hsl(var(--accent));
+  border-radius: 0 0.5rem 0.5rem 0;
+  background: hsl(var(--accent-soft) / 0.58);
+  padding: 0.75rem 1rem;
+  color: hsl(var(--panel-foreground));
 }
 
 .markdown-body table {
@@ -129,24 +168,31 @@ textarea {
   width: 100%;
   overflow-x: auto;
   border-collapse: collapse;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  border-spacing: 0;
 }
 
 .markdown-body th,
 .markdown-body td {
-  border: 1px solid hsl(var(--border));
-  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0.65rem 0.8rem;
   text-align: left;
 }
 
 .markdown-body th {
-  background: hsl(var(--muted));
+  background: hsl(var(--muted) / 0.72);
   font-weight: 650;
+}
+
+.markdown-body tr:last-child td {
+  border-bottom: 0;
 }
 
 .markdown-body code:not(pre code) {
   border: 1px solid hsl(var(--border));
-  border-radius: 0.35rem;
-  background: hsl(var(--muted));
+  border-radius: 0.4rem;
+  background: hsl(var(--muted) / 0.78);
   padding: 0.12rem 0.35rem;
   font-family: var(--font-geist-mono), SFMono-Regular, Consolas, monospace;
   font-size: 0.9em;
@@ -154,11 +200,12 @@ textarea {
 
 .markdown-body pre {
   overflow-x: auto;
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.5rem;
+  border: 1px solid hsl(215 18% 24%);
+  border-radius: 0.6rem;
   background: #0d1117;
-  padding: 1rem;
+  padding: 1.05rem;
   color: #e6edf3;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 
 .markdown-body pre code {
@@ -172,6 +219,10 @@ textarea {
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.markdown-body a:hover {
+  text-decoration-thickness: 2px;
 }
 
 .markdown-body hr {
@@ -188,15 +239,15 @@ textarea {
 
 @media (max-width: 1023px) {
   .panel-height {
-    height: calc(100vh - 18.5rem);
-    min-height: 520px;
+    height: calc(100dvh - 17.5rem);
+    min-height: 500px;
   }
 }
 
 @media (max-width: 640px) {
   .panel-height {
-    height: calc(100vh - 21rem);
-    min-height: 440px;
+    height: calc(100dvh - 18.5rem);
+    min-height: 460px;
   }
 
   .markdown-body h1 {
