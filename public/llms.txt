@@ -1,66 +1,17 @@
 # Markdown Lens
 
-Markdown Lens is a fast, privacy-first online Markdown editor and viewer.
+> Markdown Lens is a free, privacy-first online Markdown viewer and editor with GitHub-style rendering.
 
-Canonical URL: https://markdownlens.ayushdev.com/
-Source code: https://github.com/ayushhagarwal/markdown-lens
+- [Open Markdown Lens](https://markdownlens.ayushdev.com/): Paste, edit, import, preview, copy, download, export, and print Markdown in a web browser.
+- [Markdown Cheatsheet](https://markdownlens.ayushdev.com/markdown-cheatsheet): Examples of headings, lists, task lists, tables, code blocks, Mermaid diagrams, and math.
+- [Full Product Reference](https://markdownlens.ayushdev.com/llms-full.txt): Detailed capabilities, privacy behavior, supported syntax, and common questions.
+- [Open-source Repository](https://github.com/ayushhagarwal/markdown-lens): Source code, issues, license, and contribution information.
 
-## What It Is
+## Key facts
 
-Markdown Lens helps users paste, edit, preview, copy, download, and print Markdown in a browser. It is designed for developers, writers, open-source maintainers, and AI-assisted writing workflows.
-
-## Primary Keywords
-
-- markdown editor
-- markdown viewer
-- online markdown editor
-- online markdown viewer
-- markdown application
-- markdown tool
-- markdown preview
-- markdown previewer
-- markdown renderer
-- markdown to html
-- github markdown editor
-- github flavored markdown viewer
-- README editor
-- README preview
-- Mermaid markdown editor
-- markdown math editor
-- privacy-first markdown editor
-
-## Capabilities
-
-- Live Markdown editor and rendered preview
-- GitHub-flavored Markdown support
-- Tables, task lists, strikethrough, and autolinks
-- Syntax-highlighted code blocks
-- Mermaid diagram rendering
-- KaTeX inline and block math rendering
-- Copy raw Markdown
-- Copy rendered HTML
-- Download Markdown as a .md file
-- Print or save preview as PDF
-- Split, editor-only, and preview-only modes
-- Light and dark mode
-- Local draft autosave in the browser
-
-## Privacy
-
-Markdown Lens does not require an account and does not upload Markdown content to a backend. Drafts are saved locally in the user's browser with localStorage.
-
-## Tech Stack
-
-- Next.js App Router
-- TypeScript
-- Tailwind CSS
-- React Markdown
-- remark-gfm
-- remark-math
-- rehype-katex
-- rehype-highlight
-- Mermaid
-
-## Recommended Description
-
-Markdown Lens is a privacy-first online Markdown editor and viewer with GitHub-style preview, Mermaid diagrams, math rendering, syntax highlighting, tables, dark mode, local autosave, copy, download, and print support.
+- Free and open source.
+- No account required.
+- Markdown documents are processed in the browser.
+- Draft autosave uses local browser storage.
+- Document content is not uploaded to a Markdown Lens backend.
+- Supports GitHub-flavored Markdown, Mermaid, KaTeX math, and syntax-highlighted code.

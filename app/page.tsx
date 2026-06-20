@@ -1,5 +1,17 @@
+import type { Metadata } from "next";
 import { MarkdownLensApp } from "@/components/markdown-lens-app";
+import { markdownViewerFaq, SeoContent } from "@/components/seo-content";
 import { siteConfig } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: siteConfig.title,
+  },
+  description: siteConfig.description,
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default function Home() {
   const structuredData = [
@@ -17,6 +29,22 @@ export default function Home() {
     },
     {
       "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${siteConfig.url}/#webpage`,
+      url: siteConfig.url,
+      name: siteConfig.title,
+      description: siteConfig.description,
+      isPartOf: {
+        "@id": `${siteConfig.url}/#website`,
+      },
+      mainEntity: {
+        "@id": `${siteConfig.url}/#software`,
+      },
+      inLanguage: "en",
+      dateModified: "2026-06-20",
+    },
+    {
+      "@context": "https://schema.org",
       "@type": "Person",
       "@id": `${siteConfig.url}/#creator`,
       name: siteConfig.author.name,
@@ -25,7 +53,7 @@ export default function Home() {
     },
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+      "@type": ["SoftwareApplication", "WebApplication"],
       "@id": `${siteConfig.url}/#software`,
       name: siteConfig.name,
       alternateName: [
@@ -40,6 +68,7 @@ export default function Home() {
       url: siteConfig.url,
       downloadUrl: siteConfig.url,
       installUrl: siteConfig.url,
+      screenshot: `${siteConfig.url}/opengraph-image`,
       codeRepository: siteConfig.githubUrl,
       isAccessibleForFree: true,
       isFamilyFriendly: true,
@@ -56,7 +85,24 @@ export default function Home() {
       description: siteConfig.description,
       featureList: siteConfig.features,
       keywords: siteConfig.keywords.join(", "),
+      softwareVersion: "0.1.0",
+      softwareHelp: `${siteConfig.url}/markdown-cheatsheet`,
+      dateModified: "2026-06-20",
+      inLanguage: "en",
       sameAs: [siteConfig.githubUrl],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "@id": `${siteConfig.url}/#faq`,
+      mainEntity: markdownViewerFaq.map(({ question, answer }) => ({
+        "@type": "Question",
+        name: question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: answer,
+        },
+      })),
     },
   ];
 
@@ -68,7 +114,10 @@ export default function Home() {
           __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
         }}
       />
-      <MarkdownLensApp />
+      <main>
+        <MarkdownLensApp />
+        <SeoContent />
+      </main>
     </>
   );
 }

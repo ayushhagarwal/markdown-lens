@@ -75,19 +75,42 @@ const inlineExamples = [
 ];
 
 export default function MarkdownCheatsheetPage() {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "TechArticle",
-    headline: "Markdown Cheatsheet – Common Markdown Syntax",
-    description:
-      "A concise Markdown reference for headings, lists, tables, links, code, Mermaid diagrams, and math.",
-    url: `${siteConfig.url}/markdown-cheatsheet`,
-    author: {
-      "@type": "Person",
-      name: siteConfig.author.name,
-      url: siteConfig.author.url,
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      headline: "Markdown Cheatsheet – Common Markdown Syntax",
+      description:
+        "A concise Markdown reference for headings, lists, tables, links, code, Mermaid diagrams, and math.",
+      url: `${siteConfig.url}/markdown-cheatsheet`,
+      mainEntityOfPage: `${siteConfig.url}/markdown-cheatsheet`,
+      dateModified: "2026-06-20",
+      inLanguage: "en",
+      author: {
+        "@type": "Person",
+        name: siteConfig.author.name,
+        url: siteConfig.author.url,
+      },
     },
-  };
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Markdown Lens",
+          item: siteConfig.url,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Markdown Cheatsheet",
+          item: `${siteConfig.url}/markdown-cheatsheet`,
+        },
+      ],
+    },
+  ];
 
   return (
     <main className="min-h-screen bg-background text-foreground">

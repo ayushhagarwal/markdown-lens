@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: "Markdown Lens - Online Markdown Editor and Viewer",
+    default: siteConfig.title,
     template: "%s | Markdown Lens",
   },
   description: siteConfig.shortDescription,
@@ -29,9 +29,6 @@ export const metadata: Metadata = {
   category: "DeveloperApplication",
   keywords: siteConfig.keywords,
   manifest: "/manifest.webmanifest",
-  alternates: {
-    canonical: "/",
-  },
   robots: {
     index: true,
     follow: true,
@@ -48,7 +45,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "/",
     siteName: siteConfig.name,
-    title: "Markdown Lens - Online Markdown Editor and Viewer",
+    title: siteConfig.title,
     description: siteConfig.shortDescription,
     images: [
       {
@@ -61,7 +58,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Markdown Lens - Online Markdown Editor and Viewer",
+    title: siteConfig.title,
     description: siteConfig.shortDescription,
     images: ["/opengraph-image"],
   },
@@ -88,6 +85,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          rel="alternate"
+          type="text/plain"
+          href="/llms.txt"
+          title="Markdown Lens AI summary"
+        />
+        <link
+          rel="alternate"
+          type="text/plain"
+          href="/llms-full.txt"
+          title="Markdown Lens full AI reference"
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>

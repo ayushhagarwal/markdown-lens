@@ -362,7 +362,7 @@ export function MarkdownLensApp() {
   );
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="app-shell mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-4 sm:px-6 lg:px-8">
         <header className="flex min-h-16 flex-col gap-3 border-b border-border/80 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
@@ -407,11 +407,11 @@ export function MarkdownLensApp() {
         <section className="grid gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">
-              Online Markdown Editor and Viewer
+              Free Online Markdown Viewer and Editor
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Preview Markdown instantly with GitHub-style rendering, Mermaid diagrams, code
-              highlighting, math, tables, and dark mode.
+              Paste, edit, or import Markdown and preview it instantly with GitHub-style
+              rendering, Mermaid diagrams, code highlighting, math, tables, and dark mode.
             </p>
           </div>
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-border/80 bg-surface px-3 py-2 text-sm text-muted-foreground shadow-sm">
@@ -588,7 +588,7 @@ export function MarkdownLensApp() {
           </a>
         </footer>
       </div>
-    </main>
+    </div>
   );
 }
 
