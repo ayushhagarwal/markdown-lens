@@ -2,10 +2,11 @@ export const siteConfig = {
   name: "Markdown Lens",
   url: "https://markdownlens.ayushdev.com",
   githubUrl: "https://github.com/ayushhagarwal/markdown-lens",
+  title: "Free Online Markdown Viewer & Editor | Markdown Lens",
   description:
-    "Markdown Lens is a fast, privacy-first online Markdown editor and viewer for previewing Markdown, GitHub-flavored Markdown, Mermaid diagrams, math, code blocks, tables, READMEs, docs, changelogs, and AI notes.",
+    "Markdown Lens is a free, privacy-first online Markdown viewer and editor for previewing GitHub-flavored Markdown, Mermaid diagrams, math, code, tables, READMEs, and documentation.",
   shortDescription:
-    "A fast, privacy-first online Markdown editor and viewer with GitHub-style preview, Mermaid diagrams, math, code highlighting, tables, and dark mode.",
+    "Preview Markdown online with GitHub-style rendering, Mermaid diagrams, math, syntax highlighting, tables, local autosave, and no account required.",
   author: {
     name: "Ayush Agarwal",
     url: "https://github.com/ayushhagarwal",
@@ -19,6 +20,9 @@ export const siteConfig = {
     "markdown tool",
     "markdown preview",
     "markdown previewer",
+    "free markdown viewer",
+    "markdown viewer online free",
+    "online markdown preview",
     "markdown renderer",
     "markdown to html",
     "github markdown editor",
@@ -41,8 +45,11 @@ export const siteConfig = {
     "Tables, task lists, strikethrough, and autolinks",
     "Copy Markdown and rendered HTML",
     "Download Markdown files",
+    "Import local Markdown files",
+    "Export rendered Markdown as standalone HTML",
     "Print or save preview as PDF",
     "Local draft autosave with no account required",
+    "Keyboard shortcuts for common actions",
     "Light and dark mode",
   ],
 };

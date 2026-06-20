@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { siteConfig } from "@/lib/site";
 
-export const alt = "Markdown Lens online Markdown editor and preview interface";
+export const alt = "Markdown Lens free online Markdown viewer and editor";
 export const size = {
   width: 1200,
   height: 630,
@@ -53,7 +53,7 @@ export default function Image() {
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ fontSize: 34, fontWeight: 800 }}>{siteConfig.name}</div>
               <div style={{ color: "#526173", fontSize: 22 }}>
-                Online Markdown Editor and Viewer
+                Free Online Markdown Viewer and Editor
               </div>
             </div>
           </div>
