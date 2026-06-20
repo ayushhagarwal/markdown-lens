@@ -8,6 +8,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import {
   Check,
+  ChevronDown,
   Clipboard,
   Code2,
   Download,
@@ -16,6 +17,7 @@ import {
   Github,
   Loader2,
   Moon,
+  MoreHorizontal,
   PanelLeft,
   PanelRight,
   Printer,
@@ -354,7 +356,7 @@ export function MarkdownLensApp() {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 xl:justify-center">
+            <div className="hidden flex-wrap items-center gap-2 md:flex xl:justify-center">
               <ToolbarButton
                 icon={Sparkles}
                 label="Load sample"
@@ -403,7 +405,18 @@ export function MarkdownLensApp() {
               <ToolbarButton icon={Trash2} label="Clear" onClick={handleClear} disabled={isEmpty} tone="danger" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground xl:justify-end">
+            <MobileToolbar
+              copyState={copyState}
+              isEmpty={isEmpty}
+              onLoadSample={handleLoadSample}
+              onCopyMarkdown={handleCopyMarkdown}
+              onCopyHtml={handleCopyHtml}
+              onDownload={handleDownload}
+              onPrint={handlePrint}
+              onClear={handleClear}
+            />
+
+            <div className="grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground md:flex md:flex-wrap md:items-center xl:justify-end">
               <Stat label="Words" value={stats.words.toLocaleString()} />
               <Stat label="Chars" value={stats.characters.toLocaleString()} />
               <Stat label="Read" value={`${stats.minutes} min`} />
@@ -686,7 +699,7 @@ function ModeButton({
       title={shortcut ? `${label} (${shortcut})` : label}
       aria-keyshortcuts={ariaShortcut}
       className={cn(
-        "inline-flex h-8 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface lg:flex-none",
+        "inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface lg:h-8 lg:flex-none",
         active
           ? "bg-foreground text-background shadow-sm"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -707,6 +720,7 @@ function ToolbarButton({
   emphasis = false,
   shortcut,
   ariaShortcut,
+  className,
 }: {
   icon: LucideIcon;
   label: string;
@@ -716,6 +730,7 @@ function ToolbarButton({
   emphasis?: boolean;
   shortcut?: string;
   ariaShortcut?: string;
+  className?: string;
 }) {
   return (
     <button
@@ -728,11 +743,134 @@ function ToolbarButton({
         "inline-flex h-9 items-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:border-border/60 disabled:bg-muted/60 disabled:text-muted-foreground disabled:shadow-none",
         emphasis && "border-accent/30 bg-accent-soft text-accent hover:bg-accent-soft/80",
         tone === "danger" && "hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-700 dark:hover:text-red-200",
+        className,
       )}
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden />
       <span className="whitespace-nowrap">{label}</span>
     </button>
+  );
+}
+
+function MobileToolbar({
+  copyState,
+  isEmpty,
+  onLoadSample,
+  onCopyMarkdown,
+  onCopyHtml,
+  onDownload,
+  onPrint,
+  onClear,
+}: {
+  copyState: CopyState;
+  isEmpty: boolean;
+  onLoadSample: () => void;
+  onCopyMarkdown: () => void;
+  onCopyHtml: () => void;
+  onDownload: () => void;
+  onPrint: () => void;
+  onClear: () => void;
+}) {
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isMoreOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMoreOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isMoreOpen]);
+
+  const runAndClose = (action: () => void) => () => {
+    action();
+    setIsMoreOpen(false);
+  };
+
+  return (
+    <div className="grid gap-2 md:hidden">
+      <div className="grid grid-cols-2 gap-2">
+        <ToolbarButton
+          icon={Sparkles}
+          label="Load sample"
+          onClick={onLoadSample}
+          shortcut="⌘/Ctrl ⇧ L"
+          ariaShortcut="Meta+Shift+L Control+Shift+L"
+          className="h-11 w-full justify-center px-2"
+          emphasis
+        />
+        <ToolbarButton
+          icon={copyState === "markdown" ? Check : Clipboard}
+          label={copyState === "markdown" ? "Copied" : "Copy Markdown"}
+          onClick={onCopyMarkdown}
+          shortcut="⌘/Ctrl ⇧ C"
+          ariaShortcut="Meta+Shift+C Control+Shift+C"
+          className="h-11 w-full justify-center px-2"
+          disabled={isEmpty}
+        />
+      </div>
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsMoreOpen((current) => !current)}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-expanded={isMoreOpen}
+          aria-controls="mobile-secondary-actions"
+        >
+          <MoreHorizontal className="h-4 w-4" aria-hidden />
+          More actions
+          <ChevronDown
+            className={cn("h-4 w-4 transition", isMoreOpen && "rotate-180")}
+            aria-hidden
+          />
+        </button>
+        {isMoreOpen ? (
+          <div
+            id="mobile-secondary-actions"
+            className="absolute right-0 top-[calc(100%+0.5rem)] z-30 grid w-72 max-w-[calc(100vw-2rem)] gap-2 rounded-lg border border-border/80 bg-panel p-2 shadow-panel"
+          >
+            <ToolbarButton
+              icon={copyState === "html" ? Check : FileCode2}
+              label={copyState === "html" ? "Copied HTML" : "Copy HTML"}
+              onClick={runAndClose(onCopyHtml)}
+              shortcut="⌘/Ctrl ⇧ H"
+              ariaShortcut="Meta+Shift+H Control+Shift+H"
+              className="h-11 w-full justify-start shadow-none"
+              disabled={isEmpty}
+            />
+            <ToolbarButton
+              icon={Download}
+              label="Download .md"
+              onClick={runAndClose(onDownload)}
+              shortcut="⌘/Ctrl S"
+              ariaShortcut="Meta+S Control+S"
+              className="h-11 w-full justify-start shadow-none"
+              disabled={isEmpty}
+            />
+            <ToolbarButton
+              icon={Printer}
+              label="Print / PDF"
+              onClick={runAndClose(onPrint)}
+              className="h-11 w-full justify-start shadow-none"
+              disabled={isEmpty}
+            />
+            <ToolbarButton
+              icon={Trash2}
+              label="Clear"
+              onClick={runAndClose(onClear)}
+              className="h-11 w-full justify-start shadow-none"
+              disabled={isEmpty}
+              tone="danger"
+            />
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -790,9 +928,9 @@ function useKeyboardShortcuts({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <span className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border/80 bg-surface px-2.5 shadow-sm">
+    <span className="inline-flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md border border-border/80 bg-surface px-2 shadow-sm md:h-8 md:justify-start md:px-2.5">
       <span>{label}</span>
-      <span className="text-foreground">{value}</span>
+      <span className="truncate text-foreground">{value}</span>
     </span>
   );
 }
