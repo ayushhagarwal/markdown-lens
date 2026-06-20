@@ -358,7 +358,7 @@ export function MarkdownLensApp() {
           />
         </section>
 
-        <footer className="border-t border-border py-4 text-sm text-muted-foreground">
+        <footer className="flex flex-col gap-2 border-t border-border py-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>
             Want to improve Markdown Lens?{" "}
             <a
@@ -371,6 +371,12 @@ export function MarkdownLensApp() {
             </a>
             .
           </p>
+          <a
+            href="/markdown-cheatsheet"
+            className="w-fit font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Markdown cheatsheet
+          </a>
         </footer>
       </div>
     </main>
