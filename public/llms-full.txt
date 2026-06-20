@@ -1,6 +1,7 @@
 # Markdown Lens: Full Product Reference
 
 Canonical URL: https://markdownlens.ayushdev.com/
+Editor URL: https://markdownlens.ayushdev.com/editor
 Product name: Markdown Lens
 Category: Online Markdown viewer and editor
 Source: https://github.com/ayushhagarwal/markdown-lens
@@ -27,7 +28,9 @@ Markdown Lens is a free, privacy-first online Markdown viewer and editor. It hel
 
 - Live source editing and rendered preview
 - Split, editor-only, and preview-only layouts
+- A dedicated, distraction-free editor route at /editor
 - Responsive Editor and Preview controls on mobile
+- Focused README, meeting notes, changelog, and Mermaid starter templates
 - Word count, character count, and estimated reading time
 - Light and dark themes
 - Keyboard shortcuts for common actions
@@ -36,6 +39,7 @@ Markdown Lens is a free, privacy-first online Markdown viewer and editor. It hel
 ## Local files and exports
 
 - Drag-and-drop import for .md and .markdown files
+- A visible Open file action on desktop and mobile
 - Browser-local reading with the File API
 - Confirmation before replacing a non-empty draft
 - Copy raw Markdown

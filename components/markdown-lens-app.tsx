@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,6 +9,8 @@ import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import {
   AlertCircle,
+  BookOpen,
+  CalendarDays,
   Check,
   ChevronDown,
   Clipboard,
@@ -16,18 +19,18 @@ import {
   Eye,
   FileCode2,
   FileDown,
+  FileText,
   FileUp,
   Github,
   Loader2,
   Moon,
-  MoreHorizontal,
   PanelLeft,
   PanelRight,
   Printer,
-  ShieldCheck,
   Sparkles,
   Sun,
   Trash2,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
@@ -113,6 +116,84 @@ Strikethrough works too: ~~old draft~~ polished document.
 const placeholder =
   "Paste AI notes, a README, changelog, design doc, or technical Markdown here...";
 
+const starterTemplates = [
+  {
+    id: "readme",
+    label: "README",
+    description: "Project overview",
+    icon: FileText,
+    markdown: `# Project name
+
+A concise description of what this project does.
+
+## Getting started
+
+\`\`\`bash
+npm install
+npm run dev
+\`\`\`
+
+## Features
+
+- Fast to set up
+- Easy to extend
+- Ready to document
+`,
+  },
+  {
+    id: "meeting",
+    label: "Meeting notes",
+    description: "Decisions and actions",
+    icon: CalendarDays,
+    markdown: `# Meeting notes
+
+**Date:** Add date
+
+## Agenda
+
+1. Project update
+2. Open decisions
+3. Next steps
+
+## Action items
+
+- [ ] Owner — follow-up
+`,
+  },
+  {
+    id: "changelog",
+    label: "Changelog",
+    description: "Release summary",
+    icon: BookOpen,
+    markdown: `# Changelog
+
+## Unreleased
+
+### Added
+
+- Describe a new capability.
+
+### Fixed
+
+- Describe a resolved issue.
+`,
+  },
+  {
+    id: "mermaid",
+    label: "Mermaid",
+    description: "Simple flowchart",
+    icon: Workflow,
+    markdown: `# Workflow
+
+\`\`\`mermaid
+flowchart LR
+  A[Write Markdown] --> B[Preview]
+  B --> C[Publish]
+\`\`\`
+`,
+  },
+] as const;
+
 export function MarkdownLensApp() {
   const [markdown, setMarkdown] = useState("");
   const [hasHydrated, setHasHydrated] = useState(false);
@@ -123,6 +204,7 @@ export function MarkdownLensApp() {
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [importNotice, setImportNotice] = useState<ImportNotice>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
 
   useEffect(() => {
@@ -133,7 +215,14 @@ export function MarkdownLensApp() {
     setTheme(resolvedTheme);
 
     const savedDraft = localStorage.getItem(STORAGE_KEY);
-    if (savedDraft !== null) {
+    const wantsSample = new URLSearchParams(window.location.search).get("sample") === "1";
+    if (
+      wantsSample &&
+      (savedDraft === null || window.confirm("Replace your saved draft with the sample?"))
+    ) {
+      setMarkdown(sampleMarkdown);
+      setMobilePane("preview");
+    } else if (savedDraft !== null) {
       setMarkdown(savedDraft);
     }
     setHasHydrated(true);
@@ -224,6 +313,20 @@ export function MarkdownLensApp() {
     setMobilePane("preview");
   }, [isEmpty]);
 
+  const handleLoadTemplate = useCallback(
+    (template: (typeof starterTemplates)[number]) => {
+      if (
+        !isEmpty &&
+        !window.confirm(`Replace the current draft with the ${template.label} template?`)
+      ) {
+        return;
+      }
+      setMarkdown(template.markdown);
+      setMobilePane("editor");
+    },
+    [isEmpty],
+  );
+
   const handleClear = useCallback(() => {
     if (isEmpty) return;
     if (!window.confirm("Clear the editor and remove the saved local draft?")) {
@@ -309,6 +412,53 @@ export function MarkdownLensApp() {
     }
   }, []);
 
+  const importMarkdownFile = useCallback(
+    async (file: File) => {
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      const isMarkdownFile =
+        extension === "md" || extension === "markdown" || file.type === "text/markdown";
+
+      if (!isMarkdownFile) {
+        setImportNotice({
+          tone: "error",
+          message: `"${file.name}" is not supported. Choose a .md or .markdown file.`,
+        });
+        return;
+      }
+
+      if (!isEmpty && !window.confirm(`Replace the current draft with "${file.name}"?`)) {
+        return;
+      }
+
+      try {
+        const content = await file.text();
+        setMarkdown(content);
+        setMobilePane("preview");
+        setImportNotice({
+          tone: "success",
+          message: `Opened "${file.name}" locally. Nothing was uploaded.`,
+        });
+      } catch {
+        setImportNotice({
+          tone: "error",
+          message: `Could not read "${file.name}". Please try another Markdown file.`,
+        });
+      }
+    },
+    [isEmpty],
+  );
+
+  const handleFileInput = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.item(0);
+      if (file) {
+        await importMarkdownFile(file);
+      }
+      event.target.value = "";
+    },
+    [importMarkdownFile],
+  );
+
   const handleDrop = useCallback(
     async (event: React.DragEvent<HTMLElement>) => {
       event.preventDefault();
@@ -324,78 +474,54 @@ export function MarkdownLensApp() {
         return;
       }
 
-      const extension = file.name.split(".").pop()?.toLowerCase();
-      const isMarkdownFile =
-        extension === "md" || extension === "markdown" || file.type === "text/markdown";
-
-      if (!isMarkdownFile) {
-        setImportNotice({
-          tone: "error",
-          message: `"${file.name}" is not supported. Choose a .md or .markdown file.`,
-        });
-        return;
-      }
-
-      if (
-        !isEmpty &&
-        !window.confirm(`Replace the current draft with "${file.name}"?`)
-      ) {
-        return;
-      }
-
-      try {
-        const content = await file.text();
-        setMarkdown(content);
-        setMobilePane("preview");
-        setImportNotice({
-          tone: "success",
-          message: `Imported "${file.name}" locally. Nothing was uploaded.`,
-        });
-      } catch {
-        setImportNotice({
-          tone: "error",
-          message: `Could not read "${file.name}". Please try another Markdown file.`,
-        });
-      }
+      await importMarkdownFile(file);
     },
-    [isEmpty],
+    [importMarkdownFile],
   );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="app-shell mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-4 sm:px-6 lg:px-8">
-        <header className="flex min-h-16 flex-col gap-3 border-b border-border/80 py-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-surface shadow-sm">
-              <Eye className="h-5 w-5 text-accent" aria-hidden />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-lg font-semibold tracking-normal">Markdown Lens</p>
-                <span className="rounded-full border border-accent/25 bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
-                  Open Source
-                </span>
-              </div>
-              <p className="mt-1 max-w-2xl text-sm leading-5 text-muted-foreground">
-                Private Markdown preview for notes, READMEs, changelogs, and docs.
-              </p>
-            </div>
+        <header className="flex h-16 items-center justify-between gap-4 border-b border-border/80">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2.5 rounded-md font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-panel text-accent shadow-sm">
+                <Eye className="h-[18px] w-[18px]" aria-hidden />
+              </span>
+              <span className="hidden sm:inline">Markdown Lens</span>
+            </Link>
+            <nav className="hidden items-center gap-1 border-l border-border pl-3 md:flex" aria-label="Editor navigation">
+              <Link
+                href="/"
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Home
+              </Link>
+              <Link
+                href="/markdown-cheatsheet"
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Cheatsheet
+              </Link>
+            </nav>
           </div>
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+          <div className="flex items-center gap-1">
             <a
               href="https://github.com/ayushhagarwal/markdown-lens"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="View Markdown Lens on GitHub"
             >
               <Github className="h-4 w-4" aria-hidden />
-              <span className="hidden sm:inline">ayushhagarwal/markdown-lens</span>
-              <span className="sm:hidden">GitHub</span>
             </a>
             <button
               type="button"
               onClick={toggleTheme}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/80 bg-surface text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
               title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             >
@@ -404,24 +530,16 @@ export function MarkdownLensApp() {
           </div>
         </header>
 
-        <section className="grid gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">
-              Free Online Markdown Viewer and Editor
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Paste, edit, or import Markdown and preview it instantly with GitHub-style
-              rendering, Mermaid diagrams, code highlighting, math, tables, and dark mode.
-            </p>
-          </div>
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-border/80 bg-surface px-3 py-2 text-sm text-muted-foreground shadow-sm">
-            <ShieldCheck className="h-4 w-4 text-accent" aria-hidden />
-            <span>Drafts stay in localStorage on this device.</span>
-          </div>
-        </section>
-
-        <section className="sticky top-0 z-20 -mx-4 border-y border-border/80 bg-background/92 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <div className="grid gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
+        <section className="sticky top-0 z-20 -mx-4 border-b border-border/80 bg-background/94 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.markdown,text/markdown"
+            onChange={handleFileInput}
+            className="sr-only"
+            aria-label="Choose a Markdown file"
+          />
+          <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
             <div className="hidden w-fit items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:flex">
               <ModeButton icon={PanelLeft} label="Split" active={viewMode === "split"} onClick={() => setViewMode("split")} />
               <ModeButton
@@ -461,73 +579,21 @@ export function MarkdownLensApp() {
               />
             </div>
 
-            <div className="hidden flex-wrap items-center gap-2 md:flex xl:justify-center">
-              <ToolbarButton
-                icon={Sparkles}
-                label="Load sample"
-                onClick={handleLoadSample}
-                shortcut="⌘/Ctrl ⇧ L"
-                ariaShortcut="Meta+Shift+L Control+Shift+L"
-                emphasis
-              />
-              <ToolbarButton
-                icon={copyState === "markdown" ? Check : Clipboard}
-                label={
-                  copyState === "markdown"
-                    ? "Copied"
-                    : copyState === "error"
-                      ? "Copy failed"
-                      : "Copy Markdown"
-                }
-                onClick={handleCopyMarkdown}
-                shortcut="⌘/Ctrl ⇧ C"
-                ariaShortcut="Meta+Shift+C Control+Shift+C"
-                disabled={isEmpty}
-              />
-              <ToolbarButton
-                icon={copyState === "html" ? Check : FileCode2}
-                label={
-                  copyState === "html"
-                    ? "Copied HTML"
-                    : copyState === "error"
-                      ? "Copy failed"
-                      : "Copy HTML"
-                }
-                onClick={handleCopyHtml}
-                shortcut="⌘/Ctrl ⇧ H"
-                ariaShortcut="Meta+Shift+H Control+Shift+H"
-                disabled={isEmpty}
-              />
-              <ToolbarButton
-                icon={Download}
-                label="Download .md"
-                onClick={handleDownload}
-                shortcut="⌘/Ctrl S"
-                ariaShortcut="Meta+S Control+S"
-                disabled={isEmpty}
-              />
-              <ToolbarButton
-                icon={FileDown}
-                label="Export HTML"
-                onClick={handleExportHtml}
-                disabled={isEmpty}
-              />
-              <ToolbarButton icon={Printer} label="Print / PDF" onClick={handlePrint} disabled={isEmpty} />
-              <ToolbarButton icon={Trash2} label="Clear" onClick={handleClear} disabled={isEmpty} tone="danger" />
-            </div>
-
-            <MobileToolbar
+            <WorkspaceActions
               copyState={copyState}
               isEmpty={isEmpty}
+              onOpenFile={() => fileInputRef.current?.click()}
               onLoadSample={handleLoadSample}
+              onLoadTemplate={handleLoadTemplate}
               onCopyMarkdown={handleCopyMarkdown}
               onCopyHtml={handleCopyHtml}
               onDownload={handleDownload}
+              onExportHtml={handleExportHtml}
               onPrint={handlePrint}
               onClear={handleClear}
             />
 
-            <div className="grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground md:flex md:flex-wrap md:items-center xl:justify-end">
+            <div className="grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground md:flex md:flex-wrap md:items-center lg:justify-end">
               <Stat label="Words" value={stats.words.toLocaleString()} />
               <Stat label="Chars" value={stats.characters.toLocaleString()} />
               <Stat label="Read" value={`${stats.minutes} min`} />
@@ -553,6 +619,7 @@ export function MarkdownLensApp() {
             <EditorPanel
               value={markdown}
               onChange={setMarkdown}
+              onLoadTemplate={handleLoadTemplate}
               hiddenOnDesktop={viewMode === "preview"}
               hiddenOnMobile={mobilePane !== "editor"}
             />
@@ -567,25 +634,11 @@ export function MarkdownLensApp() {
           {isDraggingFile ? <DropOverlay /> : null}
         </div>
 
-        <footer className="flex flex-col gap-2 border-t border-border py-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            Want to improve Markdown Lens?{" "}
-            <a
-              href="https://github.com/ayushhagarwal/markdown-lens"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-accent underline-offset-4 hover:underline"
-            >
-              Star or contribute on GitHub
-            </a>
-            .
-          </p>
-          <a
-            href="/markdown-cheatsheet"
-            className="w-fit font-medium text-accent underline-offset-4 hover:underline"
-          >
-            Markdown cheatsheet
-          </a>
+        <footer className="flex items-center justify-between gap-3 border-t border-border py-3 text-xs text-muted-foreground">
+          <p>Saved locally in this browser.</p>
+          <Link href="/" className="font-medium hover:text-foreground">
+            Back to home
+          </Link>
         </footer>
       </div>
     </div>
@@ -595,14 +648,18 @@ export function MarkdownLensApp() {
 function EditorPanel({
   value,
   onChange,
+  onLoadTemplate,
   hiddenOnDesktop,
   hiddenOnMobile,
 }: {
   value: string;
   onChange: (value: string) => void;
+  onLoadTemplate: (template: (typeof starterTemplates)[number]) => void;
   hiddenOnDesktop: boolean;
   hiddenOnMobile: boolean;
 }) {
+  const isEmpty = value.trim().length === 0;
+
   return (
     <section
       className={cn(
@@ -615,17 +672,45 @@ function EditorPanel({
       <div className="flex h-11 items-center justify-between border-b border-border/80 bg-surface px-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <Code2 className="h-4 w-4 text-accent" aria-hidden />
-          Editor
+          Markdown
         </div>
-        <span className="text-xs text-muted-foreground">Drop .md files here</span>
+        <span className="hidden text-xs text-muted-foreground sm:inline">Drop .md files here</span>
       </div>
-      <textarea
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        spellCheck={false}
-        placeholder={placeholder}
-        className="h-[calc(100%-2.75rem)] w-full resize-none bg-transparent p-5 font-mono text-sm leading-6 text-panel-foreground caret-accent outline-none selection:bg-accent/15 placeholder:text-muted-foreground/65 sm:p-6"
-      />
+      <div className="flex h-[calc(100%-2.75rem)] flex-col">
+        {isEmpty ? (
+          <div className="border-b border-border/75 bg-surface/70 px-4 py-3">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">Start with a template</p>
+            <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+              {starterTemplates.map((template) => {
+                const Icon = template.icon;
+                return (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => onLoadTemplate(template)}
+                    className="group flex min-w-0 items-center gap-2 rounded-md border border-border bg-panel px-3 py-2 text-left transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Icon className="h-4 w-4 shrink-0 text-accent" aria-hidden />
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-semibold">{template.label}</span>
+                      <span className="hidden truncate text-[10px] text-muted-foreground 2xl:block">
+                        {template.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+        <textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          spellCheck={false}
+          placeholder={placeholder}
+          className="min-h-0 flex-1 w-full resize-none bg-transparent p-5 font-mono text-sm leading-6 text-panel-foreground caret-accent outline-none selection:bg-accent/15 placeholder:text-muted-foreground/65 sm:p-6"
+        />
+      </div>
     </section>
   );
 }
@@ -912,95 +997,135 @@ function ToolbarButton({
   );
 }
 
-function MobileToolbar({
+function WorkspaceActions({
   copyState,
   isEmpty,
+  onOpenFile,
   onLoadSample,
+  onLoadTemplate,
   onCopyMarkdown,
   onCopyHtml,
   onDownload,
+  onExportHtml,
   onPrint,
   onClear,
 }: {
   copyState: CopyState;
   isEmpty: boolean;
+  onOpenFile: () => void;
   onLoadSample: () => void;
+  onLoadTemplate: (template: (typeof starterTemplates)[number]) => void;
   onCopyMarkdown: () => void;
   onCopyHtml: () => void;
   onDownload: () => void;
+  onExportHtml: () => void;
   onPrint: () => void;
   onClear: () => void;
 }) {
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<"templates" | "export" | null>(null);
 
   useEffect(() => {
-    if (!isMoreOpen) return;
+    if (!openMenu) return;
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsMoreOpen(false);
+        setOpenMenu(null);
       }
     };
 
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [isMoreOpen]);
+  }, [openMenu]);
 
   const runAndClose = (action: () => void) => () => {
     action();
-    setIsMoreOpen(false);
+    setOpenMenu(null);
   };
 
   return (
-    <div className="grid gap-2 md:hidden">
-      <div className="grid grid-cols-2 gap-2">
-        <ToolbarButton
+    <div className="flex items-center gap-2 lg:justify-center">
+      <ToolbarButton
+        icon={FileUp}
+        label="Open file"
+        onClick={onOpenFile}
+        className="h-10 flex-1 justify-center sm:flex-none"
+        emphasis
+      />
+
+      <div className="relative flex-1 sm:flex-none">
+        <MenuButton
           icon={Sparkles}
-          label="Load sample"
-          onClick={onLoadSample}
-          shortcut="⌘/Ctrl ⇧ L"
-          ariaShortcut="Meta+Shift+L Control+Shift+L"
-          className="h-11 w-full justify-center px-2"
-          emphasis
+          label="Templates"
+          open={openMenu === "templates"}
+          onClick={() =>
+            setOpenMenu((current) => (current === "templates" ? null : "templates"))
+          }
         />
-        <ToolbarButton
-          icon={copyState === "markdown" ? Check : Clipboard}
-          label={copyState === "markdown" ? "Copied" : "Copy Markdown"}
-          onClick={onCopyMarkdown}
-          shortcut="⌘/Ctrl ⇧ C"
-          ariaShortcut="Meta+Shift+C Control+Shift+C"
-          className="h-11 w-full justify-center px-2"
-          disabled={isEmpty}
-        />
+        {openMenu === "templates" ? (
+          <div className="absolute left-0 top-[calc(100%+0.5rem)] z-40 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-panel p-2 shadow-panel">
+            <p className="px-2 pb-2 pt-1 text-xs font-medium text-muted-foreground">
+              Start with a focused document
+            </p>
+            {starterTemplates.map((template) => {
+              const Icon = template.icon;
+              return (
+                <button
+                  key={template.id}
+                  type="button"
+                  onClick={runAndClose(() => onLoadTemplate(template))}
+                  className="flex w-full items-start gap-3 rounded-lg px-2.5 py-2.5 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+                  <span>
+                    <span className="block text-sm font-medium">{template.label}</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {template.description}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+            <div className="mt-1 border-t border-border pt-1">
+              <button
+                type="button"
+                onClick={runAndClose(onLoadSample)}
+                className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Sparkles className="h-4 w-4 text-accent" aria-hidden />
+                Full feature sample
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setIsMoreOpen((current) => !current)}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          aria-expanded={isMoreOpen}
-          aria-controls="mobile-secondary-actions"
-        >
-          <MoreHorizontal className="h-4 w-4" aria-hidden />
-          More actions
-          <ChevronDown
-            className={cn("h-4 w-4 transition", isMoreOpen && "rotate-180")}
-            aria-hidden
-          />
-        </button>
-        {isMoreOpen ? (
+      <div className="relative flex-1 sm:flex-none">
+        <MenuButton
+          icon={FileDown}
+          label="Export"
+          open={openMenu === "export"}
+          onClick={() => setOpenMenu((current) => (current === "export" ? null : "export"))}
+        />
+        {openMenu === "export" ? (
           <div
-            id="mobile-secondary-actions"
-            className="absolute right-0 top-[calc(100%+0.5rem)] z-30 grid w-72 max-w-[calc(100vw-2rem)] gap-2 rounded-lg border border-border/80 bg-panel p-2 shadow-panel"
+            className="absolute right-0 top-[calc(100%+0.5rem)] z-40 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-panel p-2 shadow-panel"
           >
+            <ToolbarButton
+              icon={copyState === "markdown" ? Check : Clipboard}
+              label={copyState === "markdown" ? "Copied Markdown" : "Copy Markdown"}
+              onClick={runAndClose(onCopyMarkdown)}
+              shortcut="⌘/Ctrl ⇧ C"
+              ariaShortcut="Meta+Shift+C Control+Shift+C"
+              className="h-10 w-full justify-start border-0 shadow-none"
+              disabled={isEmpty}
+            />
             <ToolbarButton
               icon={copyState === "html" ? Check : FileCode2}
               label={copyState === "html" ? "Copied HTML" : "Copy HTML"}
               onClick={runAndClose(onCopyHtml)}
               shortcut="⌘/Ctrl ⇧ H"
               ariaShortcut="Meta+Shift+H Control+Shift+H"
-              className="h-11 w-full justify-start shadow-none"
+              className="h-10 w-full justify-start border-0 shadow-none"
               disabled={isEmpty}
             />
             <ToolbarButton
@@ -1009,21 +1134,29 @@ function MobileToolbar({
               onClick={runAndClose(onDownload)}
               shortcut="⌘/Ctrl S"
               ariaShortcut="Meta+S Control+S"
-              className="h-11 w-full justify-start shadow-none"
+              className="h-10 w-full justify-start border-0 shadow-none"
+              disabled={isEmpty}
+            />
+            <ToolbarButton
+              icon={FileDown}
+              label="Export HTML"
+              onClick={runAndClose(onExportHtml)}
+              className="h-10 w-full justify-start border-0 shadow-none"
               disabled={isEmpty}
             />
             <ToolbarButton
               icon={Printer}
               label="Print / PDF"
               onClick={runAndClose(onPrint)}
-              className="h-11 w-full justify-start shadow-none"
+              className="h-10 w-full justify-start border-0 shadow-none"
               disabled={isEmpty}
             />
+            <div className="my-1 border-t border-border" />
             <ToolbarButton
               icon={Trash2}
               label="Clear"
               onClick={runAndClose(onClear)}
-              className="h-11 w-full justify-start shadow-none"
+              className="h-10 w-full justify-start border-0 shadow-none"
               disabled={isEmpty}
               tone="danger"
             />
@@ -1031,6 +1164,31 @@ function MobileToolbar({
         ) : null}
       </div>
     </div>
+  );
+}
+
+function MenuButton({
+  icon: Icon,
+  label,
+  open,
+  onClick,
+}: {
+  icon: LucideIcon;
+  label: string;
+  open: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={open}
+      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-panel px-3 text-sm font-medium shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
+    >
+      <Icon className="h-4 w-4" aria-hidden />
+      {label}
+      <ChevronDown className={cn("h-3.5 w-3.5 transition", open && "rotate-180")} aria-hidden />
+    </button>
   );
 }
 

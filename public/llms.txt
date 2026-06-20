@@ -2,7 +2,8 @@
 
 > Markdown Lens is a free, privacy-first online Markdown viewer and editor with GitHub-style rendering.
 
-- [Open Markdown Lens](https://markdownlens.ayushdev.com/): Paste, edit, import, preview, copy, download, export, and print Markdown in a web browser.
+- [Markdown Lens](https://markdownlens.ayushdev.com/): Product overview, privacy details, supported syntax, and links to the editor.
+- [Open the Markdown Editor](https://markdownlens.ayushdev.com/editor): Paste, edit, import, preview, copy, download, export, and print Markdown in a web browser.
 - [Markdown Cheatsheet](https://markdownlens.ayushdev.com/markdown-cheatsheet): Examples of headings, lists, task lists, tables, code blocks, Mermaid diagrams, and math.
 - [Full Product Reference](https://markdownlens.ayushdev.com/llms-full.txt): Detailed capabilities, privacy behavior, supported syntax, and common questions.
 - [Open-source Repository](https://github.com/ayushhagarwal/markdown-lens): Source code, issues, license, and contribution information.
