@@ -7,6 +7,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import {
+  AlertCircle,
   Check,
   ChevronDown,
   Clipboard,
@@ -15,6 +16,7 @@ import {
   Eye,
   FileCode2,
   FileDown,
+  FileUp,
   Github,
   Loader2,
   Moon,
@@ -43,6 +45,10 @@ type KeyboardShortcutActions = {
   showEditor: () => void;
   loadSample: () => void;
 };
+type ImportNotice =
+  | { tone: "success"; message: string }
+  | { tone: "error"; message: string }
+  | null;
 
 const STORAGE_KEY = "markdown-lens:draft";
 const THEME_KEY = "markdown-lens:theme";
@@ -114,7 +120,10 @@ export function MarkdownLensApp() {
   const [mobilePane, setMobilePane] = useState<"editor" | "preview">("editor");
   const [theme, setTheme] = useState<Theme>("light");
   const [copyState, setCopyState] = useState<CopyState>("idle");
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [importNotice, setImportNotice] = useState<ImportNotice>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+  const dragDepthRef = useRef(0);
 
   useEffect(() => {
     const storedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
@@ -152,6 +161,12 @@ export function MarkdownLensApp() {
     const timeout = window.setTimeout(() => setCopyState("idle"), 1800);
     return () => window.clearTimeout(timeout);
   }, [copyState]);
+
+  useEffect(() => {
+    if (!importNotice) return;
+    const timeout = window.setTimeout(() => setImportNotice(null), 5000);
+    return () => window.clearTimeout(timeout);
+  }, [importNotice]);
 
   const stats = useMemo(() => {
     const words = markdown.trim().match(/\S+/g)?.length ?? 0;
@@ -270,6 +285,81 @@ export function MarkdownLensApp() {
     showEditor: handleShowEditor,
     loadSample: handleLoadSample,
   });
+
+  const handleDragEnter = useCallback((event: React.DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    dragDepthRef.current += 1;
+
+    if (event.dataTransfer.types.includes("Files")) {
+      setIsDraggingFile(true);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((event: React.DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  }, []);
+
+  const handleDragLeave = useCallback((event: React.DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+
+    if (dragDepthRef.current === 0) {
+      setIsDraggingFile(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (event: React.DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      dragDepthRef.current = 0;
+      setIsDraggingFile(false);
+
+      const file = event.dataTransfer.files.item(0);
+      if (!file) {
+        setImportNotice({
+          tone: "error",
+          message: "No file was found. Drop a .md or .markdown file to import it.",
+        });
+        return;
+      }
+
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      const isMarkdownFile =
+        extension === "md" || extension === "markdown" || file.type === "text/markdown";
+
+      if (!isMarkdownFile) {
+        setImportNotice({
+          tone: "error",
+          message: `"${file.name}" is not supported. Choose a .md or .markdown file.`,
+        });
+        return;
+      }
+
+      if (
+        !isEmpty &&
+        !window.confirm(`Replace the current draft with "${file.name}"?`)
+      ) {
+        return;
+      }
+
+      try {
+        const content = await file.text();
+        setMarkdown(content);
+        setMobilePane("preview");
+        setImportNotice({
+          tone: "success",
+          message: `Imported "${file.name}" locally. Nothing was uploaded.`,
+        });
+      } catch {
+        setImportNotice({
+          tone: "error",
+          message: `Could not read "${file.name}". Please try another Markdown file.`,
+        });
+      }
+    },
+    [isEmpty],
+  );
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -445,27 +535,37 @@ export function MarkdownLensApp() {
           </div>
         </section>
 
-        <section
-          className={cn(
-            "grid flex-1 gap-4 py-4",
-            viewMode === "split" && "lg:grid-cols-2",
-            viewMode !== "split" && "lg:grid-cols-1",
-          )}
+        <div
+          className="relative flex flex-1 flex-col"
+          onDragEnter={handleDragEnter}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
-          <EditorPanel
-            value={markdown}
-            onChange={setMarkdown}
-            hiddenOnDesktop={viewMode === "preview"}
-            hiddenOnMobile={mobilePane !== "editor"}
-          />
-          <PreviewPanel
-            markdown={markdown}
-            previewRef={previewRef}
-            theme={theme}
-            hiddenOnDesktop={viewMode === "editor"}
-            hiddenOnMobile={mobilePane !== "preview"}
-          />
-        </section>
+          {importNotice ? <ImportNoticeBanner notice={importNotice} /> : null}
+          <section
+            className={cn(
+              "grid flex-1 gap-4 py-4",
+              viewMode === "split" && "lg:grid-cols-2",
+              viewMode !== "split" && "lg:grid-cols-1",
+            )}
+          >
+            <EditorPanel
+              value={markdown}
+              onChange={setMarkdown}
+              hiddenOnDesktop={viewMode === "preview"}
+              hiddenOnMobile={mobilePane !== "editor"}
+            />
+            <PreviewPanel
+              markdown={markdown}
+              previewRef={previewRef}
+              theme={theme}
+              hiddenOnDesktop={viewMode === "editor"}
+              hiddenOnMobile={mobilePane !== "preview"}
+            />
+          </section>
+          {isDraggingFile ? <DropOverlay /> : null}
+        </div>
 
         <footer className="flex flex-col gap-2 border-t border-border py-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>
@@ -517,7 +617,7 @@ function EditorPanel({
           <Code2 className="h-4 w-4 text-accent" aria-hidden />
           Editor
         </div>
-        <span className="text-xs text-muted-foreground">Autosaved locally</span>
+        <span className="text-xs text-muted-foreground">Drop .md files here</span>
       </div>
       <textarea
         value={value}
@@ -581,6 +681,45 @@ function PreviewPanel({
         )}
       </div>
     </section>
+  );
+}
+
+function ImportNoticeBanner({ notice }: { notice: Exclude<ImportNotice, null> }) {
+  const isError = notice.tone === "error";
+
+  return (
+    <div
+      role={isError ? "alert" : "status"}
+      className={cn(
+        "mt-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
+        isError
+          ? "border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-200"
+          : "border-accent/30 bg-accent-soft text-foreground",
+      )}
+    >
+      {isError ? (
+        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      ) : (
+        <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+      )}
+      <span>{notice.message}</span>
+    </div>
+  );
+}
+
+function DropOverlay() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-accent bg-background/90 p-6 backdrop-blur-sm">
+      <div className="max-w-sm text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-accent-soft text-accent">
+          <FileUp className="h-7 w-7" aria-hidden />
+        </div>
+        <p className="mt-4 text-lg font-semibold">Drop your Markdown file</p>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Accepts .md and .markdown files. The file is read only in your browser.
+        </p>
+      </div>
+    </div>
   );
 }
 
