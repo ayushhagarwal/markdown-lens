@@ -43,8 +43,7 @@ html {
 body {
   margin: 0;
   overflow-x: hidden;
-  background:
-    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--surface)) 44rem);
+  background: hsl(var(--background));
   font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -56,8 +55,8 @@ textarea {
 }
 
 .panel-height {
-  height: min(76vh, calc(100dvh - 15.75rem));
-  min-height: 560px;
+  height: calc(100dvh - 13.25rem);
+  min-height: 520px;
 }
 
 ::selection {
@@ -239,15 +238,15 @@ section ::-webkit-scrollbar-thumb:hover {
 
 @media (max-width: 1023px) {
   .panel-height {
-    height: calc(100dvh - 17.5rem);
-    min-height: 500px;
+    height: calc(100dvh - 20.5rem);
+    min-height: 480px;
   }
 }
 
 @media (max-width: 640px) {
   .panel-height {
-    height: calc(100dvh - 18.5rem);
-    min-height: 460px;
+    height: calc(100dvh - 21.5rem);
+    min-height: 430px;
   }
 
   .markdown-body h1 {
