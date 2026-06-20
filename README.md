@@ -31,6 +31,20 @@ Markdown Lens exists to provide a simple, polished, browser-first Markdown viewe
 - Mobile-friendly editor and preview tabs
 - Word count, character count, and estimated reading time
 
+## Keyboard Shortcuts
+
+Markdown Lens supports the same shortcuts on macOS (`Cmd`) and Windows/Linux
+(`Ctrl`). Shortcut hints are also available from the relevant toolbar controls.
+
+| Action | Shortcut |
+| --- | --- |
+| Download Markdown | `Cmd/Ctrl + S` |
+| Copy Markdown | `Cmd/Ctrl + Shift + C` |
+| Copy rendered HTML | `Cmd/Ctrl + Shift + H` |
+| Switch to Preview | `Cmd/Ctrl + Shift + P` |
+| Switch to Editor | `Cmd/Ctrl + Shift + E` |
+| Load sample Markdown | `Cmd/Ctrl + Shift + L` |
+
 ## Privacy
 
 Markdown Lens is designed to be privacy-first.

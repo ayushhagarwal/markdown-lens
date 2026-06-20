@@ -30,6 +30,15 @@ import { cn } from "@/lib/utils";
 type ViewMode = "split" | "editor" | "preview";
 type Theme = "light" | "dark";
 type CopyState = "idle" | "markdown" | "html" | "error";
+type KeyboardShortcutActions = {
+  hasContent: boolean;
+  download: () => void;
+  copyMarkdown: () => void;
+  copyHtml: () => void;
+  showPreview: () => void;
+  showEditor: () => void;
+  loadSample: () => void;
+};
 
 const STORAGE_KEY = "markdown-lens:draft";
 const THEME_KEY = "markdown-lens:theme";
@@ -225,6 +234,26 @@ export function MarkdownLensApp() {
     setTheme((current) => (current === "dark" ? "light" : "dark"));
   }, []);
 
+  const handleShowPreview = useCallback(() => {
+    setViewMode("preview");
+    setMobilePane("preview");
+  }, []);
+
+  const handleShowEditor = useCallback(() => {
+    setViewMode("editor");
+    setMobilePane("editor");
+  }, []);
+
+  useKeyboardShortcuts({
+    hasContent: !isEmpty,
+    download: handleDownload,
+    copyMarkdown: handleCopyMarkdown,
+    copyHtml: handleCopyHtml,
+    showPreview: handleShowPreview,
+    showEditor: handleShowEditor,
+    loadSample: handleLoadSample,
+  });
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="app-shell mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-4 sm:px-6 lg:px-8">
@@ -288,17 +317,52 @@ export function MarkdownLensApp() {
           <div className="grid gap-3 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:items-center">
             <div className="hidden w-fit items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:flex">
               <ModeButton icon={PanelLeft} label="Split" active={viewMode === "split"} onClick={() => setViewMode("split")} />
-              <ModeButton icon={Code2} label="Editor" active={viewMode === "editor"} onClick={() => setViewMode("editor")} />
-              <ModeButton icon={PanelRight} label="Preview" active={viewMode === "preview"} onClick={() => setViewMode("preview")} />
+              <ModeButton
+                icon={Code2}
+                label="Editor"
+                active={viewMode === "editor"}
+                onClick={handleShowEditor}
+                shortcut="⌘/Ctrl ⇧ E"
+                ariaShortcut="Meta+Shift+E Control+Shift+E"
+              />
+              <ModeButton
+                icon={PanelRight}
+                label="Preview"
+                active={viewMode === "preview"}
+                onClick={handleShowPreview}
+                shortcut="⌘/Ctrl ⇧ P"
+                ariaShortcut="Meta+Shift+P Control+Shift+P"
+              />
             </div>
 
             <div className="flex w-full items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:hidden">
-              <ModeButton icon={Code2} label="Editor" active={mobilePane === "editor"} onClick={() => setMobilePane("editor")} />
-              <ModeButton icon={Eye} label="Preview" active={mobilePane === "preview"} onClick={() => setMobilePane("preview")} />
+              <ModeButton
+                icon={Code2}
+                label="Editor"
+                active={mobilePane === "editor"}
+                onClick={handleShowEditor}
+                shortcut="⌘/Ctrl ⇧ E"
+                ariaShortcut="Meta+Shift+E Control+Shift+E"
+              />
+              <ModeButton
+                icon={Eye}
+                label="Preview"
+                active={mobilePane === "preview"}
+                onClick={handleShowPreview}
+                shortcut="⌘/Ctrl ⇧ P"
+                ariaShortcut="Meta+Shift+P Control+Shift+P"
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-2 xl:justify-center">
-              <ToolbarButton icon={Sparkles} label="Load sample" onClick={handleLoadSample} emphasis />
+              <ToolbarButton
+                icon={Sparkles}
+                label="Load sample"
+                onClick={handleLoadSample}
+                shortcut="⌘/Ctrl ⇧ L"
+                ariaShortcut="Meta+Shift+L Control+Shift+L"
+                emphasis
+              />
               <ToolbarButton
                 icon={copyState === "markdown" ? Check : Clipboard}
                 label={
@@ -309,6 +373,8 @@ export function MarkdownLensApp() {
                       : "Copy Markdown"
                 }
                 onClick={handleCopyMarkdown}
+                shortcut="⌘/Ctrl ⇧ C"
+                ariaShortcut="Meta+Shift+C Control+Shift+C"
                 disabled={isEmpty}
               />
               <ToolbarButton
@@ -321,9 +387,18 @@ export function MarkdownLensApp() {
                       : "Copy HTML"
                 }
                 onClick={handleCopyHtml}
+                shortcut="⌘/Ctrl ⇧ H"
+                ariaShortcut="Meta+Shift+H Control+Shift+H"
                 disabled={isEmpty}
               />
-              <ToolbarButton icon={Download} label="Download .md" onClick={handleDownload} disabled={isEmpty} />
+              <ToolbarButton
+                icon={Download}
+                label="Download .md"
+                onClick={handleDownload}
+                shortcut="⌘/Ctrl S"
+                ariaShortcut="Meta+S Control+S"
+                disabled={isEmpty}
+              />
               <ToolbarButton icon={Printer} label="Print / PDF" onClick={handlePrint} disabled={isEmpty} />
               <ToolbarButton icon={Trash2} label="Clear" onClick={handleClear} disabled={isEmpty} tone="danger" />
             </div>
@@ -588,16 +663,22 @@ function ModeButton({
   label,
   active,
   onClick,
+  shortcut,
+  ariaShortcut,
 }: {
   icon: LucideIcon;
   label: string;
   active: boolean;
   onClick: () => void;
+  shortcut?: string;
+  ariaShortcut?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      title={shortcut ? `${label} (${shortcut})` : label}
+      aria-keyshortcuts={ariaShortcut}
       className={cn(
         "inline-flex h-8 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface lg:flex-none",
         active
@@ -618,6 +699,8 @@ function ToolbarButton({
   disabled,
   tone = "default",
   emphasis = false,
+  shortcut,
+  ariaShortcut,
 }: {
   icon: LucideIcon;
   label: string;
@@ -625,12 +708,16 @@ function ToolbarButton({
   disabled?: boolean;
   tone?: "default" | "danger";
   emphasis?: boolean;
+  shortcut?: string;
+  ariaShortcut?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
+      title={shortcut ? `${label} (${shortcut})` : label}
+      aria-keyshortcuts={ariaShortcut}
       className={cn(
         "inline-flex h-9 items-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:border-border/60 disabled:bg-muted/60 disabled:text-muted-foreground disabled:shadow-none",
         emphasis && "border-accent/30 bg-accent-soft text-accent hover:bg-accent-soft/80",
@@ -641,6 +728,58 @@ function ToolbarButton({
       <span className="whitespace-nowrap">{label}</span>
     </button>
   );
+}
+
+function useKeyboardShortcuts({
+  hasContent,
+  download,
+  copyMarkdown,
+  copyHtml,
+  showPreview,
+  showEditor,
+  loadSample,
+}: KeyboardShortcutActions) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.repeat ||
+        event.altKey ||
+        (!event.metaKey && !event.ctrlKey)
+      ) {
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+      let action: (() => void) | undefined;
+
+      if (!event.shiftKey && key === "s") {
+        if (!hasContent) return;
+        action = download;
+      } else if (event.shiftKey && key === "c") {
+        if (!hasContent) return;
+        action = copyMarkdown;
+      } else if (event.shiftKey && key === "h") {
+        if (!hasContent) return;
+        action = copyHtml;
+      } else if (event.shiftKey && key === "p") {
+        action = showPreview;
+      } else if (event.shiftKey && key === "e") {
+        action = showEditor;
+      } else if (event.shiftKey && key === "l") {
+        action = loadSample;
+      }
+
+      if (!action) return;
+
+      event.preventDefault();
+      action();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [copyHtml, copyMarkdown, download, hasContent, loadSample, showEditor, showPreview]);
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
