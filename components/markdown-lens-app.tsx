@@ -13,6 +13,7 @@ import {
   Download,
   Eye,
   FileCode2,
+  FileDown,
   Github,
   Loader2,
   Moon,
@@ -25,6 +26,7 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react";
+import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "split" | "editor" | "preview";
@@ -226,6 +228,19 @@ export function MarkdownLensApp() {
     URL.revokeObjectURL(url);
   }, [isEmpty, markdown]);
 
+  const handleExportHtml = useCallback(() => {
+    if (isEmpty || !previewRef.current) return;
+
+    const safePreviewHtml = sanitizePreviewHtml(previewRef.current);
+    const documentTitle = getDocumentTitle(markdown);
+    const html = buildStandaloneHtmlDocument({
+      bodyHtml: safePreviewHtml,
+      title: documentTitle,
+    });
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    downloadBlob(blob, `${toFileName(documentTitle)}.html`);
+  }, [isEmpty, markdown]);
+
   const handlePrint = useCallback(() => {
     window.print();
   }, []);
@@ -397,6 +412,12 @@ export function MarkdownLensApp() {
                 onClick={handleDownload}
                 shortcut="⌘/Ctrl S"
                 ariaShortcut="Meta+S Control+S"
+                disabled={isEmpty}
+              />
+              <ToolbarButton
+                icon={FileDown}
+                label="Export HTML"
+                onClick={handleExportHtml}
                 disabled={isEmpty}
               />
               <ToolbarButton icon={Printer} label="Print / PDF" onClick={handlePrint} disabled={isEmpty} />
@@ -786,6 +807,56 @@ function useKeyboardShortcuts({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [copyHtml, copyMarkdown, download, hasContent, loadSample, showEditor, showPreview]);
+}
+
+function sanitizePreviewHtml(preview: HTMLDivElement) {
+  const clone = preview.cloneNode(true) as HTMLDivElement;
+  clone
+    .querySelectorAll("script, style, link, meta, base, iframe, object, embed, form, input, button")
+    .forEach((element) => element.remove());
+
+  clone.querySelectorAll("*").forEach((element) => {
+    for (const attribute of Array.from(element.attributes)) {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim().toLowerCase();
+      const isEventHandler = name.startsWith("on");
+      const isUnsafeUrl =
+        (name === "href" || name === "src" || name === "xlink:href") &&
+        (value.startsWith("javascript:") || value.startsWith("data:text/html"));
+
+      if (isEventHandler || name === "srcdoc" || isUnsafeUrl) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+  });
+
+  clone.querySelectorAll("a").forEach((anchor) => {
+    anchor.setAttribute("rel", "noreferrer noopener");
+  });
+
+  return clone.innerHTML;
+}
+
+function getDocumentTitle(markdown: string) {
+  const heading = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim();
+  return heading || "Markdown Lens Document";
+}
+
+function toFileName(title: string) {
+  const normalized = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || "markdown-lens-document";
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
