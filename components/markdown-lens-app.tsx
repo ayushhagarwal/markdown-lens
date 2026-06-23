@@ -434,12 +434,12 @@ export function MarkdownLensApp() {
       const isWordFile =
         extension === "docx" ||
         file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      const isLegacyWordFile = extension === "doc";
+      const isLegacyWordFile = extension === "doc" || file.type === "application/msword";
 
       if (isLegacyWordFile) {
         setImportNotice({
           tone: "error",
-          message: `"${file.name}" is a legacy .doc file. Save it as .docx and try again.`,
+          message: `"${file.name}" is a legacy .doc file. Open it in Word or Google Docs, save/export it as .docx, then upload it again.`,
         });
         return;
       }
@@ -447,7 +447,7 @@ export function MarkdownLensApp() {
       if (!isMarkdownFile && !isPdfFile && !isWordFile) {
         setImportNotice({
           tone: "error",
-          message: `"${file.name}" is not supported. Choose a Markdown, PDF, or Word .docx file.`,
+          message: `"${file.name}" is not supported. Choose Markdown, PDF, or Word .docx. Legacy .doc files need to be saved as .docx first.`,
         });
         return;
       }
@@ -585,7 +585,8 @@ export function MarkdownLensApp() {
       if (!file) {
         setImportNotice({
           tone: "error",
-          message: "No file was found. Drop a Markdown, PDF, or Word .docx file to import it.",
+          message:
+            "No file was found. Drop Markdown, PDF, or Word .docx. Legacy .doc files need to be saved as .docx first.",
         });
         return;
       }
@@ -650,10 +651,10 @@ export function MarkdownLensApp() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".md,.markdown,.pdf,.docx,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept=".md,.markdown,.pdf,.doc,.docx,text/markdown,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             onChange={handleFileInput}
             className="sr-only"
-            aria-label="Choose a Markdown, PDF, or Word file"
+            aria-label="Choose Markdown, PDF, or Word .docx"
             disabled={importProgress !== null}
           />
           <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
@@ -793,7 +794,7 @@ function EditorPanel({
           Markdown
         </div>
         <span className="hidden text-xs text-muted-foreground sm:inline">
-          Drop Markdown, PDF, or Word here
+          Drop Markdown, PDF, or Word .docx here
         </span>
       </div>
       <div className="flex h-[calc(100%-2.75rem)] flex-col">
@@ -922,10 +923,10 @@ function DropOverlay() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-accent-soft text-accent">
           <FileUp className="h-7 w-7" aria-hidden />
         </div>
-        <p className="mt-4 text-lg font-semibold">Drop your Markdown, PDF, or Word file</p>
+        <p className="mt-4 text-lg font-semibold">Drop Markdown, PDF, or Word .docx</p>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
           PDFs and .docx files are converted locally. Scanned PDFs and embedded images are not
-          extracted.
+          extracted. Legacy .doc files need to be saved as .docx first.
         </p>
       </div>
     </div>
