@@ -10,7 +10,12 @@ export const markdownViewerFaq = [
   {
     question: "Does Markdown Lens upload my documents?",
     answer:
-      "No. Markdown is parsed, rendered, and autosaved in your browser. Document content is not sent to a Markdown Lens backend.",
+      "No. Markdown rendering, PDF and Word text extraction, conversion, and draft autosave happen in your browser. Document content is not sent to a Markdown Lens backend.",
+  },
+  {
+    question: "Can Markdown Lens convert PDF and Word files to Markdown?",
+    answer:
+      "Yes. It converts extractable text from digitally generated PDFs and `.docx` Word documents up to 100 MB into editable Markdown locally. Scanned PDFs, legacy `.doc` files, embedded images, and visual table reconstruction are not supported.",
   },
   {
     question: "How can I export my Markdown?",
@@ -23,7 +28,8 @@ const capabilities = [
   {
     icon: FileText,
     title: "Made for real documents",
-    description: "READMEs, release notes, meeting notes, specifications, and AI-assisted drafts.",
+    description:
+      "READMEs, release notes, Confluence PDF exports, Word documents, specifications, and AI-assisted drafts.",
   },
   {
     icon: Code2,
@@ -86,6 +92,8 @@ export function SeoContent() {
             "Syntax-highlighted code",
             "Inline and block math",
             "Local draft autosave",
+            "Local PDF-to-Markdown import",
+            "Local Word-to-Markdown import",
             "Markdown, HTML, and PDF export",
           ].map((item) => (
             <li key={item} className="flex items-center gap-3 border-b border-border/70 py-3 text-sm">
