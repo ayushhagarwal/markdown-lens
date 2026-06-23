@@ -5,7 +5,7 @@ export const markdownViewerFaq = [
   {
     question: "What is Markdown Lens?",
     answer:
-      "Markdown Lens is a free online Markdown viewer and editor for GitHub-flavored Markdown, Mermaid diagrams, math, code, tables, READMEs, and documentation.",
+      "Markdown Lens is a free online PDF and Word-to-Markdown converter plus Markdown viewer/editor for GitHub-flavored Markdown, Mermaid diagrams, math, code, tables, READMEs, and documentation.",
   },
   {
     question: "Does Markdown Lens upload my documents?",
@@ -15,7 +15,7 @@ export const markdownViewerFaq = [
   {
     question: "Can Markdown Lens convert PDF and Word files to Markdown?",
     answer:
-      "Yes. It converts extractable text from digitally generated PDFs and `.docx` Word documents up to 100 MB into editable Markdown locally. Scanned PDFs, legacy `.doc` files, embedded images, and visual table reconstruction are not supported.",
+      "Yes. Upload a text-based PDF or Word `.docx` file up to 100 MB and Markdown Lens converts it into editable Markdown locally. Scanned PDFs, legacy `.doc` files, embedded images, and visual table reconstruction are not supported.",
   },
   {
     question: "How can I export my Markdown?",
@@ -27,9 +27,9 @@ export const markdownViewerFaq = [
 const capabilities = [
   {
     icon: FileText,
-    title: "Made for real documents",
+    title: "Upload real documents",
     description:
-      "READMEs, release notes, Confluence PDF exports, Word documents, specifications, and AI-assisted drafts.",
+      "Turn Confluence PDF exports, Word .docx handbooks, product specs, and AI-ready knowledge files into editable Markdown.",
   },
   {
     icon: Code2,
@@ -92,8 +92,8 @@ export function SeoContent() {
             "Syntax-highlighted code",
             "Inline and block math",
             "Local draft autosave",
-            "Local PDF-to-Markdown import",
-            "Local Word-to-Markdown import",
+            "Upload PDF to Markdown locally",
+            "Upload Word .docx to Markdown locally",
             "Markdown, HTML, and PDF export",
           ].map((item) => (
             <li key={item} className="flex items-center gap-3 border-b border-border/70 py-3 text-sm">

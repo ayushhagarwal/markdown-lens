@@ -2,11 +2,11 @@ export const siteConfig = {
   name: "Markdown Lens",
   url: "https://markdownlens.ayushdev.com",
   githubUrl: "https://github.com/ayushhagarwal/markdown-lens",
-  title: "Free Online Markdown Viewer & Editor | Markdown Lens",
+  title: "Free PDF & Word to Markdown Converter | Markdown Lens",
   description:
-    "Markdown Lens is a free, privacy-first Markdown viewer and editor with local PDF and Word-to-Markdown conversion, GitHub-flavored previews, diagrams, math, code, and tables.",
+    "Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter with local document upload, editable Markdown output, GitHub-flavored previews, diagrams, math, code, and tables.",
   shortDescription:
-    "Preview Markdown or convert text-based PDFs and Word .docx files locally with GitHub-style rendering, diagrams, math, syntax highlighting, local autosave, and no account required.",
+    "Upload text-based PDFs or Word .docx files and convert them locally into editable Markdown with GitHub-style preview, syntax highlighting, autosave, and no account required.",
   author: {
     name: "Ayush Agarwal",
     url: "https://github.com/ayushhagarwal",
@@ -27,7 +27,10 @@ export const siteConfig = {
     "markdown to html",
     "pdf to markdown",
     "word to markdown",
+    "doc to markdown",
     "docx to markdown",
+    "pdf to md",
+    "word document to markdown",
     "confluence pdf to markdown",
     "github markdown editor",
     "github flavored markdown viewer",
@@ -50,6 +53,7 @@ export const siteConfig = {
     "Copy Markdown and rendered HTML",
     "Download Markdown files",
     "Import local Markdown files",
+    "Upload PDFs and Word .docx files",
     "Convert text-based PDFs to Markdown locally",
     "Convert Word .docx files to Markdown locally",
     "Export rendered Markdown as standalone HTML",

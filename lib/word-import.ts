@@ -47,7 +47,7 @@ export async function importWordAsMarkdown(
   if (extension === "doc") {
     throw new WordImportError(
       "legacy-doc",
-      "Legacy .doc files are not supported yet. Save the document as .docx and try again.",
+      "Legacy .doc files are not converted in-browser. Open the document in Word or Google Docs, save/export it as .docx, then upload it again.",
     );
   }
 
