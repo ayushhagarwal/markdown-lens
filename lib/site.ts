@@ -4,9 +4,9 @@ export const siteConfig = {
   githubUrl: "https://github.com/ayushhagarwal/markdown-lens",
   title: "Free Online Markdown Viewer & Editor | Markdown Lens",
   description:
-    "Markdown Lens is a free, privacy-first online Markdown viewer and editor for previewing GitHub-flavored Markdown, Mermaid diagrams, math, code, tables, READMEs, and documentation.",
+    "Markdown Lens is a free, privacy-first Markdown viewer and editor with local PDF and Word-to-Markdown conversion, GitHub-flavored previews, diagrams, math, code, and tables.",
   shortDescription:
-    "Preview Markdown online with GitHub-style rendering, Mermaid diagrams, math, syntax highlighting, tables, local autosave, and no account required.",
+    "Preview Markdown or convert text-based PDFs and Word .docx files locally with GitHub-style rendering, diagrams, math, syntax highlighting, local autosave, and no account required.",
   author: {
     name: "Ayush Agarwal",
     url: "https://github.com/ayushhagarwal",
@@ -25,6 +25,10 @@ export const siteConfig = {
     "online markdown preview",
     "markdown renderer",
     "markdown to html",
+    "pdf to markdown",
+    "word to markdown",
+    "docx to markdown",
+    "confluence pdf to markdown",
     "github markdown editor",
     "github flavored markdown viewer",
     "README editor",
@@ -46,6 +50,8 @@ export const siteConfig = {
     "Copy Markdown and rendered HTML",
     "Download Markdown files",
     "Import local Markdown files",
+    "Convert text-based PDFs to Markdown locally",
+    "Convert Word .docx files to Markdown locally",
     "Export rendered Markdown as standalone HTML",
     "Print or save preview as PDF",
     "Local draft autosave with no account required",

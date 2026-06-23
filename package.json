@@ -8,14 +8,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --no-warnings --experimental-strip-types --test lib/pdf-to-markdown.test.ts lib/word-to-markdown.test.ts"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
+    "mammoth": "^1.12.0",
     "mermaid": "^11.4.0",
     "next": "^16.2.7",
+    "pdfjs-dist": "^5.4.624",
     "react": "^19.2.7",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.0",
@@ -23,12 +26,15 @@
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
-    "tailwind-merge": "^3.6.0"
+    "tailwind-merge": "^3.6.0",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.2",
+    "@types/turndown": "^5.0.6",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
     "eslint-config-next": "^16.2.9",

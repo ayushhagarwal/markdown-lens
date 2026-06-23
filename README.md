@@ -20,6 +20,7 @@ Markdown Lens exists to provide a simple, polished, browser-first Markdown viewe
 - **Clean up AI-generated Markdown** and check headings, lists, tables, and code fences.
 - **Validate Mermaid diagrams and math** alongside the surrounding documentation.
 - **Review changelogs and release notes** in a focused, readable layout.
+- **Convert legacy docs** from text-based PDF exports or `.docx` Word files into editable Markdown.
 - **Export documentation** by downloading the Markdown or printing the rendered preview to PDF.
 
 ## Features
@@ -31,6 +32,8 @@ Markdown Lens exists to provide a simple, polished, browser-first Markdown viewe
 - KaTeX math support for inline and block math
 - Light and dark mode with local preference persistence
 - Local draft autosave using `localStorage`
+- Local PDF-to-Markdown import for digitally generated PDFs
+- Local Word-to-Markdown import for `.docx` files
 - Copy raw Markdown
 - Copy rendered HTML
 - Download current content as a `.md` file
@@ -60,11 +63,18 @@ Markdown Lens supports the same shortcuts on macOS (`Cmd`) and Windows/Linux
 Markdown Lens is designed to be privacy-first.
 
 - Markdown is parsed and rendered directly in your browser.
+- PDF and Word text extraction plus Markdown conversion also happen entirely in your browser.
 - Drafts are saved only to that browser profile using `localStorage`.
 - The app does not upload document content to a backend.
 - There is no account, database, analytics, or tracking in v0.1.
 
 Because drafts are stored by the browser, anyone with access to your device or browser profile may be able to view locally saved content. Clear the editor when you are done with sensitive notes.
+
+### PDF and Word import limitations
+
+Markdown Lens reads extractable text from every page of PDFs up to 100 MB. It infers common headings, paragraphs, lists, links, and code-like blocks, but PDF is a presentation format rather than a structured document format. Images, diagrams, scanned pages, and visual table structure are not converted. Text found inside simple tables is retained in its detected reading order.
+
+Markdown Lens also converts `.docx` Word documents up to 100 MB into editable GitHub-flavored Markdown. It preserves common headings, paragraphs, lists, tables, links, emphasis, strikethrough, superscript/subscript, footnote references, and code-like blocks. Embedded images are noted but not extracted, and legacy `.doc` files are not supported yet.
 
 ## Tech Stack
 
@@ -78,6 +88,9 @@ Because drafts are stored by the browser, anyone with access to your device or b
 - [rehype-katex](https://github.com/remarkjs/remark-math/tree/main/packages/rehype-katex)
 - [rehype-highlight](https://github.com/rehypejs/rehype-highlight)
 - [Mermaid](https://mermaid.js.org/)
+- [PDF.js](https://mozilla.github.io/pdf.js/)
+- [Mammoth](https://github.com/mwilliamson/mammoth.js)
+- [Turndown](https://github.com/mixmark-io/turndown)
 
 ## Local Development
 
@@ -109,6 +122,11 @@ components/
   markdown-lens-app.tsx
                     Main editor, preview, toolbar, and rendering experience
 lib/
+  pdf-import.ts      Lazy PDF.js extraction and import-state errors
+  pdf-to-markdown.ts Positioned PDF text to Markdown conversion
+  word-import.ts     Lazy Mammoth/Turndown DOCX import
+  word-to-markdown.ts
+                    Word HTML cleanup and GFM Markdown conversion
   utils.ts           Small shared utilities
 public/
   screenshot.png     Current application screenshot
@@ -116,7 +134,6 @@ public/
 
 ## Roadmap
 
-- Add import from local `.md` files
 - Add shareable state export without uploading content
 - Improve copied HTML output styling
 - Add more Markdown fixture tests

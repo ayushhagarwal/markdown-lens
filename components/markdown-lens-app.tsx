@@ -33,6 +33,16 @@ import {
   Workflow,
   type LucideIcon,
 } from "lucide-react";
+import {
+  importPdfAsMarkdown,
+  PdfImportError,
+  PDF_SIZE_LIMIT_BYTES,
+} from "@/lib/pdf-import";
+import {
+  importWordAsMarkdown,
+  WordImportError,
+  WORD_SIZE_LIMIT_BYTES,
+} from "@/lib/word-import";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +61,14 @@ type KeyboardShortcutActions = {
 type ImportNotice =
   | { tone: "success"; message: string }
   | { tone: "error"; message: string }
+  | { tone: "progress"; message: string }
   | null;
+type ImportProgress = {
+  fileName: string;
+  kind: "pdf" | "word";
+  currentPage?: number;
+  totalPages?: number;
+} | null;
 
 const STORAGE_KEY = "markdown-lens:draft";
 const THEME_KEY = "markdown-lens:theme";
@@ -203,6 +220,7 @@ export function MarkdownLensApp() {
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [importNotice, setImportNotice] = useState<ImportNotice>(null);
+  const [importProgress, setImportProgress] = useState<ImportProgress>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
@@ -252,7 +270,7 @@ export function MarkdownLensApp() {
   }, [copyState]);
 
   useEffect(() => {
-    if (!importNotice) return;
+    if (!importNotice || importNotice.tone === "progress") return;
     const timeout = window.setTimeout(() => setImportNotice(null), 5000);
     return () => window.clearTimeout(timeout);
   }, [importNotice]);
@@ -340,12 +358,7 @@ export function MarkdownLensApp() {
   const handleDownload = useCallback(() => {
     if (isEmpty) return;
     const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "markdown-lens-document.md";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${toFileName(getDocumentTitle(markdown))}.md`);
   }, [isEmpty, markdown]);
 
   const handleExportHtml = useCallback(() => {
@@ -412,21 +425,124 @@ export function MarkdownLensApp() {
     }
   }, []);
 
-  const importMarkdownFile = useCallback(
+  const importLocalFile = useCallback(
     async (file: File) => {
       const extension = file.name.split(".").pop()?.toLowerCase();
       const isMarkdownFile =
         extension === "md" || extension === "markdown" || file.type === "text/markdown";
+      const isPdfFile = extension === "pdf" || file.type === "application/pdf";
+      const isWordFile =
+        extension === "docx" ||
+        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const isLegacyWordFile = extension === "doc";
 
-      if (!isMarkdownFile) {
+      if (isLegacyWordFile) {
         setImportNotice({
           tone: "error",
-          message: `"${file.name}" is not supported. Choose a .md or .markdown file.`,
+          message: `"${file.name}" is a legacy .doc file. Save it as .docx and try again.`,
+        });
+        return;
+      }
+
+      if (!isMarkdownFile && !isPdfFile && !isWordFile) {
+        setImportNotice({
+          tone: "error",
+          message: `"${file.name}" is not supported. Choose a Markdown, PDF, or Word .docx file.`,
+        });
+        return;
+      }
+
+      if (isPdfFile && file.size > PDF_SIZE_LIMIT_BYTES) {
+        setImportNotice({
+          tone: "error",
+          message: `"${file.name}" is larger than the 100 MB PDF limit.`,
+        });
+        return;
+      }
+
+      if (isWordFile && file.size > WORD_SIZE_LIMIT_BYTES) {
+        setImportNotice({
+          tone: "error",
+          message: `"${file.name}" is larger than the 100 MB Word import limit.`,
         });
         return;
       }
 
       if (!isEmpty && !window.confirm(`Replace the current draft with "${file.name}"?`)) {
+        return;
+      }
+
+      if (isPdfFile) {
+        setImportProgress({ fileName: file.name, kind: "pdf", currentPage: 0, totalPages: 0 });
+        setImportNotice({
+          tone: "progress",
+          message: `Opening "${file.name}" locally…`,
+        });
+
+        try {
+          const result = await importPdfAsMarkdown(file, ({ currentPage, totalPages }) => {
+            setImportProgress({ fileName: file.name, kind: "pdf", currentPage, totalPages });
+            setImportNotice({
+              tone: "progress",
+              message: `Converting page ${currentPage} of ${totalPages} from "${file.name}"…`,
+            });
+          });
+          setMarkdown(result.markdown);
+          setMobilePane("preview");
+          setImportNotice({
+            tone: "success",
+            message: `Converted all ${result.pageCount} pages from "${file.name}" locally. Images were not included.`,
+          });
+        } catch (error) {
+          const message =
+            error instanceof PdfImportError
+              ? error.message
+              : `Could not convert "${file.name}". Please try another PDF.`;
+          setImportNotice({ tone: "error", message });
+        } finally {
+          setImportProgress(null);
+        }
+        return;
+      }
+
+      if (isWordFile) {
+        setImportProgress({ fileName: file.name, kind: "word" });
+        setImportNotice({
+          tone: "progress",
+          message: `Opening "${file.name}" locally…`,
+        });
+
+        try {
+          const result = await importWordAsMarkdown(file, ({ stage }) => {
+            setImportProgress({ fileName: file.name, kind: "word" });
+            const stageMessage =
+              stage === "reading"
+                ? `Reading "${file.name}" locally…`
+                : stage === "converting"
+                  ? `Converting "${file.name}" to Markdown locally…`
+                  : `Finishing Markdown cleanup for "${file.name}"…`;
+            setImportNotice({ tone: "progress", message: stageMessage });
+          });
+          setMarkdown(result.markdown);
+          setMobilePane("preview");
+          setImportNotice({
+            tone: "success",
+            message:
+              result.imageCount > 0
+                ? `Converted "${file.name}" locally. ${result.imageCount} embedded image${
+                    result.imageCount === 1 ? " was" : "s were"
+                  } noted but not extracted.`
+                : `Converted "${file.name}" locally. Nothing was uploaded.`,
+          });
+        } catch (error) {
+          const message =
+            error instanceof WordImportError
+              ? error.message
+              : `Could not convert "${file.name}". Please try another .docx file.`;
+          setImportNotice({ tone: "error", message });
+        } finally {
+          setImportProgress(null);
+        }
         return;
       }
 
@@ -452,11 +568,11 @@ export function MarkdownLensApp() {
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.item(0);
       if (file) {
-        await importMarkdownFile(file);
+        await importLocalFile(file);
       }
       event.target.value = "";
     },
-    [importMarkdownFile],
+    [importLocalFile],
   );
 
   const handleDrop = useCallback(
@@ -469,14 +585,14 @@ export function MarkdownLensApp() {
       if (!file) {
         setImportNotice({
           tone: "error",
-          message: "No file was found. Drop a .md or .markdown file to import it.",
+          message: "No file was found. Drop a Markdown, PDF, or Word .docx file to import it.",
         });
         return;
       }
 
-      await importMarkdownFile(file);
+      await importLocalFile(file);
     },
-    [importMarkdownFile],
+    [importLocalFile],
   );
 
   return (
@@ -534,10 +650,11 @@ export function MarkdownLensApp() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".md,.markdown,text/markdown"
+            accept=".md,.markdown,.pdf,.docx,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             onChange={handleFileInput}
             className="sr-only"
-            aria-label="Choose a Markdown file"
+            aria-label="Choose a Markdown, PDF, or Word file"
+            disabled={importProgress !== null}
           />
           <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
             <div className="hidden w-fit items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:flex">
@@ -582,6 +699,7 @@ export function MarkdownLensApp() {
             <WorkspaceActions
               copyState={copyState}
               isEmpty={isEmpty}
+              isImporting={importProgress !== null}
               onOpenFile={() => fileInputRef.current?.click()}
               onLoadSample={handleLoadSample}
               onLoadTemplate={handleLoadTemplate}
@@ -674,7 +792,9 @@ function EditorPanel({
           <Code2 className="h-4 w-4 text-accent" aria-hidden />
           Markdown
         </div>
-        <span className="hidden text-xs text-muted-foreground sm:inline">Drop .md files here</span>
+        <span className="hidden text-xs text-muted-foreground sm:inline">
+          Drop Markdown, PDF, or Word here
+        </span>
       </div>
       <div className="flex h-[calc(100%-2.75rem)] flex-col">
         {isEmpty ? (
@@ -771,6 +891,7 @@ function PreviewPanel({
 
 function ImportNoticeBanner({ notice }: { notice: Exclude<ImportNotice, null> }) {
   const isError = notice.tone === "error";
+  const isProgress = notice.tone === "progress";
 
   return (
     <div
@@ -784,6 +905,8 @@ function ImportNoticeBanner({ notice }: { notice: Exclude<ImportNotice, null> })
     >
       {isError ? (
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      ) : isProgress ? (
+        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-accent" aria-hidden />
       ) : (
         <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
       )}
@@ -799,9 +922,10 @@ function DropOverlay() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-accent-soft text-accent">
           <FileUp className="h-7 w-7" aria-hidden />
         </div>
-        <p className="mt-4 text-lg font-semibold">Drop your Markdown file</p>
+        <p className="mt-4 text-lg font-semibold">Drop your Markdown, PDF, or Word file</p>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          Accepts .md and .markdown files. The file is read only in your browser.
+          PDFs and .docx files are converted locally. Scanned PDFs and embedded images are not
+          extracted.
         </p>
       </div>
     </div>
@@ -958,6 +1082,7 @@ function ModeButton({
 
 function ToolbarButton({
   icon: Icon,
+  iconClassName,
   label,
   onClick,
   disabled,
@@ -968,6 +1093,7 @@ function ToolbarButton({
   className,
 }: {
   icon: LucideIcon;
+  iconClassName?: string;
   label: string;
   onClick: () => void;
   disabled?: boolean;
@@ -991,7 +1117,7 @@ function ToolbarButton({
         className,
       )}
     >
-      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+      <Icon className={cn("h-4 w-4 shrink-0", iconClassName)} aria-hidden />
       <span className="whitespace-nowrap">{label}</span>
     </button>
   );
@@ -1000,6 +1126,7 @@ function ToolbarButton({
 function WorkspaceActions({
   copyState,
   isEmpty,
+  isImporting,
   onOpenFile,
   onLoadSample,
   onLoadTemplate,
@@ -1012,6 +1139,7 @@ function WorkspaceActions({
 }: {
   copyState: CopyState;
   isEmpty: boolean;
+  isImporting: boolean;
   onOpenFile: () => void;
   onLoadSample: () => void;
   onLoadTemplate: (template: (typeof starterTemplates)[number]) => void;
@@ -1045,11 +1173,13 @@ function WorkspaceActions({
   return (
     <div className="flex items-center gap-2 lg:justify-center">
       <ToolbarButton
-        icon={FileUp}
-        label="Open file"
+        icon={isImporting ? Loader2 : FileUp}
+        label={isImporting ? "Converting…" : "Open file"}
         onClick={onOpenFile}
         className="h-10 flex-1 justify-center sm:flex-none"
         emphasis
+        disabled={isImporting}
+        iconClassName={isImporting ? "animate-spin" : undefined}
       />
 
       <div className="relative flex-1 sm:flex-none">
