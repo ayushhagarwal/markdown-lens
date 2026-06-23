@@ -4,7 +4,7 @@ import { MarkdownLensApp } from "@/components/markdown-lens-app";
 export const metadata: Metadata = {
   title: "Markdown Editor",
   description:
-    "Open, write, and preview Markdown with GitHub-style rendering, Mermaid diagrams, math, code highlighting, and local browser autosave.",
+    "Open Markdown or convert text-based PDFs and Word .docx files locally, then edit and preview with GitHub-style rendering, Mermaid diagrams, math, and code highlighting.",
   alternates: {
     canonical: "/editor",
   },

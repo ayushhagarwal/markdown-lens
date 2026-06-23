@@ -43,7 +43,7 @@ export default function Home() {
         "@id": `${siteConfig.url}/#software`,
       },
       inLanguage: "en",
-      dateModified: "2026-06-20",
+      dateModified: "2026-06-23",
     },
     {
       "@context": "https://schema.org",
@@ -62,6 +62,7 @@ export default function Home() {
         "Online Markdown Editor",
         "Online Markdown Viewer",
         "Markdown Preview Tool",
+        "PDF and Word to Markdown Converter",
       ],
       applicationCategory: "DeveloperApplication",
       applicationSubCategory: "Markdown editor",
@@ -89,7 +90,7 @@ export default function Home() {
       keywords: siteConfig.keywords.join(", "),
       softwareVersion: "0.1.0",
       softwareHelp: `${siteConfig.url}/markdown-cheatsheet`,
-      dateModified: "2026-06-20",
+      dateModified: "2026-06-23",
       inLanguage: "en",
       sameAs: [siteConfig.githubUrl],
     },
@@ -125,8 +126,8 @@ export default function Home() {
                 Markdown that looks right before you publish.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                Paste, open, and preview Markdown instantly. GitHub-style rendering, diagrams,
-                math, and code—all in your browser.
+                Paste or open Markdown, or turn a text-based PDF or Word .docx into an editable
+                draft. GitHub-style rendering, diagrams, math, and code—all in your browser.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
