@@ -67,7 +67,7 @@ Markdown Lens is designed to be privacy-first.
 - PDF and Word text extraction plus Markdown conversion also happen entirely in your browser.
 - Drafts are saved only to that browser profile using `localStorage`.
 - The app does not upload document content to a backend.
-- There is no account, database, analytics, or tracking in v0.1.
+- There is no account, database, analytics, or tracking in v0.2.
 
 Because drafts are stored by the browser, anyone with access to your device or browser profile may be able to view locally saved content. Clear the editor when you are done with sensitive notes.
 
@@ -109,6 +109,7 @@ Useful checks:
 ```bash
 npm run lint
 npm run typecheck
+npm run check:release
 npm run build
 ```
 
@@ -139,7 +140,7 @@ public/
 - Improve copied HTML output styling
 - Add more Markdown fixture tests
 - Add accessibility and keyboard-navigation polish
-- Publish a stable v0.1 release
+- Explore OCR and legacy `.doc` conversion options without weakening local-only privacy
 
 ## Contributing
 

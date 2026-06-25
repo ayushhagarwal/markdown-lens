@@ -1,6 +1,6 @@
 {
   "name": "markdown-lens",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A beautiful, privacy-first online Markdown viewer with GitHub-style preview, Mermaid diagrams, code highlighting, math, and dark mode.",
   "scripts": {
@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "check:release": "node scripts/check-release-updates.mjs",
     "test": "node --no-warnings --experimental-strip-types --test lib/pdf-to-markdown.test.ts lib/word-to-markdown.test.ts"
   },
   "dependencies": {
