@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, FileText, FileUp, LockKeyhole } from "lucide-react";
 import { markdownViewerFaq, SeoContent } from "@/components/seo-content";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 
@@ -43,7 +44,7 @@ export default function Home() {
         "@id": `${siteConfig.url}/#software`,
       },
       inLanguage: "en",
-      dateModified: "2026-06-25",
+      dateModified: "2026-06-27",
     },
     {
       "@context": "https://schema.org",
@@ -88,9 +89,9 @@ export default function Home() {
       description: siteConfig.description,
       featureList: siteConfig.features,
       keywords: siteConfig.keywords.join(", "),
-      softwareVersion: "0.2.0",
+      softwareVersion: "0.2.1",
       softwareHelp: `${siteConfig.url}/markdown-cheatsheet`,
-      dateModified: "2026-06-25",
+      dateModified: "2026-06-27",
       inLanguage: "en",
       sameAs: [siteConfig.githubUrl],
     },
@@ -130,9 +131,13 @@ export default function Home() {
                 Turn PDFs and Word docs into clean Markdown.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                Upload a text-based PDF or Word .docx and Markdown Lens converts it into an
-                editable Markdown draft right in your browser. Great for Confluence exports,
-                existing docs, README prep, and AI-ready knowledge bases.
+                Markdown Lens is a free PDF-to-Markdown and Word-to-Markdown converter that runs
+                entirely in your browser. Upload a text-based PDF or .docx file, edit the generated
+                Markdown, and download it—no account or server upload required.
+              </p>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+                Great for Confluence exports, existing docs, README prep, and AI-ready knowledge
+                bases.
               </p>
               <div className="mt-6 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                 {[
@@ -174,6 +179,7 @@ export default function Home() {
 
           <SeoContent />
         </main>
+        <SiteFooter />
       </div>
     </>
   );

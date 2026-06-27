@@ -28,8 +28,19 @@ const capabilities = [
   {
     icon: FileText,
     title: "Upload real documents",
-    description:
-      "Turn Confluence PDF exports, Word .docx handbooks, product specs, and AI-ready knowledge files into editable Markdown.",
+    description: (
+      <>
+        Use the private, browser-based{" "}
+        <Link href="/pdf-to-markdown" className="font-semibold text-accent hover:underline">
+          PDF to Markdown converter
+        </Link>{" "}
+        or{" "}
+        <Link href="/word-to-markdown" className="font-semibold text-accent hover:underline">
+          Word to Markdown converter
+        </Link>{" "}
+        for handbooks, specs, and knowledge files.
+      </>
+    ),
   },
   {
     icon: Code2,
@@ -87,18 +98,27 @@ export function SeoContent() {
         </div>
         <ul className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
           {[
-            "GitHub-flavored Markdown",
-            "Mermaid diagrams",
-            "Syntax-highlighted code",
-            "Inline and block math",
-            "Local draft autosave",
-            "Upload PDF to Markdown locally",
-            "Upload Word .docx to Markdown locally",
-            "Markdown, HTML, and PDF export",
+            { label: "GitHub-flavored Markdown" },
+            { label: "Mermaid diagrams" },
+            { label: "Syntax-highlighted code" },
+            { label: "Inline and block math" },
+            { label: "Local draft autosave" },
+            { label: "Convert PDF to Markdown locally", href: "/pdf-to-markdown" },
+            { label: "Convert Word .docx to Markdown locally", href: "/word-to-markdown" },
+            { label: "Markdown, HTML, and PDF export" },
           ].map((item) => (
-            <li key={item} className="flex items-center gap-3 border-b border-border/70 py-3 text-sm">
+            <li
+              key={item.label}
+              className="flex items-center gap-3 border-b border-border/70 py-3 text-sm"
+            >
               <Check className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-              {item}
+              {item.href ? (
+                <Link href={item.href} className="font-medium underline-offset-4 hover:underline">
+                  {item.label}
+                </Link>
+              ) : (
+                item.label
+              )}
             </li>
           ))}
         </ul>
