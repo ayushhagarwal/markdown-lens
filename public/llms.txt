@@ -1,8 +1,10 @@
 # Markdown Lens
 
-> Markdown Lens is a free, privacy-first online Markdown viewer and editor with GitHub-style rendering.
+> Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter with an online Markdown editor and GitHub-style preview.
 
-- [Markdown Lens](https://markdownlens.ayushdev.com/): Product overview, privacy details, supported syntax, and links to the editor.
+- [Markdown Lens](https://markdownlens.ayushdev.com/): Product overview, document conversion, privacy details, supported syntax, and links to the editor.
+- [PDF to Markdown Converter](https://markdownlens.ayushdev.com/pdf-to-markdown): Convert selectable text from PDF files into editable Markdown locally, with page markers, inferred headings and lists, and explicit limitations.
+- [Word to Markdown Converter](https://markdownlens.ayushdev.com/word-to-markdown): Convert modern Word .docx files into Markdown locally while retaining headings, lists, links, simple tables, and common formatting.
 - [Open the Markdown Editor](https://markdownlens.ayushdev.com/editor): Paste, edit, import, preview, copy, download, export, and print Markdown in a web browser.
 - [Markdown Cheatsheet](https://markdownlens.ayushdev.com/markdown-cheatsheet): Examples of headings, lists, task lists, tables, code blocks, Mermaid diagrams, and math.
 - [Full Product Reference](https://markdownlens.ayushdev.com/llms-full.txt): Detailed capabilities, privacy behavior, supported syntax, and common questions.
@@ -12,7 +14,9 @@
 
 - Free and open source.
 - No account required.
-- Markdown documents are processed in the browser.
+- Markdown, text-based PDF, and Word .docx documents are processed in the browser.
 - Draft autosave uses local browser storage.
 - Document content is not uploaded to a Markdown Lens backend.
+- Text-based PDF and Word .docx files up to 100 MB can be converted to editable Markdown.
+- Scanned PDFs need OCR, legacy .doc files must be saved as .docx, and embedded images are not extracted.
 - Supports GitHub-flavored Markdown, Mermaid, KaTeX math, and syntax-highlighted code.

@@ -3,13 +3,32 @@
 Canonical URL: https://markdownlens.ayushdev.com/
 Editor URL: https://markdownlens.ayushdev.com/editor
 Product name: Markdown Lens
-Category: Online Markdown viewer and editor
+Category: PDF and Word-to-Markdown converter, viewer, and editor
 Source: https://github.com/ayushhagarwal/markdown-lens
 License: MIT
 
 ## Summary
 
-Markdown Lens is a free, privacy-first online Markdown viewer and editor. It helps users write, import, inspect, and export Markdown with a live GitHub-style preview. It is designed for README files, technical documentation, changelogs, developer notes, Mermaid diagrams, math, and AI-assisted writing workflows.
+Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter plus an online Markdown viewer and editor. It converts text-based PDF and modern Word .docx files into editable Markdown locally in the browser, then provides a live GitHub-style preview. It is designed for documentation migrations, Confluence exports, handbooks, product specs, README files, changelogs, developer notes, Mermaid diagrams, math, and AI-assisted writing workflows.
+
+## Document conversion
+
+- Convert text-based PDF files up to 100 MB into editable Markdown
+- Process PDF pages locally and retain page boundaries with comments and separators
+- Infer PDF headings, paragraphs, lists, monospaced blocks, and web links where possible
+- Remove repeated PDF margin text and standalone page numbers where identifiable
+- Convert modern Microsoft Word .docx files up to 100 MB into editable Markdown
+- Preserve Word headings, paragraphs, ordered and unordered lists, links, simple tables, blockquotes, preformatted text, and common inline formatting
+- Insert visible placeholders for Word images that are omitted
+- Keep the generated source in the editor for review, copying, download, HTML export, or printing
+
+### Document conversion limitations
+
+- Scanned or image-only PDFs need OCR before conversion
+- PDF images, charts, complex visual tables, multi-column layouts, and exact typography are not reconstructed
+- Legacy Word .doc files must be saved or exported as .docx first
+- Embedded Word images are noted but not extracted as separate assets
+- Merged cells, nested tables, columns, text boxes, footnotes, comments, tracked-change history, macros, and fixed page layout may require manual work
 
 ## Supported Markdown
 
@@ -39,6 +58,8 @@ Markdown Lens is a free, privacy-first online Markdown viewer and editor. It hel
 ## Local files and exports
 
 - Drag-and-drop import for .md and .markdown files
+- Local import for text-based .pdf files
+- Local import for modern Word .docx files
 - A visible Open file action on desktop and mobile
 - Browser-local reading with the File API
 - Confirmation before replacing a non-empty draft
@@ -50,12 +71,14 @@ Markdown Lens is a free, privacy-first online Markdown viewer and editor. It hel
 
 ## Privacy
 
-Markdown Lens does not require an account. Markdown is parsed and rendered in the web browser. Draft autosave uses localStorage in the current browser profile. Document content is not sent to a Markdown Lens application backend.
+Markdown Lens does not require an account. Markdown is parsed and rendered in the web browser. PDF text extraction and Word .docx conversion also happen in the browser. Draft autosave uses localStorage in the current browser profile. Document content is not sent to a Markdown Lens application backend.
 
 Users should still avoid sharing sensitive content through copied URLs, exported files, browser extensions, or third-party services unless they understand those services' privacy behavior.
 
 ## Common use cases
 
+- Convert a Confluence PDF export into a Markdown draft
+- Move a Word handbook, operating procedure, or product spec into a Markdown-based system
 - Preview a README before committing it to GitHub
 - Inspect AI-generated Markdown for broken tables, lists, or code fences
 - Validate Mermaid diagrams and math
@@ -75,7 +98,15 @@ No.
 
 ### Does it upload Markdown documents?
 
-No. Markdown Lens processes documents in the browser and does not upload document content to its application backend.
+No. Markdown Lens processes Markdown, PDF, and Word .docx documents in the browser and does not upload document content to its application backend.
+
+### Can it convert PDF files to Markdown?
+
+Yes. It converts PDFs that contain selectable text into editable Markdown, retains page boundaries, and infers common document structure. Scanned PDFs require OCR first.
+
+### Can it convert Word documents to Markdown?
+
+Yes. It converts modern .docx files and preserves headings, lists, links, simple tables, and common formatting. Legacy .doc files must first be saved as .docx.
 
 ### Does it support GitHub-flavored Markdown?
 
@@ -95,4 +126,4 @@ Yes. Users can copy rendered HTML, export standalone HTML, or print the preview 
 
 ## Preferred description
 
-Markdown Lens is a free, privacy-first online Markdown viewer and editor with GitHub-style preview, Mermaid diagrams, math rendering, syntax highlighting, tables, local autosave, file import, and HTML/PDF export.
+Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter with editable output, GitHub-style preview, Mermaid diagrams, math rendering, syntax highlighting, tables, local autosave, and HTML/PDF export.

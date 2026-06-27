@@ -1,6 +1,6 @@
 {
   "name": "markdown-lens",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "description": "A beautiful, privacy-first online Markdown viewer with GitHub-style preview, Mermaid diagrams, code highlighting, math, and dark mode.",
   "scripts": {

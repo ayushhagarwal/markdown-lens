@@ -2,6 +2,23 @@
 
 All notable Markdown Lens changes are documented here.
 
+## v0.2.1 - 2026-06-27
+
+### Added
+
+- Dedicated, indexable PDF-to-Markdown and Word-to-Markdown landing pages with concise summaries, accurate conversion details, limitations, examples, FAQs, and direct editor actions.
+- A shared site footer with contextual links to conversion tools, the editor, the Markdown cheatsheet, AI-readable references, and the open-source repository.
+
+### Changed
+
+- Homepage opening copy now gives search engines and visitors a direct two-sentence product summary.
+- Homepage feature content, the sitemap, and AI-readable reference files now link to and describe the dedicated conversion workflows consistently.
+
+### Notes
+
+- Both conversion pages are statically rendered and keep document processing local to the browser.
+- No analytics, tracking, account system, or server-side document upload was added.
+
 ## v0.2.0 - 2026-06-25
 
 ### Added
