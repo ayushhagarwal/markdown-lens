@@ -24,6 +24,10 @@ Security-sensitive areas include:
 - Exported HTML output
 - Clipboard and file import/export behavior
 - Any change that could upload or expose user Markdown content
+- IndexedDB document and asset persistence, migration, backup, and restore
+- ZIP, EPUB, Office, and other archive-based parsers
+- Local OCR workers and same-origin language-model assets
+- URL-fragment share links and malformed or oversized payload handling
 
 ## Expectations
 
@@ -32,3 +36,16 @@ Markdown Lens should remain safe by default:
 - Do not execute unsafe raw HTML from Markdown input.
 - Do not add analytics, tracking, authentication, or backend upload behavior without explicit discussion.
 - Keep Markdown content local to the browser unless a future feature clearly explains otherwise and requires user action.
+- Never extract archive entries to filesystem paths; enforce entry-count and expanded-size limits before conversion.
+- Treat converted HTML, SVG, links, document metadata, filenames, and OCR output as untrusted input.
+- Keep share payloads in URL fragments. Do not place document content in query parameters, paths, analytics, or logs.
+- Do not describe URL compression as encryption; anyone with the complete share URL can read its contents.
+- Store OCR language data and workers on the same origin, and never send image or document bytes to an OCR service.
+- Validate workspace backups before writing records and keep schema migrations idempotent.
+
+## Current Limits
+
+- Input files are limited to 100 MB.
+- ZIP archives are limited to 100 files, one archive level, and 250 MB expanded content.
+- Share fragments are capped to protect browsers from unstable URLs and decompression abuse.
+- Legacy binary DOC, PPT, and XLS parsers are intentionally excluded.

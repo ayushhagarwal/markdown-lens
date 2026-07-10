@@ -1,12 +1,12 @@
 # Markdown Lens
 
-A beautiful, privacy-first PDF and Word-to-Markdown converter plus online Markdown viewer for AI notes, READMEs, docs, changelogs, and developer writing.
+A privacy-first, local document-to-Markdown workbench for PDF, Word, PowerPoint, Excel, HTML, EPUB, structured data, images, archives, READMEs, and developer writing.
 
 [Live Demo](https://markdownlens.ayushdev.com) · [Report Bug](../../issues) · [Request Feature](../../issues)
 
 ![Markdown Lens showing a Markdown document beside its rendered preview](./public/screenshot.png)
 
-Markdown Lens helps you upload text-based PDFs or Word `.docx` files and turn them into editable Markdown, then preview the result with clean GitHub-style rendering. It is built for developers, writers, and open-source maintainers who want a fast document-to-Markdown workflow without accounts, ads, analytics, or unnecessary UI.
+Markdown Lens helps you convert common documents into editable Markdown, manage multiple private local documents, and review the result with clean GitHub-style rendering. It is built for developers, writers, and open-source maintainers who want a zero-install workflow without accounts, ads, analytics, or backend document uploads.
 
 ## Why Markdown Lens?
 
@@ -35,6 +35,14 @@ Markdown Lens exists to provide a simple, polished, browser-first Markdown viewe
 - Simple upload flow for Markdown, text-based PDFs, and Word `.docx` files
 - Local PDF-to-Markdown import for digitally generated PDFs
 - Local Word-to-Markdown import for `.docx` files
+- Local PowerPoint `.pptx`, Excel `.xlsx`, HTML, CSV/TSV, JSON, XML, EPUB, image, and bounded ZIP import
+- Optional local English OCR for PNG, JPEG, WebP, and BMP images
+- Multi-document IndexedDB workspace with search, duplicate, trash, restore, backup, and autosave
+- CodeMirror editor with line numbers, find/replace, command palette, resizable split view, and document outline
+- Embedded DOCX and PPTX images stored as local document assets
+- Conversion jobs with progress, cancellation, warnings, statistics, and conversion reports
+- Privacy-preserving compressed share links stored only in the URL fragment
+- Installable offline-capable PWA with safe update handling
 - Copy raw Markdown
 - Copy rendered HTML
 - Download current content as a `.md` file
@@ -73,9 +81,9 @@ Because drafts are stored by the browser, anyone with access to your device or b
 
 ### PDF and Word import limitations
 
-Markdown Lens reads extractable text from every page of PDFs up to 100 MB. It infers common headings, paragraphs, lists, links, and code-like blocks, but PDF is a presentation format rather than a structured document format. Images, diagrams, scanned pages, and visual table structure are not converted. Text found inside simple tables is retained in its detected reading order.
+Markdown Lens reads extractable text from every page of PDFs up to 100 MB. It infers common headings, paragraphs, lists, links, and code-like blocks, but PDF is a presentation format rather than a structured document format. Scanned PDFs still require a dedicated OCR workflow, and complex columns, diagrams, and visual table structure should be reviewed.
 
-Markdown Lens also converts `.docx` Word documents up to 100 MB into editable GitHub-flavored Markdown. It preserves common headings, paragraphs, lists, tables, links, emphasis, strikethrough, superscript/subscript, footnote references, and code-like blocks. Embedded images are noted but not extracted. Legacy `.doc` files are not converted in-browser; save or export them as `.docx` first.
+Markdown Lens also converts `.docx` Word documents up to 100 MB into editable GitHub-flavored Markdown. It preserves common headings, paragraphs, lists, tables, links, emphasis, strikethrough, superscript/subscript, footnote references, code-like blocks, and embedded images as local assets. Legacy `.doc` files are not converted in-browser; save or export them as `.docx` first.
 
 ## Tech Stack
 
@@ -136,11 +144,10 @@ public/
 
 ## Roadmap
 
-- Add shareable state export without uploading content
-- Improve copied HTML output styling
-- Add more Markdown fixture tests
-- Add accessibility and keyboard-navigation polish
-- Explore OCR and legacy `.doc` conversion options without weakening local-only privacy
+- Add scanned-PDF OCR using the local worker pipeline
+- Improve conservative PDF table and multi-column reconstruction
+- Add more OCR language packs as optional same-origin assets
+- Extract the converter registry into a reusable package for future CLI and MCP surfaces
 
 ## Contributing
 

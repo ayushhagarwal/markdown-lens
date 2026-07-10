@@ -18,7 +18,9 @@ Before opening a pull request, run:
 ```bash
 npm run lint
 npm run typecheck
+npm test
 npm run build
+npm run test:e2e
 ```
 
 ## Branch Naming
@@ -46,6 +48,9 @@ docs/readme-roadmap
 - Mention any known limitations or follow-up work.
 - Avoid adding backend services, analytics, authentication, or paid APIs without prior discussion.
 - Preserve the privacy-first behavior: Markdown should stay in the browser and should not be uploaded.
+- Add or update a deterministic converter fixture when changing parsing behavior.
+- Keep heavy editor, OCR, Office, archive, and rendering libraries behind dynamic imports.
+- Document retained, flattened, and omitted content in conversion results instead of claiming visual fidelity.
 
 ## Good First Contribution Ideas
 
@@ -56,6 +61,7 @@ docs/readme-roadmap
 - Add accessibility checks for toolbar controls
 - Improve Mermaid error messages
 - Add tests or fixtures for Markdown rendering
+- Add small, license-safe fixtures for PDF, DOCX, PPTX, XLSX, EPUB, HTML, CSV, JSON, XML, and archive edge cases
 - Review dependency updates and compatibility notes
 
 ## Code Style
@@ -69,3 +75,13 @@ Follow the existing project style:
 - No unnecessary dependencies
 
 When in doubt, open an issue first and describe the change you want to make.
+
+## Converter Contract
+
+Converters implement the `LocalConverter` interface in `lib/converters/types.ts`. They must:
+
+- Recognize only the formats they own.
+- Validate input limits before allocating large buffers.
+- Report progress and observe `AbortSignal` between meaningful units of work.
+- Return warnings, omitted-content notes, statistics, and local assets with the Markdown.
+- Avoid network calls, temporary filesystem paths, executable document content, and silent data loss.
