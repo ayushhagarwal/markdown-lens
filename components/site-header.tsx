@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Eye, Github } from "lucide-react";
+import { Github } from "lucide-react";
+import { BrandIcon } from "@/components/brand-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { siteConfig } from "@/lib/site";
 
@@ -11,9 +12,7 @@ export function SiteHeader() {
           href="/"
           className="inline-flex items-center gap-2.5 rounded-md font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-panel text-accent shadow-sm">
-            <Eye className="h-[18px] w-[18px]" aria-hidden />
-          </span>
+          <BrandIcon className="h-9 w-9 shadow-sm" priority />
           <span>Markdown Lens</span>
         </Link>
 
@@ -29,6 +28,12 @@ export function SiteHeader() {
             className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
           >
             Cheatsheet
+          </Link>
+          <Link
+            href="/supported-formats"
+            className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
+          >
+            Formats
           </Link>
           <a
             href={siteConfig.githubUrl}

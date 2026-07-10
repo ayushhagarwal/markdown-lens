@@ -5,22 +5,22 @@ export const markdownViewerFaq = [
   {
     question: "What is Markdown Lens?",
     answer:
-      "Markdown Lens is a free online PDF and Word-to-Markdown converter plus Markdown viewer/editor for GitHub-flavored Markdown, Mermaid diagrams, math, code, tables, READMEs, and documentation.",
+      "Markdown Lens is a free local document-to-Markdown workbench for PDF, DOCX, PPTX, XLSX, HTML, EPUB, structured data, images, archives, and GitHub-flavored Markdown.",
   },
   {
     question: "Does Markdown Lens upload my documents?",
     answer:
-      "No. Markdown rendering, PDF and Word text extraction, conversion, and draft autosave happen in your browser. Document content is not sent to a Markdown Lens backend.",
+      "No. Rendering, document conversion, optional English OCR, workspace persistence, and export happen in your browser. Document content is not sent to a Markdown Lens backend.",
   },
   {
     question: "Can Markdown Lens convert PDF and Word files to Markdown?",
     answer:
-      "Yes. Upload a text-based PDF or Word `.docx` file up to 100 MB and Markdown Lens converts it into editable Markdown locally. Scanned PDFs, legacy `.doc` files, embedded images, and visual table reconstruction are not supported.",
+      "Yes. Open a text-based PDF or Word `.docx` file up to 100 MB and Markdown Lens converts it into editable Markdown locally. DOCX embedded images are stored as local assets; scanned PDFs still require a dedicated OCR workflow.",
   },
   {
     question: "How can I export my Markdown?",
     answer:
-      "You can download the Markdown source, copy Markdown or rendered HTML, export standalone HTML, or print the preview to PDF.",
+      "You can download Markdown, copy source, export standalone HTML, bundle Markdown with local assets, back up the workspace, create a URL-fragment share link, or print the preview to PDF.",
   },
 ];
 

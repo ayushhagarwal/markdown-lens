@@ -71,6 +71,13 @@ export async function importWordAsMarkdown(
     const title = file.name.replace(/\.docx$/i, "") || "Imported Word Document";
     const arrayBuffer = await file.arrayBuffer();
     let imageCount = 0;
+    const assets: Array<{
+      name: string;
+      mimeType: string;
+      blob: Blob;
+      altText: string;
+      sourceLocation: string;
+    }> = [];
 
     onProgress({ stage: "converting" });
     const result = await mammoth.convertToHtml(
@@ -80,8 +87,19 @@ export async function importWordAsMarkdown(
         includeDefaultStyleMap: true,
         convertImage: mammoth.images.imgElement(async (image) => {
           imageCount += 1;
+          const extension = extensionForImageType(image.contentType);
+          const name = `embedded-image-${imageCount}.${extension}`;
+          const base64 = await image.readAsBase64String();
+          const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+          assets.push({
+            name,
+            mimeType: image.contentType,
+            blob: new Blob([bytes], { type: image.contentType }),
+            altText: `Embedded image ${imageCount}`,
+            sourceLocation: `word/${name}`,
+          });
           return {
-            src: `markdown-lens-omitted-image-${imageCount}`,
+            src: `assets/${name}`,
             alt: `embedded image ${imageCount} (${image.contentType})`,
           } as { src: string };
         }),
@@ -102,6 +120,7 @@ export async function importWordAsMarkdown(
       markdown,
       title,
       imageCount,
+      assets,
       warnings: result.messages.map((message) => message.message),
     };
   } catch (error) {
@@ -126,6 +145,14 @@ export async function importWordAsMarkdown(
       "Could not convert this Word document. Please try another .docx file.",
     );
   }
+}
+
+function extensionForImageType(contentType: string) {
+  if (contentType === "image/png") return "png";
+  if (contentType === "image/gif") return "gif";
+  if (contentType === "image/svg+xml") return "svg";
+  if (contentType === "image/webp") return "webp";
+  return "jpg";
 }
 
 function resolveDefaultModule<TDefault, TNamespace>(defaultExport: TDefault, namespace: TNamespace) {

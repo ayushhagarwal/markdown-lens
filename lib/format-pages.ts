@@ -1,0 +1,58 @@
+import type { FormatLandingConfig } from "@/components/format-landing-page";
+
+export const formatPages = {
+  pptx: {
+    path: "/pptx-to-markdown", title: "Convert PowerPoint PPTX to Markdown locally", extensions: "PPTX",
+    summary: "Open a PowerPoint presentation and turn slide titles, text, notes, and tables into editable Markdown without uploading the file.",
+    description: "Markdown Lens reads modern PowerPoint packages in your browser, keeps slide boundaries, and extracts embedded images as local document assets.",
+    preserves: ["Slide order and slide headings", "Text shapes and speaker notes", "Readable tables and hyperlinks", "Embedded slide images as local assets"],
+    limitations: ["Animations, transitions, theme styling, and exact object placement are not represented.", "Charts and diagrams may require manual descriptions.", "Legacy .ppt files must first be exported as .pptx."],
+    steps: ["Choose a .pptx file in the workspace.", "Review slide-by-slide conversion progress and warnings.", "Edit, preview, and export the generated Markdown."],
+    faq: [{ question: "Are PowerPoint files uploaded?", answer: "No. PPTX packages are opened and parsed locally in the browser." }, { question: "Are slide images included?", answer: "Embedded images are stored as local document assets and can be exported with the Markdown bundle." }],
+  },
+  excel: {
+    path: "/excel-to-markdown", title: "Convert Excel XLSX sheets to Markdown tables", extensions: "XLSX",
+    summary: "Convert visible Excel worksheets into readable GitHub-flavored Markdown tables entirely in your browser.",
+    description: "The converter reads the XLSX package directly, keeps worksheet order, resolves shared text values, leaves blank cells blank, and excludes hidden sheets by default.",
+    preserves: ["Visible worksheet names and order", "Rows, columns, blank cells, and cached values", "One Markdown section per worksheet", "Wide tables with horizontal preview scrolling"],
+    limitations: ["Formatting, macros, charts, and pivot-table behavior are not reproduced.", "Formula output uses the value cached in the workbook.", "Legacy .xls files require export to .xlsx."],
+    steps: ["Choose a modern .xlsx workbook.", "Markdown Lens converts each visible sheet locally.", "Review wide tables and export the resulting document."],
+    faq: [{ question: "Are hidden worksheets converted?", answer: "No. Hidden worksheets are excluded by default to avoid exposing unintended content." }, { question: "Does it calculate formulas?", answer: "No. It reads cached workbook values and does not execute spreadsheet formulas." }],
+  },
+  html: {
+    path: "/html-to-markdown", title: "Convert HTML files to clean Markdown", extensions: "HTML",
+    summary: "Turn local HTML documents into editable Markdown while preserving useful headings, links, lists, tables, emphasis, and code.",
+    description: "Scripts, styles, embedded frames, and forms are removed before conversion so the Markdown remains focused and safe to review.",
+    preserves: ["Headings, paragraphs, lists, and blockquotes", "Links, emphasis, images, and code", "Tables that fit GitHub-flavored Markdown", "The HTML document title when available"],
+    limitations: ["CSS presentation and interactive behavior are not converted.", "Complex layout containers are flattened to reading order.", "Remote images remain remote references unless downloaded separately."],
+    steps: ["Open a local .html or .htm file.", "Unsafe and non-content elements are removed.", "Review and export the cleaned Markdown."],
+    faq: [{ question: "Does Markdown Lens execute scripts?", answer: "No. Script, style, frame, object, and form elements are removed before Markdown conversion." }, { question: "Can it fetch a website URL?", answer: "This release converts local HTML files. It does not proxy or scrape remote pages." }],
+  },
+  csv: {
+    path: "/csv-to-markdown", title: "Convert CSV or TSV data to a Markdown table", extensions: "CSV or TSV",
+    summary: "Open comma- or tab-separated data and produce a clean Markdown table with quoted cells handled correctly.",
+    description: "Conversion runs locally and reports malformed rows instead of silently discarding parsing problems.",
+    preserves: ["Quoted cells and embedded delimiters", "Header row and source row order", "Blank values and Unicode text", "CSV and tab-separated input"],
+    limitations: ["Very wide datasets may be easier to read in a spreadsheet.", "Markdown tables do not support merged cells.", "Cell formatting and data types are represented as text."],
+    steps: ["Choose a .csv or .tsv file.", "Review any row-level parsing warnings.", "Edit or copy the generated GFM table."],
+    faq: [{ question: "Does it support commas inside cells?", answer: "Yes. Standards-compliant quoted cells and escaped quotes are handled." }, { question: "Is the data uploaded?", answer: "No. Parsing and table generation happen in the browser." }],
+  },
+  epub: {
+    path: "/epub-to-markdown", title: "Convert EPUB books to structured Markdown", extensions: "EPUB",
+    summary: "Convert an EPUB’s ordered chapters and XHTML content into one editable Markdown document, locally in your browser.",
+    description: "Markdown Lens follows the EPUB package spine, uses the book title when available, and keeps chapter boundaries visible.",
+    preserves: ["Book title and spine chapter order", "Chapter headings, paragraphs, lists, and links", "Basic tables, emphasis, and code", "Clear separators between source chapters"],
+    limitations: ["DRM-protected books cannot be opened.", "Fixed-layout EPUB presentation is flattened.", "Fonts, reading-system styling, and interactive widgets are omitted."],
+    steps: ["Choose an unprotected .epub file.", "Chapters are converted in package reading order.", "Review the combined Markdown and export it."],
+    faq: [{ question: "Does EPUB conversion require an account?", answer: "No. The book is parsed locally without an account or upload." }, { question: "Does it remove DRM?", answer: "No. Protected EPUB files are unsupported." }],
+  },
+  image: {
+    path: "/image-to-markdown", title: "Turn images into Markdown with local OCR", extensions: "PNG, JPG, WebP, or BMP",
+    summary: "Add an image as a local Markdown asset and optionally extract English text using OCR that runs in your browser.",
+    description: "The original image is kept in the local document workspace. OCR is opt-in, cancelable, and does not send pixels to a hosted service.",
+    preserves: ["Original image as a local document asset", "Image dimensions, type, and source size", "Optional locally recognized English text", "Portable Markdown-plus-assets bundle export"],
+    limitations: ["OCR accuracy depends on resolution, contrast, orientation, and typography.", "The bundled OCR language is English in this release.", "OCR extracts text but does not infer chart meaning or visual semantics."],
+    steps: ["Choose a supported image.", "Decide whether to run local English OCR.", "Review recognized text and export the image bundle."],
+    faq: [{ question: "Is OCR cloud-based?", answer: "No. The OCR worker and English model run locally after they are loaded from the same site origin." }, { question: "Does it describe charts?", answer: "No. This release extracts visible text and image metadata rather than interpreting visual meaning." }],
+  },
+} satisfies Record<string, FormatLandingConfig>;

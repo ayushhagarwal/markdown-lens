@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { siteConfig } from "@/lib/site";
 
 export const alt = "Markdown Lens free online Markdown viewer and editor";
@@ -9,6 +11,8 @@ export const size = {
 export const contentType = "image/png";
 
 export default function Image() {
+  const brandIcon = `data:image/png;base64,${readFileSync(join(process.cwd(), "public/icon-192.png")).toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -33,23 +37,13 @@ export default function Image() {
           }}
         >
           <div style={{ alignItems: "center", display: "flex", gap: 18 }}>
-            <div
-              style={{
-                alignItems: "center",
-                background: "#ffffff",
-                border: "1px solid #d6dde6",
-                borderRadius: 18,
-                color: "#0f766e",
-                display: "flex",
-                fontSize: 28,
-                fontWeight: 800,
-                height: 64,
-                justifyContent: "center",
-                width: 64,
-              }}
-            >
-              ML
-            </div>
+            <img
+              src={brandIcon}
+              alt=""
+              width={64}
+              height={64}
+              style={{ borderRadius: 14 }}
+            />
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ fontSize: 34, fontWeight: 800 }}>{siteConfig.name}</div>
               <div style={{ color: "#526173", fontSize: 22 }}>

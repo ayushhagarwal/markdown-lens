@@ -44,7 +44,7 @@ export default function Home() {
         "@id": `${siteConfig.url}/#software`,
       },
       inLanguage: "en",
-      dateModified: "2026-06-27",
+      dateModified: "2026-07-10",
     },
     {
       "@context": "https://schema.org",
@@ -89,9 +89,9 @@ export default function Home() {
       description: siteConfig.description,
       featureList: siteConfig.features,
       keywords: siteConfig.keywords.join(", "),
-      softwareVersion: "0.2.1",
+      softwareVersion: "0.9.0",
       softwareHelp: `${siteConfig.url}/markdown-cheatsheet`,
-      dateModified: "2026-06-27",
+      dateModified: "2026-07-10",
       inLanguage: "en",
       sameAs: [siteConfig.githubUrl],
     },
@@ -125,15 +125,15 @@ export default function Home() {
             <div className="max-w-2xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
                 <FileUp className="h-3.5 w-3.5" aria-hidden />
-                New: upload PDF or Word .docx to Markdown
+                New: private multi-document Markdown workspace
               </div>
               <h1 className="text-balance text-4xl font-semibold tracking-[-0.05em] sm:text-5xl lg:text-[4rem] lg:leading-[1.03]">
-                Turn PDFs and Word docs into clean Markdown.
+                Turn documents into clean, editable Markdown.
               </h1>
               <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                Markdown Lens is a free PDF-to-Markdown and Word-to-Markdown converter that runs
-                entirely in your browser. Upload a text-based PDF or .docx file, edit the generated
-                Markdown, and download it—no account or server upload required.
+                Markdown Lens is a free document-to-Markdown workbench that runs entirely in your
+                browser. Open PDFs, Office files, HTML, EPUB, structured data, archives, or images,
+                then edit and export the result—no account or server upload required.
               </p>
               <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
                 Great for Confluence exports, existing docs, README prep, and AI-ready knowledge
@@ -144,7 +144,7 @@ export default function Home() {
                   "Local conversion — no upload",
                   "Editable .md output",
                   "PDF pages kept with separators",
-                  "DOCX headings, lists, tables, links",
+                  "PDF, DOCX, PPTX, XLSX, EPUB, HTML, and more",
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-2">
                     <Check className="h-4 w-4 shrink-0 text-accent" aria-hidden />
@@ -169,8 +169,8 @@ export default function Home() {
               </div>
               <p className="mt-6 flex items-start gap-2 text-sm leading-6 text-muted-foreground">
                 <LockKeyhole className="h-4 w-4 text-accent" aria-hidden />
-                Private by default. PDF and .docx conversion runs locally; scanned PDFs and legacy
-                .doc files are not converted.
+                Private by default. Conversion and optional English image OCR run locally; legacy
+                DOC, PPT, and XLS files must first be exported to modern formats.
               </p>
             </div>
 
