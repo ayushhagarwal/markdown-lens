@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 26% 97%;
-  --foreground: 218 35% 11%;
-  --border: 214 22% 86%;
-  --muted: 210 22% 93%;
-  --muted-foreground: 216 12% 42%;
+  --background: 210 25% 98%;
+  --foreground: 215 28% 12%;
+  --border: 214 19% 84%;
+  --muted: 210 20% 93%;
+  --muted-foreground: 215 10% 43%;
   --panel: 0 0% 100%;
   --panel-foreground: 218 35% 11%;
   --surface: 210 30% 99%;
@@ -18,15 +18,15 @@
 }
 
 .dark {
-  --background: 222 22% 7%;
-  --foreground: 210 28% 94%;
-  --border: 220 16% 20%;
-  --muted: 220 16% 15%;
-  --muted-foreground: 215 12% 68%;
-  --panel: 222 20% 10%;
+  --background: 207 37% 6%;
+  --foreground: 207 24% 94%;
+  --border: 207 20% 18%;
+  --muted: 207 22% 13%;
+  --muted-foreground: 207 10% 63%;
+  --panel: 207 30% 7%;
   --panel-foreground: 210 28% 94%;
-  --surface: 222 18% 12%;
-  --accent: 174 72% 45%;
+  --surface: 207 27% 9%;
+  --accent: 170 66% 52%;
   --accent-foreground: 220 20% 8%;
   --accent-soft: 174 72% 16%;
   --ring: 174 72% 45%;
@@ -50,8 +50,60 @@ body {
 }
 
 button,
+input,
 textarea {
   font: inherit;
+}
+
+button,
+a,
+input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+kbd {
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.3rem;
+  background: hsl(var(--surface));
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.66rem;
+}
+
+.workspace-shell {
+  font-size: 0.875rem;
+}
+
+.workspace-rail {
+  contain: layout paint;
+}
+
+.workspace-shell .cm-editor,
+.workspace-shell .cm-scroller {
+  height: 100%;
+}
+
+.workspace-shell .cm-theme-dark,
+.workspace-shell .cm-theme-light {
+  height: 100%;
+  background: hsl(var(--panel)) !important;
+}
+
+.workspace-shell .cm-theme-dark .cm-editor,
+.workspace-shell .cm-theme-light .cm-editor,
+.workspace-shell .cm-theme-dark .cm-gutters,
+.workspace-shell .cm-theme-light .cm-gutters {
+  background: hsl(var(--panel)) !important;
+}
+
+.workspace-shell .cm-editor.cm-focused {
+  outline: none;
+}
+
+.workspace-shell .cm-tooltip {
+  border-color: hsl(var(--border));
+  background: hsl(var(--panel));
+  color: hsl(var(--foreground));
 }
 
 .panel-height {
@@ -91,7 +143,7 @@ section ::-webkit-scrollbar-thumb:hover {
 
 .markdown-body {
   color: hsl(var(--panel-foreground));
-  font-size: 0.985rem;
+  font-size: 0.94rem;
 }
 
 .markdown-body :where(h1, h2, h3, h4, h5, h6) {
@@ -106,7 +158,7 @@ section ::-webkit-scrollbar-thumb:hover {
   margin-top: 0;
   padding-bottom: 0.42em;
   border-bottom: 1px solid hsl(var(--border));
-  font-size: 2.1rem;
+  font-size: 2rem;
 }
 
 .markdown-body h2 {
@@ -129,7 +181,7 @@ section ::-webkit-scrollbar-thumb:hover {
 }
 
 .markdown-body p {
-  line-height: 1.78;
+  line-height: 1.72;
 }
 
 .markdown-body ul,
@@ -200,11 +252,22 @@ section ::-webkit-scrollbar-thumb:hover {
 .markdown-body pre {
   overflow-x: auto;
   border: 1px solid hsl(215 18% 24%);
-  border-radius: 0.6rem;
+  border-radius: 0.4rem;
   background: #0d1117;
   padding: 1.05rem;
   color: #e6edf3;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.4rem;
+}
+
+.markdown-body > :first-child {
+  margin-top: 0;
 }
 
 .markdown-body pre code {
@@ -254,6 +317,17 @@ section ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 @media print {
   @page {
     margin: 0.65in;
@@ -264,16 +338,20 @@ section ::-webkit-scrollbar-thumb:hover {
     color: #111827;
   }
 
-  .app-shell > header,
-  .app-shell > section:not(:last-child),
-  .app-shell textarea,
-  .app-shell section[aria-label="Markdown editor"] {
+  .workspace-shell > header,
+  .workspace-shell > nav,
+  .workspace-shell > footer,
+  .workspace-shell aside,
+  .workspace-shell section[aria-label="Markdown"],
+  .workspace-shell button {
     display: none !important;
   }
 
-  .app-shell,
-  .app-shell > section:last-child,
-  .app-shell section[aria-label="Markdown preview"] {
+  .workspace-shell,
+  .workspace-shell > div,
+  .workspace-shell main,
+  .workspace-shell main > div,
+  .workspace-shell section[aria-label="Preview"] {
     display: block !important;
     height: auto !important;
     min-height: 0 !important;
@@ -284,11 +362,11 @@ section ::-webkit-scrollbar-thumb:hover {
     background: #fff !important;
   }
 
-  .app-shell section[aria-label="Markdown preview"] > div:first-child {
+  .workspace-shell section[aria-label="Preview"] > header {
     display: none !important;
   }
 
-  .app-shell section[aria-label="Markdown preview"] > div:last-child {
+  .workspace-shell section[aria-label="Preview"] > div {
     height: auto !important;
     overflow: visible !important;
   }

@@ -79,8 +79,10 @@ function preprocessWordHtml(html: string, imageCount: number) {
   output = output.replace(/<body[^>]*>([\s\S]*?)<\/body>/i, "$1");
 
   let imageIndex = 0;
-  output = output.replace(/<img\b([^>]*)>/gi, (_match, attributes: string) => {
+  output = output.replace(/<img\b([^>]*)>/gi, (match, attributes: string) => {
     imageIndex += 1;
+    const src = extractAttribute(attributes, "src");
+    if (src.startsWith("assets/")) return match;
     const alt = extractAttribute(attributes, "alt");
     const label = alt ? `: ${escapeHtml(alt)}` : "";
     return `<p data-markdown-lens-image="true">Image omitted${label}</p>`;

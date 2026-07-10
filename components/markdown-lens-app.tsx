@@ -1,1435 +1,895 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import rehypeHighlight from "rehype-highlight";
 import {
-  AlertCircle,
+  startTransition,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  ArchiveRestore,
   BookOpen,
-  CalendarDays,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clipboard,
-  Code2,
+  Command,
+  Copy,
   Download,
   Eye,
-  FileCode2,
+  FileArchive,
   FileDown,
+  FilePlus2,
   FileText,
   FileUp,
   Github,
+  HardDrive,
   Loader2,
+  Menu,
   Moon,
   PanelLeft,
-  PanelRight,
-  Printer,
-  Sparkles,
+  RotateCcw,
+  Search,
+  Share2,
+  ShieldCheck,
   Sun,
   Trash2,
-  Workflow,
-  type LucideIcon,
+  X,
 } from "lucide-react";
-import {
-  importPdfAsMarkdown,
-  PdfImportError,
-  PDF_SIZE_LIMIT_BYTES,
-} from "@/lib/pdf-import";
-import {
-  importWordAsMarkdown,
-  WordImportError,
-  WORD_SIZE_LIMIT_BYTES,
-} from "@/lib/word-import";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
+import { BrandIcon } from "@/components/brand-icon";
+import {
+  addDocument,
+  duplicateDocument,
+  exportWorkspace,
+  getDocumentAssets,
+  importWorkspace,
+  initializeWorkspace,
+  listDocuments,
+  moveDocumentToTrash,
+  permanentlyDeleteDocument,
+  putAssets,
+  restoreDocument,
+  saveDocument,
+} from "@/lib/workspace/db";
+import {
+  createDocumentRecord,
+  createId,
+  type DocumentRecord,
+  type WorkspaceBackup,
+} from "@/lib/workspace/types";
+import {
+  downloadBlob,
+  getDocumentHeadings,
+  getDocumentStats,
+  getDocumentTitle,
+  sanitizePreviewHtml,
+  toFileName,
+} from "@/lib/editor-utils";
+import { convertLocalFile, converterCapabilities } from "@/lib/converters/registry";
+import { ConverterError } from "@/lib/converters/error";
+import type { ConversionResult, ConverterProgress } from "@/lib/converters/types";
+import { createShareFragment, readShareFragment } from "@/lib/share-state";
+import { ServiceWorkerRegister } from "@/components/workspace/service-worker-register";
 
-type ViewMode = "split" | "editor" | "preview";
+const MarkdownEditor = dynamic(
+  () => import("@/components/workspace/markdown-editor").then((module) => module.MarkdownEditor),
+  { ssr: false, loading: () => <PanelLoading label="Loading editor" /> },
+);
+const MarkdownPreview = dynamic(
+  () => import("@/components/workspace/markdown-preview").then((module) => module.MarkdownPreview),
+  { ssr: false, loading: () => <PanelLoading label="Loading preview" /> },
+);
+
 type Theme = "light" | "dark";
-type CopyState = "idle" | "markdown" | "html" | "error";
-type KeyboardShortcutActions = {
-  hasContent: boolean;
-  download: () => void;
-  copyMarkdown: () => void;
-  copyHtml: () => void;
-  showPreview: () => void;
-  showEditor: () => void;
-  loadSample: () => void;
-};
-type ImportNotice =
-  | { tone: "success"; message: string }
-  | { tone: "error"; message: string }
-  | { tone: "progress"; message: string }
-  | null;
-type ImportProgress = {
+type SaveState = "saved" | "saving" | "error";
+type MobilePane = "documents" | "editor" | "preview" | "outline";
+type ImportJob = {
+  id: string;
   fileName: string;
-  kind: "pdf" | "word";
-  currentPage?: number;
-  totalPages?: number;
-} | null;
+  state: "queued" | "running" | "completed" | "failed" | "cancelled";
+  progress?: ConverterProgress;
+  error?: string;
+};
 
-const STORAGE_KEY = "markdown-lens:draft";
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
 const THEME_KEY = "markdown-lens:theme";
-
-const sampleMarkdown = `# Markdown Lens Sample
-
-Beautiful Markdown previews for docs, READMEs, changelogs, and AI notes.
-
-## What it handles
-
-- GitHub-flavored Markdown
-- Tables, task lists, and strikethrough
-- Syntax highlighted code blocks
-- Mermaid diagrams
-- Inline math like $E = mc^2$ and block math
-
-### Task list
-
-- [x] Paste a messy AI note
-- [x] Preview it instantly
-- [ ] Export the polished version
-
-> Privacy note: this draft stays in your browser. Markdown Lens does not upload your content.
-
-| Feature | Status | Notes |
-| --- | --- | --- |
-| GFM | Ready | Tables, tasks, autolinks |
-| Mermaid | Ready | Flowcharts and diagrams |
-| Math | Ready | KaTeX rendering |
-
-\`\`\`ts
-type Release = {
-  name: string;
-  version: string;
-  shipped: boolean;
-};
-
-const release: Release = {
-  name: "Markdown Lens",
-  version: "0.1.0",
-  shipped: true,
-};
-\`\`\`
-
-\`\`\`mermaid
-flowchart LR
-  A[Paste Markdown] --> B[Render Preview]
-  B --> C{Need output?}
-  C -->|Copy| D[Markdown or HTML]
-  C -->|Export| E[Download or Print]
-\`\`\`
-
-Block math:
-
-$$
-\\int_0^1 x^2\\,dx = \\frac{1}{3}
-$$
-
-Strikethrough works too: ~~old draft~~ polished document.
-`;
-
-const placeholder =
-  "Paste AI notes, a README, changelog, design doc, or technical Markdown here...";
-
-const starterTemplates = [
-  {
-    id: "readme",
-    label: "README",
-    description: "Project overview",
-    icon: FileText,
-    markdown: `# Project name
-
-A concise description of what this project does.
-
-## Getting started
-
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
-
-## Features
-
-- Fast to set up
-- Easy to extend
-- Ready to document
-`,
-  },
-  {
-    id: "meeting",
-    label: "Meeting notes",
-    description: "Decisions and actions",
-    icon: CalendarDays,
-    markdown: `# Meeting notes
-
-**Date:** Add date
-
-## Agenda
-
-1. Project update
-2. Open decisions
-3. Next steps
-
-## Action items
-
-- [ ] Owner — follow-up
-`,
-  },
-  {
-    id: "changelog",
-    label: "Changelog",
-    description: "Release summary",
-    icon: BookOpen,
-    markdown: `# Changelog
-
-## Unreleased
-
-### Added
-
-- Describe a new capability.
-
-### Fixed
-
-- Describe a resolved issue.
-`,
-  },
-  {
-    id: "mermaid",
-    label: "Mermaid",
-    description: "Simple flowchart",
-    icon: Workflow,
-    markdown: `# Workflow
-
-\`\`\`mermaid
-flowchart LR
-  A[Write Markdown] --> B[Preview]
-  B --> C[Publish]
-\`\`\`
-`,
-  },
-] as const;
+const SPLIT_KEY = "markdown-lens:split-ratio";
 
 export function MarkdownLensApp() {
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [markdown, setMarkdown] = useState("");
-  const [hasHydrated, setHasHydrated] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("split");
-  const [mobilePane, setMobilePane] = useState<"editor" | "preview">("editor");
-  const [theme, setTheme] = useState<Theme>("light");
-  const [copyState, setCopyState] = useState<CopyState>("idle");
-  const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [importNotice, setImportNotice] = useState<ImportNotice>(null);
-  const [importProgress, setImportProgress] = useState<ImportProgress>(null);
+  const [ready, setReady] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [documentSearch, setDocumentSearch] = useState("");
+  const [showTrash, setShowTrash] = useState(false);
+  const [documentsOpen, setDocumentsOpen] = useState(true);
+  const [outlineOpen, setOutlineOpen] = useState(true);
+  const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
+  const [splitRatio, setSplitRatio] = useState(50);
+  const [cursor, setCursor] = useState({ line: 1, column: 1 });
+  const [jobs, setJobs] = useState<ImportJob[]>([]);
+  const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandSearch, setCommandSearch] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [formatGuideOpen, setFormatGuideOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [online, setOnline] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
+  const centralRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const dragDepthRef = useRef(0);
+  const backupInputRef = useRef<HTMLInputElement>(null);
+  const abortControllers = useRef(new Map<string, AbortController>());
+  const editorActions = useRef<{ focus: () => void; openSearch: () => void } | null>(null);
+  const deferredMarkdown = useDeferredValue(markdown);
+
+  const activeDocument = useMemo(
+    () => documents.find((document) => document.id === activeId),
+    [activeId, documents],
+  );
+  const headings = useMemo(() => getDocumentHeadings(deferredMarkdown), [deferredMarkdown]);
+  const stats = useMemo(() => getDocumentStats(markdown), [markdown]);
+  const filteredDocuments = useMemo(() => {
+    const query = documentSearch.trim().toLowerCase();
+    return documents.filter((document) => {
+      if (showTrash ? document.deletedAt === undefined : document.deletedAt !== undefined) return false;
+      return !query || document.title.toLowerCase().includes(query) || document.markdown.toLowerCase().includes(query);
+    });
+  }, [documentSearch, documents, showTrash]);
 
   useEffect(() => {
     const storedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const resolvedTheme = storedTheme ?? (prefersDark ? "dark" : "light");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTheme(resolvedTheme);
+    const nextTheme = storedTheme ?? "dark";
+    setTheme(nextTheme);
+    document.documentElement.classList.toggle("dark", nextTheme === "dark");
+    const storedRatio = Number(localStorage.getItem(SPLIT_KEY));
+    if (storedRatio >= 30 && storedRatio <= 70) setSplitRatio(storedRatio);
 
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
-    const wantsSample = new URLSearchParams(window.location.search).get("sample") === "1";
-    if (
-      wantsSample &&
-      (savedDraft === null || window.confirm("Replace your saved draft with the sample?"))
-    ) {
-      setMarkdown(sampleMarkdown);
-      setMobilePane("preview");
-    } else if (savedDraft !== null) {
-      setMarkdown(savedDraft);
+    async function load() {
+      await initializeWorkspace();
+      let records = await listDocuments({ includeDeleted: true });
+      try {
+        const sharedMarkdown = readShareFragment(window.location.hash);
+        if (sharedMarkdown) {
+          const shared = createDocumentRecord({ title: getDocumentTitle(sharedMarkdown), markdown: sharedMarkdown });
+          await addDocument(shared);
+          records = [shared, ...records];
+          history.replaceState(null, "", `${location.pathname}${location.search}`);
+        }
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
+      }
+      setDocuments(records);
+      const first = records.find((record) => record.deletedAt === undefined);
+      setActiveId(first?.id ?? null);
+      setMarkdown(first?.markdown ?? "");
+      setReady(true);
     }
-    setHasHydrated(true);
+    void load();
   }, []);
+
+  useEffect(() => {
+    setOnline(navigator.onLine);
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    const handleInstall = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("beforeinstallprompt", handleInstall);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("beforeinstallprompt", handleInstall);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!activeDocument) return;
+    setMarkdown(activeDocument.markdown);
+    let revoked: string[] = [];
+    void getDocumentAssets(activeDocument.id).then((assets) => {
+      const next: Record<string, string> = {};
+      for (const asset of assets) {
+        const url = URL.createObjectURL(asset.blob);
+        next[asset.name] = url;
+        revoked.push(url);
+      }
+      setAssetUrls(next);
+    });
+    return () => {
+      revoked.forEach((url) => URL.revokeObjectURL(url));
+      revoked = [];
+    };
+    // Asset URLs are owned by the selected document ID; record edits do not change them.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDocument?.id]);
+
+  useEffect(() => {
+    if (!ready || !activeDocument || activeDocument.markdown === markdown) return;
+    setSaveState("saving");
+    const timeout = window.setTimeout(async () => {
+      try {
+        const inferredTitle = activeDocument.title === "Untitled document" ? getDocumentTitle(markdown) : activeDocument.title;
+        const saved = await saveDocument({ ...activeDocument, title: inferredTitle, markdown });
+        startTransition(() => {
+          setDocuments((current) => current.map((document) => (document.id === saved.id ? saved : document)));
+          setSaveState("saved");
+        });
+      } catch {
+        setSaveState("error");
+      }
+    }, 400);
+    return () => window.clearTimeout(timeout);
+  }, [activeDocument, markdown, ready]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
-    if (hasHydrated) {
-      localStorage.setItem(THEME_KEY, theme);
-    }
-  }, [hasHydrated, theme]);
+    if (ready) localStorage.setItem(THEME_KEY, theme);
+  }, [ready, theme]);
 
   useEffect(() => {
-    if (!hasHydrated) return;
-    if (markdown.trim().length > 0) {
-      localStorage.setItem(STORAGE_KEY, markdown);
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [hasHydrated, markdown]);
-
-  useEffect(() => {
-    if (copyState === "idle") return;
-    const timeout = window.setTimeout(() => setCopyState("idle"), 1800);
-    return () => window.clearTimeout(timeout);
-  }, [copyState]);
-
-  useEffect(() => {
-    if (!importNotice || importNotice.tone === "progress") return;
-    const timeout = window.setTimeout(() => setImportNotice(null), 5000);
-    return () => window.clearTimeout(timeout);
-  }, [importNotice]);
-
-  const stats = useMemo(() => {
-    const words = markdown.trim().match(/\S+/g)?.length ?? 0;
-    const characters = markdown.length;
-    const minutes = Math.max(1, Math.ceil(words / 220));
-
-    return { words, characters, minutes };
-  }, [markdown]);
-
-  const isEmpty = markdown.trim().length === 0;
-
-  const copyText = useCallback(async (text: string, state: CopyState) => {
-    try {
-      if (navigator.clipboard && document.hasFocus()) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.setAttribute("readonly", "");
-        textarea.style.left = "-1000px";
-        textarea.style.position = "fixed";
-        textarea.style.top = "-1000px";
-        document.body.appendChild(textarea);
-        textarea.select();
-        const didCopy = document.execCommand("copy");
-        document.body.removeChild(textarea);
-
-        if (!didCopy) {
-          throw new Error("Copy command was not available.");
-        }
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key === "k") {
+        event.preventDefault();
+        setCommandOpen(true);
+      } else if (key === "o") {
+        event.preventDefault();
+        fileInputRef.current?.click();
+      } else if (key === "n") {
+        event.preventDefault();
+        void createNewDocument();
+      } else if (key === "s") {
+        event.preventDefault();
+        downloadMarkdown();
       }
-
-      setCopyState(state);
-    } catch {
-      setCopyState("error");
-    }
-  }, []);
-
-  const handleCopyMarkdown = useCallback(async () => {
-    if (isEmpty) return;
-    await copyText(markdown, "markdown");
-  }, [copyText, isEmpty, markdown]);
-
-  const handleCopyHtml = useCallback(async () => {
-    if (isEmpty) return;
-    const html = previewRef.current?.innerHTML ?? "";
-    await copyText(html, "html");
-  }, [copyText, isEmpty]);
-
-  const handleLoadSample = useCallback(() => {
-    if (!isEmpty && !window.confirm("Replace the current draft with the Markdown Lens sample?")) {
-      return;
-    }
-    setMarkdown(sampleMarkdown);
-    setMobilePane("preview");
-  }, [isEmpty]);
-
-  const handleLoadTemplate = useCallback(
-    (template: (typeof starterTemplates)[number]) => {
-      if (
-        !isEmpty &&
-        !window.confirm(`Replace the current draft with the ${template.label} template?`)
-      ) {
-        return;
-      }
-      setMarkdown(template.markdown);
-      setMobilePane("editor");
-    },
-    [isEmpty],
-  );
-
-  const handleClear = useCallback(() => {
-    if (isEmpty) return;
-    if (!window.confirm("Clear the editor and remove the saved local draft?")) {
-      return;
-    }
-    setMarkdown("");
-    localStorage.removeItem(STORAGE_KEY);
-    setMobilePane("editor");
-  }, [isEmpty]);
-
-  const handleDownload = useCallback(() => {
-    if (isEmpty) return;
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-    downloadBlob(blob, `${toFileName(getDocumentTitle(markdown))}.md`);
-  }, [isEmpty, markdown]);
-
-  const handleExportHtml = useCallback(() => {
-    if (isEmpty || !previewRef.current) return;
-
-    const safePreviewHtml = sanitizePreviewHtml(previewRef.current);
-    const documentTitle = getDocumentTitle(markdown);
-    const html = buildStandaloneHtmlDocument({
-      bodyHtml: safePreviewHtml,
-      title: documentTitle,
-    });
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    downloadBlob(blob, `${toFileName(documentTitle)}.html`);
-  }, [isEmpty, markdown]);
-
-  const handlePrint = useCallback(() => {
-    window.print();
-  }, []);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((current) => (current === "dark" ? "light" : "dark"));
-  }, []);
-
-  const handleShowPreview = useCallback(() => {
-    setViewMode("preview");
-    setMobilePane("preview");
-  }, []);
-
-  const handleShowEditor = useCallback(() => {
-    setViewMode("editor");
-    setMobilePane("editor");
-  }, []);
-
-  useKeyboardShortcuts({
-    hasContent: !isEmpty,
-    download: handleDownload,
-    copyMarkdown: handleCopyMarkdown,
-    copyHtml: handleCopyHtml,
-    showPreview: handleShowPreview,
-    showEditor: handleShowEditor,
-    loadSample: handleLoadSample,
+    };
+    window.addEventListener("keydown", handleKeyboard);
+    return () => window.removeEventListener("keydown", handleKeyboard);
   });
 
-  const handleDragEnter = useCallback((event: React.DragEvent<HTMLElement>) => {
-    event.preventDefault();
-    dragDepthRef.current += 1;
-
-    if (event.dataTransfer.types.includes("Files")) {
-      setIsDraggingFile(true);
-    }
+  const refreshDocuments = useCallback(async () => {
+    setDocuments(await listDocuments({ includeDeleted: true }));
   }, []);
 
-  const handleDragOver = useCallback((event: React.DragEvent<HTMLElement>) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "copy";
+  const createNewDocument = useCallback(async () => {
+    const document = createDocumentRecord();
+    await addDocument(document);
+    setDocuments((current) => [document, ...current]);
+    setActiveId(document.id);
+    setMarkdown("");
+    setMobilePane("editor");
+    window.setTimeout(() => editorActions.current?.focus(), 0);
   }, []);
 
-  const handleDragLeave = useCallback((event: React.DragEvent<HTMLElement>) => {
-    event.preventDefault();
-    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
-
-    if (dragDepthRef.current === 0) {
-      setIsDraggingFile(false);
-    }
+  const selectDocument = useCallback((document: DocumentRecord) => {
+    setActiveId(document.id);
+    setMarkdown(document.markdown);
+    setMobilePane("editor");
   }, []);
 
-  const importLocalFile = useCallback(
-    async (file: File) => {
-      const extension = file.name.split(".").pop()?.toLowerCase();
-      const isMarkdownFile =
-        extension === "md" || extension === "markdown" || file.type === "text/markdown";
-      const isPdfFile = extension === "pdf" || file.type === "application/pdf";
-      const isWordFile =
-        extension === "docx" ||
-        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-      const isLegacyWordFile = extension === "doc" || file.type === "application/msword";
+  const renameDocument = useCallback(async (document: DocumentRecord) => {
+    const title = window.prompt("Rename document", document.title)?.trim();
+    if (!title || title === document.title) return;
+    const saved = await saveDocument({ ...document, title });
+    setDocuments((current) => current.map((item) => (item.id === document.id ? saved : item)));
+  }, []);
 
-      if (isLegacyWordFile) {
-        setImportNotice({
-          tone: "error",
-          message: `"${file.name}" is a legacy .doc file. Open it in Word or Google Docs, save/export it as .docx, then upload it again.`,
-        });
-        return;
+  const removeDocument = useCallback(
+    async (document: DocumentRecord) => {
+      await moveDocumentToTrash(document.id);
+      if (activeId === document.id) {
+        const next = documents.find((item) => item.id !== document.id && item.deletedAt === undefined);
+        setActiveId(next?.id ?? null);
+        setMarkdown(next?.markdown ?? "");
       }
+      await refreshDocuments();
+      setNotice(`“${document.title}” moved to Trash.`);
+    },
+    [activeId, documents, refreshDocuments],
+  );
 
-      if (!isMarkdownFile && !isPdfFile && !isWordFile) {
-        setImportNotice({
-          tone: "error",
-          message: `"${file.name}" is not supported. Choose Markdown, PDF, or Word .docx. Legacy .doc files need to be saved as .docx first.`,
-        });
-        return;
-      }
+  const restoreFromTrash = useCallback(async (document: DocumentRecord) => {
+    await restoreDocument(document.id);
+    await refreshDocuments();
+    setNotice(`“${document.title}” restored.`);
+  }, [refreshDocuments]);
 
-      if (isPdfFile && file.size > PDF_SIZE_LIMIT_BYTES) {
-        setImportNotice({
-          tone: "error",
-          message: `"${file.name}" is larger than the 100 MB PDF limit.`,
-        });
-        return;
-      }
+  const deleteForever = useCallback(async (document: DocumentRecord) => {
+    if (!window.confirm(`Permanently delete “${document.title}”? This cannot be undone.`)) return;
+    await permanentlyDeleteDocument(document.id);
+    await refreshDocuments();
+  }, [refreshDocuments]);
 
-      if (isWordFile && file.size > WORD_SIZE_LIMIT_BYTES) {
-        setImportNotice({
-          tone: "error",
-          message: `"${file.name}" is larger than the 100 MB Word import limit.`,
-        });
-        return;
-      }
+  const duplicate = useCallback(async (document: DocumentRecord) => {
+    const copy = await duplicateDocument(document);
+    setDocuments((current) => [copy, ...current]);
+    setActiveId(copy.id);
+  }, []);
 
-      if (!isEmpty && !window.confirm(`Replace the current draft with "${file.name}"?`)) {
-        return;
-      }
-
-      if (isPdfFile) {
-        setImportProgress({ fileName: file.name, kind: "pdf", currentPage: 0, totalPages: 0 });
-        setImportNotice({
-          tone: "progress",
-          message: `Opening "${file.name}" locally…`,
-        });
-
-        try {
-          const result = await importPdfAsMarkdown(file, ({ currentPage, totalPages }) => {
-            setImportProgress({ fileName: file.name, kind: "pdf", currentPage, totalPages });
-            setImportNotice({
-              tone: "progress",
-              message: `Converting page ${currentPage} of ${totalPages} from "${file.name}"…`,
-            });
-          });
-          setMarkdown(result.markdown);
-          setMobilePane("preview");
-          setImportNotice({
-            tone: "success",
-            message: `Converted all ${result.pageCount} pages from "${file.name}" locally. Images were not included.`,
-          });
-        } catch (error) {
-          const message =
-            error instanceof PdfImportError
-              ? error.message
-              : `Could not convert "${file.name}". Please try another PDF.`;
-          setImportNotice({ tone: "error", message });
-        } finally {
-          setImportProgress(null);
-        }
-        return;
-      }
-
-      if (isWordFile) {
-        setImportProgress({ fileName: file.name, kind: "word" });
-        setImportNotice({
-          tone: "progress",
-          message: `Opening "${file.name}" locally…`,
-        });
-
-        try {
-          const result = await importWordAsMarkdown(file, ({ stage }) => {
-            setImportProgress({ fileName: file.name, kind: "word" });
-            const stageMessage =
-              stage === "reading"
-                ? `Reading "${file.name}" locally…`
-                : stage === "converting"
-                  ? `Converting "${file.name}" to Markdown locally…`
-                  : `Finishing Markdown cleanup for "${file.name}"…`;
-            setImportNotice({ tone: "progress", message: stageMessage });
-          });
-          setMarkdown(result.markdown);
-          setMobilePane("preview");
-          setImportNotice({
-            tone: "success",
-            message:
-              result.imageCount > 0
-                ? `Converted "${file.name}" locally. ${result.imageCount} embedded image${
-                    result.imageCount === 1 ? " was" : "s were"
-                  } noted but not extracted.`
-                : `Converted "${file.name}" locally. Nothing was uploaded.`,
-          });
-        } catch (error) {
-          const message =
-            error instanceof WordImportError
-              ? error.message
-              : `Could not convert "${file.name}". Please try another .docx file.`;
-          setImportNotice({ tone: "error", message });
-        } finally {
-          setImportProgress(null);
-        }
-        return;
-      }
-
+  const importFiles = useCallback(async (files: File[]) => {
+    for (const file of files) {
+      const id = createId();
+      const controller = new AbortController();
+      abortControllers.current.set(id, controller);
+      setJobs((current) => [...current, { id, fileName: file.name, state: "queued" }]);
       try {
-        const content = await file.text();
-        setMarkdown(content);
-        setMobilePane("preview");
-        setImportNotice({
-          tone: "success",
-          message: `Opened "${file.name}" locally. Nothing was uploaded.`,
-        });
-      } catch {
-        setImportNotice({
-          tone: "error",
-          message: `Could not read "${file.name}". Please try another Markdown file.`,
-        });
-      }
-    },
-    [isEmpty],
-  );
-
-  const handleFileInput = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.item(0);
-      if (file) {
-        await importLocalFile(file);
-      }
-      event.target.value = "";
-    },
-    [importLocalFile],
-  );
-
-  const handleDrop = useCallback(
-    async (event: React.DragEvent<HTMLElement>) => {
-      event.preventDefault();
-      dragDepthRef.current = 0;
-      setIsDraggingFile(false);
-
-      const file = event.dataTransfer.files.item(0);
-      if (!file) {
-        setImportNotice({
-          tone: "error",
-          message:
-            "No file was found. Drop Markdown, PDF, or Word .docx. Legacy .doc files need to be saved as .docx first.",
-        });
-        return;
-      }
-
-      await importLocalFile(file);
-    },
-    [importLocalFile],
-  );
-
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="app-shell mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-4 sm:px-6 lg:px-8">
-        <header className="flex h-16 items-center justify-between gap-4 border-b border-border/80">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2.5 rounded-md font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-panel text-accent shadow-sm">
-                <Eye className="h-[18px] w-[18px]" aria-hidden />
-              </span>
-              <span className="hidden sm:inline">Markdown Lens</span>
-            </Link>
-            <nav className="hidden items-center gap-1 border-l border-border pl-3 md:flex" aria-label="Editor navigation">
-              <Link
-                href="/"
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                Home
-              </Link>
-              <Link
-                href="/markdown-cheatsheet"
-                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                Cheatsheet
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-1">
-            <a
-              href="https://github.com/ayushhagarwal/markdown-lens"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="View Markdown Lens on GitHub"
-            >
-              <Github className="h-4 w-4" aria-hidden />
-            </a>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-              title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-          </div>
-        </header>
-
-        <section className="sticky top-0 z-20 -mx-4 border-b border-border/80 bg-background/94 px-4 py-3 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".md,.markdown,.pdf,.doc,.docx,text/markdown,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            onChange={handleFileInput}
-            className="sr-only"
-            aria-label="Choose Markdown, PDF, or Word .docx"
-            disabled={importProgress !== null}
-          />
-          <div className="grid gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
-            <div className="hidden w-fit items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:flex">
-              <ModeButton icon={PanelLeft} label="Split" active={viewMode === "split"} onClick={() => setViewMode("split")} />
-              <ModeButton
-                icon={Code2}
-                label="Editor"
-                active={viewMode === "editor"}
-                onClick={handleShowEditor}
-                shortcut="⌘/Ctrl ⇧ E"
-                ariaShortcut="Meta+Shift+E Control+Shift+E"
-              />
-              <ModeButton
-                icon={PanelRight}
-                label="Preview"
-                active={viewMode === "preview"}
-                onClick={handleShowPreview}
-                shortcut="⌘/Ctrl ⇧ P"
-                ariaShortcut="Meta+Shift+P Control+Shift+P"
-              />
-            </div>
-
-            <div className="flex w-full items-center gap-1 rounded-lg border border-border/80 bg-surface p-1 shadow-sm lg:hidden">
-              <ModeButton
-                icon={Code2}
-                label="Editor"
-                active={mobilePane === "editor"}
-                onClick={handleShowEditor}
-                shortcut="⌘/Ctrl ⇧ E"
-                ariaShortcut="Meta+Shift+E Control+Shift+E"
-              />
-              <ModeButton
-                icon={Eye}
-                label="Preview"
-                active={mobilePane === "preview"}
-                onClick={handleShowPreview}
-                shortcut="⌘/Ctrl ⇧ P"
-                ariaShortcut="Meta+Shift+P Control+Shift+P"
-              />
-            </div>
-
-            <WorkspaceActions
-              copyState={copyState}
-              isEmpty={isEmpty}
-              isImporting={importProgress !== null}
-              onOpenFile={() => fileInputRef.current?.click()}
-              onLoadSample={handleLoadSample}
-              onLoadTemplate={handleLoadTemplate}
-              onCopyMarkdown={handleCopyMarkdown}
-              onCopyHtml={handleCopyHtml}
-              onDownload={handleDownload}
-              onExportHtml={handleExportHtml}
-              onPrint={handlePrint}
-              onClear={handleClear}
-            />
-
-            <div className="grid grid-cols-3 gap-2 text-xs font-medium text-muted-foreground md:flex md:flex-wrap md:items-center lg:justify-end">
-              <Stat label="Words" value={stats.words.toLocaleString()} />
-              <Stat label="Chars" value={stats.characters.toLocaleString()} />
-              <Stat label="Read" value={`${stats.minutes} min`} />
-            </div>
-          </div>
-        </section>
-
-        <div
-          className="relative flex flex-1 flex-col"
-          onDragEnter={handleDragEnter}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          {importNotice ? <ImportNoticeBanner notice={importNotice} /> : null}
-          <section
-            className={cn(
-              "grid flex-1 gap-4 py-4",
-              viewMode === "split" && "lg:grid-cols-2",
-              viewMode !== "split" && "lg:grid-cols-1",
-            )}
-          >
-            <EditorPanel
-              value={markdown}
-              onChange={setMarkdown}
-              onLoadTemplate={handleLoadTemplate}
-              hiddenOnDesktop={viewMode === "preview"}
-              hiddenOnMobile={mobilePane !== "editor"}
-            />
-            <PreviewPanel
-              markdown={markdown}
-              previewRef={previewRef}
-              theme={theme}
-              hiddenOnDesktop={viewMode === "editor"}
-              hiddenOnMobile={mobilePane !== "preview"}
-            />
-          </section>
-          {isDraggingFile ? <DropOverlay /> : null}
-        </div>
-
-        <footer className="flex items-center justify-between gap-3 border-t border-border py-3 text-xs text-muted-foreground">
-          <p>Saved locally in this browser.</p>
-          <Link href="/" className="font-medium hover:text-foreground">
-            Back to home
-          </Link>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
-function EditorPanel({
-  value,
-  onChange,
-  onLoadTemplate,
-  hiddenOnDesktop,
-  hiddenOnMobile,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onLoadTemplate: (template: (typeof starterTemplates)[number]) => void;
-  hiddenOnDesktop: boolean;
-  hiddenOnMobile: boolean;
-}) {
-  const isEmpty = value.trim().length === 0;
-
-  return (
-    <section
-      className={cn(
-        "panel-height overflow-hidden rounded-lg border border-border/80 bg-panel shadow-panel ring-1 ring-black/[0.02] dark:ring-white/[0.04]",
-        hiddenOnMobile && "hidden lg:block",
-        hiddenOnDesktop && "lg:hidden",
-      )}
-      aria-label="Markdown editor"
-    >
-      <div className="flex h-11 items-center justify-between border-b border-border/80 bg-surface px-4">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Code2 className="h-4 w-4 text-accent" aria-hidden />
-          Markdown
-        </div>
-        <span className="hidden text-xs text-muted-foreground sm:inline">
-          Drop Markdown, PDF, or Word .docx here
-        </span>
-      </div>
-      <div className="flex h-[calc(100%-2.75rem)] flex-col">
-        {isEmpty ? (
-          <div className="border-b border-border/75 bg-surface/70 px-4 py-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Start with a template</p>
-            <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-              {starterTemplates.map((template) => {
-                const Icon = template.icon;
-                return (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => onLoadTemplate(template)}
-                    className="group flex min-w-0 items-center gap-2 rounded-md border border-border bg-panel px-3 py-2 text-left transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <Icon className="h-4 w-4 shrink-0 text-accent" aria-hidden />
-                    <span className="min-w-0">
-                      <span className="block truncate text-xs font-semibold">{template.label}</span>
-                      <span className="hidden truncate text-[10px] text-muted-foreground 2xl:block">
-                        {template.description}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-        <textarea
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          spellCheck={false}
-          placeholder={placeholder}
-          className="min-h-0 flex-1 w-full resize-none bg-transparent p-5 font-mono text-sm leading-6 text-panel-foreground caret-accent outline-none selection:bg-accent/15 placeholder:text-muted-foreground/65 sm:p-6"
-        />
-      </div>
-    </section>
-  );
-}
-
-function PreviewPanel({
-  markdown,
-  previewRef,
-  theme,
-  hiddenOnDesktop,
-  hiddenOnMobile,
-}: {
-  markdown: string;
-  previewRef: React.RefObject<HTMLDivElement | null>;
-  theme: Theme;
-  hiddenOnDesktop: boolean;
-  hiddenOnMobile: boolean;
-}) {
-  const components = useMarkdownComponents(theme);
-  const isEmpty = markdown.trim().length === 0;
-
-  return (
-    <section
-      className={cn(
-        "panel-height overflow-hidden rounded-lg border border-border/80 bg-panel shadow-panel ring-1 ring-black/[0.02] dark:ring-white/[0.04]",
-        hiddenOnMobile && "hidden lg:block",
-        hiddenOnDesktop && "lg:hidden",
-      )}
-      aria-label="Markdown preview"
-    >
-      <div className="flex h-11 items-center justify-between border-b border-border/80 bg-surface px-4">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Eye className="h-4 w-4 text-accent" aria-hidden />
-          Preview
-        </div>
-        <span className="text-xs text-muted-foreground">GitHub-style output</span>
-      </div>
-      <div className="h-[calc(100%-2.75rem)] overflow-auto">
-        {isEmpty ? (
-          <EmptyState />
-        ) : (
-          <div ref={previewRef} className="print-area markdown-body mx-auto w-full max-w-[980px] px-5 py-7 sm:px-8 lg:px-10">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
-              rehypePlugins={[
-                [rehypeKatex, { throwOnError: false, strict: false }],
-                rehypeHighlight,
-              ]}
-              components={components}
-            >
-              {markdown}
-            </ReactMarkdown>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function ImportNoticeBanner({ notice }: { notice: Exclude<ImportNotice, null> }) {
-  const isError = notice.tone === "error";
-  const isProgress = notice.tone === "progress";
-
-  return (
-    <div
-      role={isError ? "alert" : "status"}
-      className={cn(
-        "mt-4 flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm",
-        isError
-          ? "border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-200"
-          : "border-accent/30 bg-accent-soft text-foreground",
-      )}
-    >
-      {isError ? (
-        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-      ) : isProgress ? (
-        <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-accent" aria-hidden />
-      ) : (
-        <Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
-      )}
-      <span>{notice.message}</span>
-    </div>
-  );
-}
-
-function DropOverlay() {
-  return (
-    <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-xl border-2 border-dashed border-accent bg-background/90 p-6 backdrop-blur-sm">
-      <div className="max-w-sm text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-accent-soft text-accent">
-          <FileUp className="h-7 w-7" aria-hidden />
-        </div>
-        <p className="mt-4 text-lg font-semibold">Drop Markdown, PDF, or Word .docx</p>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          PDFs and .docx files are converted locally. Scanned PDFs and embedded images are not
-          extracted. Legacy .doc files need to be saved as .docx first.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex h-full min-h-[420px] items-center justify-center p-6">
-      <div className="max-w-sm text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg border border-border/80 bg-accent-soft">
-          <FileCode2 className="h-6 w-6 text-accent" aria-hidden />
-        </div>
-        <h2 className="mt-5 text-xl font-semibold tracking-normal">No preview yet</h2>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Your rendered document will appear here.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function useMarkdownComponents(theme: Theme): Components {
-  return useMemo(
-    () => ({
-      code(props) {
-        const { className, children, ...rest } = props;
-        const match = /language-(\w+)/.exec(className ?? "");
-        const language = match?.[1]?.toLowerCase();
-        const code = String(children).replace(/\n$/, "");
-
-        if (language === "mermaid") {
-          return <MermaidDiagram code={code} theme={theme} />;
-        }
-
-        return (
-          <code className={className} {...rest}>
-            {children}
-          </code>
+        const isImage = file.type.startsWith("image/");
+        const useOcr = isImage && window.confirm(`Run local English OCR on “${file.name}”? The image never leaves this browser.`);
+        setJobs((current) => current.map((job) => (job.id === id ? { ...job, state: "running" } : job)));
+        const result = await convertLocalFile(
+          file,
+          { ocr: useOcr, tableMode: "html-fallback" },
+          {
+            signal: controller.signal,
+            onProgress(progress) {
+              setJobs((current) => current.map((job) => (job.id === id ? { ...job, progress } : job)));
+            },
+          },
         );
-      },
-      a(props) {
-        return <a {...props} target="_blank" rel="noreferrer" />;
-      },
-    }),
-    [theme],
-  );
-}
-
-function MermaidDiagram({ code, theme }: { code: string; theme: Theme }) {
-  const [state, setState] = useState<{
-    status: "loading" | "ready" | "error";
-    svg?: string;
-    error?: string;
-  }>({ status: "loading" });
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function renderDiagram() {
-      try {
-        const mermaid = (await import("mermaid")).default;
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: "strict",
-          theme: theme === "dark" ? "dark" : "default",
-        });
-
-        const id = `markdown-lens-mermaid-${crypto.randomUUID()}`;
-        const { svg } = await mermaid.render(id, code);
-        if (!cancelled) {
-          setState({ status: "ready", svg });
+        const results = result.children?.length ? result.children : [result];
+        let lastDocument: DocumentRecord | null = null;
+        for (const converted of results) lastDocument = await persistConversion(converted);
+        await refreshDocuments();
+        if (lastDocument) {
+          setActiveId(lastDocument.id);
+          setMarkdown(lastDocument.markdown);
+          setMobilePane("preview");
         }
+        setJobs((current) => current.map((job) => (job.id === id ? { ...job, state: "completed" } : job)));
       } catch (error) {
-        if (!cancelled) {
-          setState({
-            status: "error",
-            error: error instanceof Error ? error.message : "Unable to render this Mermaid diagram.",
-          });
-        }
+        const cancelled = error instanceof ConverterError && error.code === "cancelled";
+        setJobs((current) =>
+          current.map((job) =>
+            job.id === id
+              ? { ...job, state: cancelled ? "cancelled" : "failed", error: error instanceof Error ? error.message : "Conversion failed." }
+              : job,
+          ),
+        );
+      } finally {
+        abortControllers.current.delete(id);
       }
     }
+  }, [refreshDocuments]);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState({ status: "loading" });
-    renderDiagram();
+  async function persistConversion(result: ConversionResult) {
+    const duration = Number(result.statistics.durationMs ?? 0);
+    const completedAt = Date.now();
+    const document = createDocumentRecord({
+      title: result.title,
+      markdown: result.markdown,
+      source: result.source,
+      conversion: {
+        converterId: result.converterId,
+        startedAt: completedAt - duration,
+        completedAt,
+        warnings: result.warnings,
+        omitted: result.omitted,
+        statistics: result.statistics,
+        usedOcr: result.usedOcr,
+      },
+    });
+    const assets = result.assets.map((asset) => ({ ...asset, id: createId(), documentId: document.id }));
+    document.assetIds = assets.map((asset) => asset.id);
+    await Promise.all([addDocument(document), putAssets(assets)]);
+    return document;
+  }
 
-    return () => {
-      cancelled = true;
+  function downloadMarkdown() {
+    if (!markdown.trim()) return;
+    downloadBlob(new Blob([markdown], { type: "text/markdown;charset=utf-8" }), `${toFileName(activeDocument?.title ?? getDocumentTitle(markdown))}.md`);
+  }
+
+  function exportHtml() {
+    if (!previewRef.current) return;
+    const html = buildStandaloneHtmlDocument({
+      title: activeDocument?.title ?? getDocumentTitle(markdown),
+      bodyHtml: sanitizePreviewHtml(previewRef.current),
+    });
+    downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${toFileName(activeDocument?.title ?? "document")}.html`);
+  }
+
+  async function copyMarkdown() {
+    await navigator.clipboard.writeText(markdown);
+    setNotice("Markdown copied.");
+  }
+
+  async function shareDocument() {
+    try {
+      const fragment = createShareFragment(markdown);
+      const url = `${location.origin}${location.pathname}${fragment}`;
+      await navigator.clipboard.writeText(url);
+      setNotice(`Share link copied (${url.length.toLocaleString()} characters). Encoding is not encryption.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "A share link could not be created.");
+    }
+  }
+
+  async function downloadWorkspaceBackup() {
+    const backup = await exportWorkspace();
+    downloadBlob(
+      new Blob([JSON.stringify(backup)], { type: "application/json" }),
+      `markdown-lens-workspace-${new Date().toISOString().slice(0, 10)}.markdownlens.json`,
+    );
+  }
+
+  async function exportDocumentBundle() {
+    if (!activeDocument) return;
+    const [{ zipSync, strToU8 }, assets] = await Promise.all([
+      import("fflate"),
+      getDocumentAssets(activeDocument.id),
+    ]);
+    const entries: Record<string, Uint8Array> = {
+      [`${toFileName(activeDocument.title)}.md`]: strToU8(markdown),
     };
-  }, [code, theme]);
-
-  if (state.status === "loading") {
-    return (
-      <div className="not-prose my-5 flex items-center gap-2 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-        Rendering Mermaid diagram
-      </div>
+    for (const asset of assets) entries[`assets/${asset.name}`] = new Uint8Array(await asset.blob.arrayBuffer());
+    downloadBlob(
+      new Blob([zipSync(entries)], { type: "application/zip" }),
+      `${toFileName(activeDocument.title)}-bundle.zip`,
     );
   }
 
-  if (state.status === "error") {
-    return (
-      <div className="not-prose my-5 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-200">
-        <div className="font-semibold">Mermaid diagram could not be rendered.</div>
-        <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-md bg-background p-3 font-mono text-xs text-foreground">
-          {state.error}
-        </pre>
-      </div>
-    );
+  async function restoreWorkspace(file: File) {
+    const backup = JSON.parse(await file.text()) as WorkspaceBackup;
+    await importWorkspace(backup);
+    await refreshDocuments();
+    setNotice("Workspace backup restored locally.");
   }
+
+  function beginResize(event: React.PointerEvent<HTMLButtonElement>) {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const update = (clientX: number) => {
+      const bounds = centralRef.current?.getBoundingClientRect();
+      if (!bounds) return;
+      const ratio = Math.min(70, Math.max(30, ((clientX - bounds.left) / bounds.width) * 100));
+      setSplitRatio(ratio);
+      localStorage.setItem(SPLIT_KEY, String(ratio));
+    };
+    const handleMove = (moveEvent: PointerEvent) => update(moveEvent.clientX);
+    const handleUp = () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+  }
+
+  const commands = [
+      { label: "New document", hint: "⌘N", action: () => void createNewDocument() },
+      { label: "Open or convert", hint: "⌘O", action: () => fileInputRef.current?.click() },
+      { label: "Find and replace", hint: "⌘F", action: () => editorActions.current?.openSearch() },
+      { label: "Show Documents", action: () => setDocumentsOpen(true) },
+      { label: "Show Outline", action: () => setOutlineOpen(true) },
+      { label: "Download Markdown", hint: "⌘S", action: downloadMarkdown },
+      { label: "Copy Markdown", action: () => void copyMarkdown() },
+      { label: "Create private share link", action: () => void shareDocument() },
+      { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
+    ];
+  const visibleCommands = commands.filter((command) => command.label.toLowerCase().includes(commandSearch.toLowerCase()));
 
   return (
     <div
-      className="not-prose my-5 overflow-auto rounded-lg border border-border bg-white p-4 dark:bg-slate-950"
-      dangerouslySetInnerHTML={{ __html: state.svg ?? "" }}
-    />
-  );
-}
-
-function ModeButton({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-  shortcut,
-  ariaShortcut,
-}: {
-  icon: LucideIcon;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  shortcut?: string;
-  ariaShortcut?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={shortcut ? `${label} (${shortcut})` : label}
-      aria-keyshortcuts={ariaShortcut}
-      className={cn(
-        "inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface lg:h-8 lg:flex-none",
-        active
-          ? "bg-foreground text-background shadow-sm"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-      )}
+      className="workspace-shell flex h-dvh min-h-[620px] flex-col overflow-hidden bg-background text-foreground"
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes("Files")) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }
+      }}
+      onDrop={(event) => {
+        const files = Array.from(event.dataTransfer.files);
+        if (!files.length) return;
+        event.preventDefault();
+        void importFiles(files);
+      }}
     >
-      <Icon className="h-4 w-4" aria-hidden />
-      {label}
-    </button>
-  );
-}
-
-function ToolbarButton({
-  icon: Icon,
-  iconClassName,
-  label,
-  onClick,
-  disabled,
-  tone = "default",
-  emphasis = false,
-  shortcut,
-  ariaShortcut,
-  className,
-}: {
-  icon: LucideIcon;
-  iconClassName?: string;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  tone?: "default" | "danger";
-  emphasis?: boolean;
-  shortcut?: string;
-  ariaShortcut?: string;
-  className?: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={shortcut ? `${label} (${shortcut})` : label}
-      aria-keyshortcuts={ariaShortcut}
-      className={cn(
-        "inline-flex h-9 items-center gap-2 rounded-md border border-border/80 bg-surface px-3 text-sm font-medium text-panel-foreground shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:border-border/60 disabled:bg-muted/60 disabled:text-muted-foreground disabled:shadow-none",
-        emphasis && "border-accent/30 bg-accent-soft text-accent hover:bg-accent-soft/80",
-        tone === "danger" && "hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-700 dark:hover:text-red-200",
-        className,
-      )}
-    >
-      <Icon className={cn("h-4 w-4 shrink-0", iconClassName)} aria-hidden />
-      <span className="whitespace-nowrap">{label}</span>
-    </button>
-  );
-}
-
-function WorkspaceActions({
-  copyState,
-  isEmpty,
-  isImporting,
-  onOpenFile,
-  onLoadSample,
-  onLoadTemplate,
-  onCopyMarkdown,
-  onCopyHtml,
-  onDownload,
-  onExportHtml,
-  onPrint,
-  onClear,
-}: {
-  copyState: CopyState;
-  isEmpty: boolean;
-  isImporting: boolean;
-  onOpenFile: () => void;
-  onLoadSample: () => void;
-  onLoadTemplate: (template: (typeof starterTemplates)[number]) => void;
-  onCopyMarkdown: () => void;
-  onCopyHtml: () => void;
-  onDownload: () => void;
-  onExportHtml: () => void;
-  onPrint: () => void;
-  onClear: () => void;
-}) {
-  const [openMenu, setOpenMenu] = useState<"templates" | "export" | null>(null);
-
-  useEffect(() => {
-    if (!openMenu) return;
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpenMenu(null);
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [openMenu]);
-
-  const runAndClose = (action: () => void) => () => {
-    action();
-    setOpenMenu(null);
-  };
-
-  return (
-    <div className="flex items-center gap-2 lg:justify-center">
-      <ToolbarButton
-        icon={isImporting ? Loader2 : FileUp}
-        label={isImporting ? "Converting…" : "Open file"}
-        onClick={onOpenFile}
-        className="h-10 flex-1 justify-center sm:flex-none"
-        emphasis
-        disabled={isImporting}
-        iconClassName={isImporting ? "animate-spin" : undefined}
+      <ServiceWorkerRegister onUpdate={() => setUpdateAvailable(true)} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        aria-label="Open or convert local documents"
+        multiple
+        className="sr-only"
+        accept=".md,.markdown,.txt,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.html,.htm,.csv,.tsv,.json,.xml,.epub,.zip,.png,.jpg,.jpeg,.webp,.bmp"
+        onChange={(event) => {
+          const files = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          if (files.length) void importFiles(files);
+        }}
+      />
+      <input
+        ref={backupInputRef}
+        type="file"
+        aria-label="Restore Markdown Lens workspace backup"
+        className="sr-only"
+        accept=".json,.markdownlens.json"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void restoreWorkspace(file);
+        }}
       />
 
-      <div className="relative flex-1 sm:flex-none">
-        <MenuButton
-          icon={Sparkles}
-          label="Templates"
-          open={openMenu === "templates"}
-          onClick={() =>
-            setOpenMenu((current) => (current === "templates" ? null : "templates"))
-          }
-        />
-        {openMenu === "templates" ? (
-          <div className="absolute left-0 top-[calc(100%+0.5rem)] z-40 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-panel p-2 shadow-panel">
-            <p className="px-2 pb-2 pt-1 text-xs font-medium text-muted-foreground">
-              Start with a focused document
-            </p>
-            {starterTemplates.map((template) => {
-              const Icon = template.icon;
-              return (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={runAndClose(() => onLoadTemplate(template))}
-                  className="flex w-full items-start gap-3 rounded-lg px-2.5 py-2.5 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
-                  <span>
-                    <span className="block text-sm font-medium">{template.label}</span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {template.description}
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-            <div className="mt-1 border-t border-border pt-1">
-              <button
-                type="button"
-                onClick={runAndClose(onLoadSample)}
-                className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left text-sm font-medium transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Sparkles className="h-4 w-4 text-accent" aria-hidden />
-                Full feature sample
+      <header className="flex h-[54px] shrink-0 items-center justify-between border-b border-border bg-background px-3">
+        <div className="flex min-w-0 items-center gap-1">
+          <Link href="/" aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus:outline-none focus:ring-2 focus:ring-ring">
+            <BrandIcon className="h-6 w-6" priority />
+            <span className="hidden sm:inline">Markdown Lens</span>
+          </Link>
+          <TopButton icon={PanelLeft} label="Documents" onClick={() => setDocumentsOpen((open) => !open)} active={documentsOpen} className="hidden md:flex" />
+          <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="hidden sm:flex" />
+          <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} emphasis />
+          <button
+            type="button"
+            onClick={() => setFormatGuideOpen(true)}
+            className="hidden rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground lg:inline"
+          >
+            Formats
+          </button>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className={cn("hidden items-center gap-1.5 px-2 text-xs md:flex", saveState === "error" ? "text-red-400" : "text-muted-foreground")}>
+            {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "error" ? <HardDrive className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5 text-accent" />}
+            {saveState === "saving" ? "Saving…" : saveState === "error" ? "Storage unavailable" : "Saved locally"}
+          </span>
+          {!online ? <span className="hidden px-2 text-xs text-amber-400 md:inline">Offline</span> : null}
+          {installPrompt ? (
+            <button
+              type="button"
+              onClick={async () => {
+                await installPrompt.prompt();
+                const choice = await installPrompt.userChoice;
+                setInstallPrompt(null);
+                if (choice.outcome === "accepted") setNotice("Markdown Lens was installed.");
+              }}
+              className="hidden h-9 items-center rounded-md px-3 text-xs text-muted-foreground hover:bg-muted hover:text-foreground md:flex"
+            >
+              Install
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted lg:flex">
+            <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>⌘K</kbd>
+          </button>
+          <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
+          <a href="https://github.com/ayushhagarwal/markdown-lens" target="_blank" rel="noreferrer" className="hidden h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground sm:flex" aria-label="View on GitHub">
+            <Github className="h-4 w-4" />
+          </a>
+          <IconButton icon={Menu} label="Open commands" onClick={() => setCommandOpen(true)} className="lg:hidden" />
+        </div>
+      </header>
+
+      <nav className="flex h-11 shrink-0 items-center border-b border-border px-2 lg:hidden" aria-label="Workspace panes">
+        {(["documents", "editor", "preview", "outline"] as MobilePane[]).map((pane) => (
+          <button key={pane} type="button" onClick={() => setMobilePane(pane)} className={cn("flex-1 rounded-md px-2 py-2 text-xs font-medium capitalize text-muted-foreground", mobilePane === pane && "bg-muted text-foreground")}>
+            {pane}
+          </button>
+        ))}
+      </nav>
+
+      <div className="relative flex min-h-0 flex-1">
+        <aside
+          className={cn(
+            "workspace-rail z-30 flex w-[260px] shrink-0 flex-col border-r border-border bg-background 2xl:w-[300px]",
+            !documentsOpen && "hidden",
+            mobilePane !== "documents" && "hidden lg:flex",
+            mobilePane === "documents" && "absolute inset-y-0 left-0 flex w-full max-w-[340px] shadow-2xl lg:static lg:shadow-none",
+          )}
+          aria-label="Documents"
+        >
+          <RailHeader label={showTrash ? "Trash" : "Documents"} onClose={() => setDocumentsOpen(false)} />
+          <div className="border-b border-border p-2.5">
+            <label className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs text-muted-foreground focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
+              <Search className="h-3.5 w-3.5" />
+              <input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="Search documents" className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground" />
+            </label>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+            {filteredDocuments.length ? (
+              filteredDocuments.map((document) => (
+                <DocumentRow
+                  key={document.id}
+                  document={document}
+                  active={activeId === document.id}
+                  trashed={showTrash}
+                  onSelect={() => selectDocument(document)}
+                  onRename={() => void renameDocument(document)}
+                  onDuplicate={() => void duplicate(document)}
+                  onDelete={() => void removeDocument(document)}
+                  onRestore={() => void restoreFromTrash(document)}
+                  onDeleteForever={() => void deleteForever(document)}
+                />
+              ))
+            ) : (
+              <div className="px-3 py-10 text-center text-xs leading-5 text-muted-foreground">
+                {showTrash ? "Trash is empty." : "No documents match this search."}
+              </div>
+            )}
+          </div>
+          <div className="border-t border-border p-2">
+            <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+              {showTrash ? <BookOpen className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+              {showTrash ? "Back to documents" : "Trash"}
+            </button>
+          </div>
+          <ImportJobs jobs={jobs} onCancel={(id) => abortControllers.current.get(id)?.abort()} onClear={() => setJobs((current) => current.filter((job) => job.state === "running" || job.state === "queued"))} />
+        </aside>
+
+        <main ref={centralRef} className={cn("min-w-0 flex-1", mobilePane === "documents" || mobilePane === "outline" ? "hidden lg:block" : "block")}>
+          <div
+            className="hidden h-full min-h-0 lg:grid"
+            style={{ gridTemplateColumns: `${splitRatio}fr 7px ${100 - splitRatio}fr` }}
+          >
+            <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
+              <MarkdownEditor value={markdown} theme={theme} onChange={setMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
+            </WorkspacePanel>
+            <button
+              type="button"
+              className="group flex cursor-col-resize items-center justify-center border-x border-border bg-background hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
+              role="separator"
+              aria-label="Resize editor and preview"
+              aria-valuemin={30}
+              aria-valuemax={70}
+              aria-valuenow={Math.round(splitRatio)}
+              onPointerDown={beginResize}
+              onKeyDown={(event) => {
+                if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                event.preventDefault();
+                const next = event.key === "Home" ? 30 : event.key === "End" ? 70 : Math.min(70, Math.max(30, splitRatio + (event.key === "ArrowLeft" ? -2 : 2)));
+                setSplitRatio(next);
+                localStorage.setItem(SPLIT_KEY, String(next));
+              }}
+            >
+              <span className="grid gap-0.5 opacity-50 group-hover:opacity-100" aria-hidden><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /></span>
+            </button>
+            <WorkspacePanel label="Preview" icon={Eye} detail="GitHub-style output">
+              <div className="h-full overflow-y-auto">
+                <MarkdownPreview markdown={deferredMarkdown} theme={theme} previewRef={previewRef} assetUrls={assetUrls} />
+              </div>
+            </WorkspacePanel>
+          </div>
+          <div className="h-full lg:hidden">
+            {mobilePane === "editor" ? (
+              <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
+                <MarkdownEditor value={markdown} theme={theme} onChange={setMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
+              </WorkspacePanel>
+            ) : (
+              <WorkspacePanel label="Preview" icon={Eye} detail="GitHub-style output">
+                <div className="h-full overflow-y-auto"><MarkdownPreview markdown={deferredMarkdown} theme={theme} previewRef={previewRef} assetUrls={assetUrls} /></div>
+              </WorkspacePanel>
+            )}
+          </div>
+        </main>
+
+        <aside
+          className={cn(
+            "workspace-rail z-30 flex w-[220px] shrink-0 flex-col border-l border-border bg-background 2xl:w-[260px]",
+            !outlineOpen && "hidden",
+            mobilePane !== "outline" && "hidden lg:flex",
+            mobilePane === "outline" && "absolute inset-y-0 right-0 flex w-full max-w-[320px] shadow-2xl lg:static lg:shadow-none",
+          )}
+          aria-label="Outline"
+        >
+          <RailHeader label="Outline" onClose={() => setOutlineOpen(false)} />
+          <nav className="min-h-0 flex-1 overflow-y-auto py-2" aria-label="Document outline">
+            {headings.length ? headings.map((heading) => (
+              <button key={`${heading.id}-${heading.line}`} type="button" onClick={() => previewRef.current?.querySelector(`#${CSS.escape(heading.id)}`)?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground" style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
+                <span className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
+                <span className="line-clamp-2 leading-4">{heading.text}</span>
               </button>
+            )) : <p className="px-5 py-10 text-center text-xs leading-5 text-muted-foreground">Add Markdown headings to build an outline.</p>}
+          </nav>
+          <div className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
+            <div className="flex items-center justify-between">
+              <span>{headings.length} heading{headings.length === 1 ? "" : "s"}</span>
+              {activeDocument?.conversion ? <button type="button" onClick={() => setReportOpen(true)} className="font-medium text-accent hover:underline">Conversion report</button> : null}
             </div>
           </div>
-        ) : null}
+        </aside>
       </div>
 
-      <div className="relative flex-1 sm:flex-none">
-        <MenuButton
-          icon={FileDown}
-          label="Export"
-          open={openMenu === "export"}
-          onClick={() => setOpenMenu((current) => (current === "export" ? null : "export"))}
-        />
-        {openMenu === "export" ? (
-          <div
-            className="absolute right-0 top-[calc(100%+0.5rem)] z-40 grid w-64 max-w-[calc(100vw-2rem)] gap-1 rounded-xl border border-border bg-panel p-2 shadow-panel"
-          >
-            <ToolbarButton
-              icon={copyState === "markdown" ? Check : Clipboard}
-              label={copyState === "markdown" ? "Copied Markdown" : "Copy Markdown"}
-              onClick={runAndClose(onCopyMarkdown)}
-              shortcut="⌘/Ctrl ⇧ C"
-              ariaShortcut="Meta+Shift+C Control+Shift+C"
-              className="h-10 w-full justify-start border-0 shadow-none"
-              disabled={isEmpty}
-            />
-            <ToolbarButton
-              icon={copyState === "html" ? Check : FileCode2}
-              label={copyState === "html" ? "Copied HTML" : "Copy HTML"}
-              onClick={runAndClose(onCopyHtml)}
-              shortcut="⌘/Ctrl ⇧ H"
-              ariaShortcut="Meta+Shift+H Control+Shift+H"
-              className="h-10 w-full justify-start border-0 shadow-none"
-              disabled={isEmpty}
-            />
-            <ToolbarButton
-              icon={Download}
-              label="Download .md"
-              onClick={runAndClose(onDownload)}
-              shortcut="⌘/Ctrl S"
-              ariaShortcut="Meta+S Control+S"
-              className="h-10 w-full justify-start border-0 shadow-none"
-              disabled={isEmpty}
-            />
-            <ToolbarButton
-              icon={FileDown}
-              label="Export HTML"
-              onClick={runAndClose(onExportHtml)}
-              className="h-10 w-full justify-start border-0 shadow-none"
-              disabled={isEmpty}
-            />
-            <ToolbarButton
-              icon={Printer}
-              label="Print / PDF"
-              onClick={runAndClose(onPrint)}
-              className="h-10 w-full justify-start border-0 shadow-none"
-              disabled={isEmpty}
-            />
-            <div className="my-1 border-t border-border" />
-            <ToolbarButton
-              icon={Trash2}
-              label="Clear"
-              onClick={runAndClose(onClear)}
-              className="h-10 w-full justify-start border-0 shadow-none"
-              disabled={isEmpty}
-              tone="danger"
-            />
+      <footer className="flex h-11 shrink-0 items-center justify-between gap-2 border-t border-border bg-background px-3 text-[11px] text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-3">
+          {!documentsOpen ? <IconButton icon={ChevronRight} label="Show Documents" onClick={() => setDocumentsOpen(true)} compact /> : null}
+          <span className="hidden items-center gap-1.5 2xl:flex"><ShieldCheck className="h-3.5 w-3.5 text-accent" />All documents stay on this device.</span>
+          <span>Ln {cursor.line}, Col {cursor.column}</span>
+          <span className="hidden sm:inline">UTF-8</span>
+          <span className="hidden md:inline">Markdown</span>
+          <span className="hidden md:inline">{stats.words.toLocaleString()} words</span>
+          <span role="status" className={cn("h-1.5 w-1.5 rounded-full", saveState === "saved" ? "bg-accent" : saveState === "saving" ? "bg-amber-400" : "bg-red-400")}>
+            <span className="sr-only">{saveState}</span>
+          </span>
+        </div>
+        <div className="relative flex items-center gap-1">
+          <button type="button" onClick={() => setExportOpen((open) => !open)} className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10">
+            Export <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+          <div className="hidden h-8 overflow-hidden rounded-md border border-border xl:flex">
+            <QuickExport label=".md" onClick={downloadMarkdown} />
+            <QuickExport label=".html" onClick={exportHtml} />
+            <QuickExport label=".pdf" onClick={() => window.print()} />
+            <QuickExport label="…" onClick={() => setExportOpen(true)} ariaLabel="More export options" />
           </div>
-        ) : null}
+          {exportOpen ? (
+            <div className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-64 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl">
+              <MenuAction icon={Clipboard} label="Copy Markdown" onClick={() => void copyMarkdown()} />
+              <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
+              <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
+              {activeDocument?.assetIds.length ? <MenuAction icon={FileArchive} label="Export Markdown + assets" onClick={() => void exportDocumentBundle()} /> : null}
+              <MenuAction icon={Share2} label="Copy share link" onClick={() => void shareDocument()} />
+              <MenuAction icon={FileArchive} label="Export workspace backup" onClick={() => void downloadWorkspaceBackup()} />
+              <MenuAction icon={ArchiveRestore} label="Restore workspace backup" onClick={() => backupInputRef.current?.click()} />
+              <MenuAction icon={FileText} label="Print / save PDF" onClick={() => window.print()} />
+            </div>
+          ) : null}
+          {!outlineOpen ? <IconButton icon={ChevronLeft} label="Show Outline" onClick={() => setOutlineOpen(true)} compact /> : null}
+        </div>
+      </footer>
+
+      {notice ? <Notice message={notice} onClose={() => setNotice(null)} /> : null}
+      {updateAvailable ? <Notice message="A new Markdown Lens version is ready. Reload when convenient." onClose={() => setUpdateAvailable(false)} /> : null}
+      {commandOpen ? <CommandPalette search={commandSearch} onSearch={setCommandSearch} commands={visibleCommands} onClose={() => { setCommandOpen(false); setCommandSearch(""); }} /> : null}
+      {formatGuideOpen ? <FormatGuide onClose={() => setFormatGuideOpen(false)} /> : null}
+      {reportOpen && activeDocument?.conversion ? <ConversionReportDialog document={activeDocument} onClose={() => setReportOpen(false)} /> : null}
+    </div>
+  );
+}
+
+function WorkspacePanel({ label, icon: Icon, detail, children }: { label: string; icon: typeof FileText; detail: string; children: React.ReactNode }) {
+  return (
+    <section className="flex min-h-0 min-w-0 flex-col bg-panel" aria-label={label}>
+      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-surface px-3">
+        <span className="flex items-center gap-2 text-xs font-semibold"><Icon className="h-3.5 w-3.5 text-accent" />{label}</span>
+        <span className="text-[11px] text-muted-foreground">{detail}</span>
+      </header>
+      <div className="min-h-0 flex-1">{children}</div>
+    </section>
+  );
+}
+
+function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicate, onDelete, onRestore, onDeleteForever }: { document: DocumentRecord; active: boolean; trashed: boolean; onSelect: () => void; onRename: () => void; onDuplicate: () => void; onDelete: () => void; onRestore: () => void; onDeleteForever: () => void }) {
+  return (
+    <div className={cn("group mb-0.5 flex items-center rounded-md border border-transparent", active && !trashed && "border-accent/45 bg-accent/10")}>
+      <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-2 text-left focus:outline-none">
+        <FileText className={cn("h-3.5 w-3.5 shrink-0", active ? "text-accent" : "text-muted-foreground")} />
+        <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground">{relativeTime(document.updatedAt)}</span>
+      </button>
+      <div className="mr-1 hidden items-center group-hover:flex group-focus-within:flex">
+        {trashed ? (
+          <><IconButton icon={RotateCcw} label="Restore document" onClick={onRestore} compact /><IconButton icon={Trash2} label="Delete permanently" onClick={onDeleteForever} compact /></>
+        ) : (
+          <><IconButton icon={Copy} label="Duplicate document" onClick={onDuplicate} compact /><IconButton icon={Trash2} label="Move to Trash" onClick={onDelete} compact /></>
+        )}
       </div>
     </div>
   );
 }
 
-function MenuButton({
-  icon: Icon,
-  label,
-  open,
-  onClick,
-}: {
-  icon: LucideIcon;
-  label: string;
-  open: boolean;
-  onClick: () => void;
-}) {
+function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onClear: () => void }) {
+  if (!jobs.length) return (
+    <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+      <FileUp className="mx-auto mb-2 h-4 w-4" />Drop files anywhere to import
+    </div>
+  );
+  const active = jobs.find((job) => job.state === "running" || job.state === "queued") ?? jobs.at(-1)!;
+  const percent = active.progress?.current && active.progress?.total ? Math.round((active.progress.current / active.progress.total) * 100) : null;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-expanded={open}
-      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-panel px-3 text-sm font-medium shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
-    >
-      <Icon className="h-4 w-4" aria-hidden />
-      {label}
-      <ChevronDown className={cn("h-3.5 w-3.5 transition", open && "rotate-180")} aria-hidden />
-    </button>
+    <div className="border-t border-border p-2">
+      <div className="border border-border bg-surface p-2.5">
+        <div className="flex items-center gap-2 text-xs"><FileText className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion"><X className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check className="h-3.5 w-3.5 text-accent" /> : null}</div>
+        {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted"><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
+        <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")}>{active.error ?? active.progress?.message ?? active.state}</p>
+        <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><button type="button" onClick={onClear} className="hover:text-foreground">Clear finished</button></div>
+      </div>
+    </div>
   );
 }
 
-function useKeyboardShortcuts({
-  hasContent,
-  download,
-  copyMarkdown,
-  copyHtml,
-  showPreview,
-  showEditor,
-  loadSample,
-}: KeyboardShortcutActions) {
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (
-        event.defaultPrevented ||
-        event.isComposing ||
-        event.repeat ||
-        event.altKey ||
-        (!event.metaKey && !event.ctrlKey)
-      ) {
-        return;
-      }
-
-      const key = event.key.toLowerCase();
-      let action: (() => void) | undefined;
-
-      if (!event.shiftKey && key === "s") {
-        if (!hasContent) return;
-        action = download;
-      } else if (event.shiftKey && key === "c") {
-        if (!hasContent) return;
-        action = copyMarkdown;
-      } else if (event.shiftKey && key === "h") {
-        if (!hasContent) return;
-        action = copyHtml;
-      } else if (event.shiftKey && key === "p") {
-        action = showPreview;
-      } else if (event.shiftKey && key === "e") {
-        action = showEditor;
-      } else if (event.shiftKey && key === "l") {
-        action = loadSample;
-      }
-
-      if (!action) return;
-
-      event.preventDefault();
-      action();
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [copyHtml, copyMarkdown, download, hasContent, loadSample, showEditor, showPreview]);
-}
-
-function sanitizePreviewHtml(preview: HTMLDivElement) {
-  const clone = preview.cloneNode(true) as HTMLDivElement;
-  clone
-    .querySelectorAll("script, style, link, meta, base, iframe, object, embed, form, input, button")
-    .forEach((element) => element.remove());
-
-  clone.querySelectorAll("*").forEach((element) => {
-    for (const attribute of Array.from(element.attributes)) {
-      const name = attribute.name.toLowerCase();
-      const value = attribute.value.trim().toLowerCase();
-      const isEventHandler = name.startsWith("on");
-      const isUnsafeUrl =
-        (name === "href" || name === "src" || name === "xlink:href") &&
-        (value.startsWith("javascript:") || value.startsWith("data:text/html"));
-
-      if (isEventHandler || name === "srcdoc" || isUnsafeUrl) {
-        element.removeAttribute(attribute.name);
-      }
-    }
-  });
-
-  clone.querySelectorAll("a").forEach((anchor) => {
-    anchor.setAttribute("rel", "noreferrer noopener");
-  });
-
-  return clone.innerHTML;
-}
-
-function getDocumentTitle(markdown: string) {
-  const heading = markdown.match(/^#\s+(.+)$/m)?.[1]?.trim();
-  return heading || "Markdown Lens Document";
-}
-
-function toFileName(title: string) {
-  const normalized = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return normalized || "markdown-lens-document";
-}
-
-function downloadBlob(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = fileName;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
+function CommandPalette({ search, onSearch, commands, onClose }: { search: string; onSearch: (value: string) => void; commands: Array<{ label: string; hint?: string; action: () => void }>; onClose: () => void }) {
   return (
-    <span className="inline-flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md border border-border/80 bg-surface px-2 shadow-sm md:h-8 md:justify-start md:px-2.5">
-      <span>{label}</span>
-      <span className="truncate text-foreground">{value}</span>
-    </span>
+    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div role="dialog" aria-modal="true" aria-label="Command palette" className="w-full max-w-xl overflow-hidden rounded-lg border border-border bg-panel shadow-2xl">
+        <label className="flex h-12 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 text-accent" /><input autoFocus value={search} onChange={(event) => onSearch(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") onClose(); }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
+        <div className="max-h-[50vh] overflow-y-auto p-1.5">{commands.length ? commands.map((command) => <button key={command.label} type="button" onClick={() => { command.action(); onClose(); }} className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm hover:bg-muted"><span>{command.label}</span>{command.hint ? <kbd className="text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No matching commands.</p>}</div>
+      </div>
+    </div>
   );
+}
+
+function FormatGuide({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="formats-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4"><div><h2 id="formats-title" className="text-lg font-semibold">Local format support</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Files are processed in this browser. Nothing is uploaded.</p></div><IconButton icon={X} label="Close format guide" onClick={onClose} /></div>
+        <div className="mt-5 divide-y divide-border border-y border-border">{converterCapabilities.map((capability) => <div key={capability.label} className="grid grid-cols-[120px_1fr] gap-4 py-3 text-sm"><strong>{capability.label}</strong><span className="text-muted-foreground">{capability.extensions}</span></div>)}</div>
+        <p className="mt-4 text-xs leading-5 text-muted-foreground">Legacy DOC, PPT, and XLS files must be exported to their modern formats. PDF and Office layout is inferred and should be reviewed after conversion.</p>
+      </div>
+    </div>
+  );
+}
+
+function ConversionReportDialog({ document, onClose }: { document: DocumentRecord; onClose: () => void }) {
+  const report = document.conversion!;
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="report-title" className="max-h-[80vh] w-full max-w-xl overflow-y-auto rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4"><div><h2 id="report-title" className="text-lg font-semibold">Conversion report</h2><p className="mt-1 text-sm text-muted-foreground">{document.source?.name} · processed locally</p></div><IconButton icon={X} label="Close conversion report" onClick={onClose} /></div>
+        <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden border border-border bg-border text-sm">
+          <ReportFact label="Converter" value={report.converterId} />
+          <ReportFact label="OCR" value={report.usedOcr ? "Used locally" : "Not used"} />
+          {Object.entries(report.statistics).map(([label, value]) => <ReportFact key={label} label={label} value={String(value)} />)}
+        </dl>
+        <ReportList title="Warnings" items={report.warnings} empty="No conversion warnings." />
+        <ReportList title="Omitted content" items={report.omitted} empty="No omitted content was reported." />
+        <p className="mt-5 text-xs leading-5 text-muted-foreground">Document conversion is structural rather than visually lossless. Review complex tables, columns, diagrams, and embedded media before publishing.</p>
+      </div>
+    </div>
+  );
+}
+
+function ReportFact({ label, value }: { label: string; value: string }) {
+  return <div className="bg-panel p-3"><dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-mono text-xs">{value}</dd></div>;
+}
+
+function ReportList({ title, items, empty }: { title: string; items: string[]; empty: string }) {
+  return <section className="mt-5"><h3 className="text-sm font-semibold">{title}</h3>{items.length ? <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-muted-foreground">{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">{empty}</p>}</section>;
+}
+
+function Notice({ message, onClose }: { message: string; onClose: () => void }) {
+  useEffect(() => { const timeout = window.setTimeout(onClose, 6000); return () => window.clearTimeout(timeout); }, [onClose]);
+  return <div role="status" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl"><span>{message}</span><button type="button" onClick={onClose} aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button></div>;
+}
+
+function RailHeader({ label, onClose }: { label: string; onClose: () => void }) {
+  return <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3"><span className="text-xs font-semibold">{label}</span><IconButton icon={X} label={`Hide ${label}`} onClick={onClose} compact /></header>;
+}
+
+function TopButton({ icon: Icon, label, onClick, emphasis, active, className }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; className?: string }) {
+  return <button type="button" onClick={onClick} className={cn("h-9 items-center gap-2 rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" />{label}</button>;
+}
+
+function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: typeof FileText; label: string; onClick: () => void; compact?: boolean; className?: string }) {
+  return <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring", compact ? "h-7 w-7" : "h-9 w-9", className)}><Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} /></button>;
+}
+
+function MenuAction({ icon: Icon, label, onClick }: { icon: typeof FileText; label: string; onClick: () => void }) {
+  return <button type="button" onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
+}
+
+function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
+  return <button type="button" onClick={onClick} aria-label={ariaLabel} className="min-w-12 border-r border-border px-2.5 font-mono text-[10px] text-muted-foreground last:border-r-0 hover:bg-muted hover:text-foreground">{label}</button>;
+}
+
+function PanelLoading({ label }: { label: string }) {
+  return <div className="flex h-full items-center justify-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{label}</div>;
+}
+
+function relativeTime(timestamp: number) {
+  const difference = Date.now() - timestamp;
+  if (difference < 60_000) return "now";
+  if (difference < 3_600_000) return `${Math.floor(difference / 60_000)}m`;
+  if (difference < 86_400_000) return `${Math.floor(difference / 3_600_000)}h`;
+  return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(timestamp);
 }

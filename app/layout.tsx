@@ -29,6 +29,13 @@ export const metadata: Metadata = {
   category: "DeveloperApplication",
   keywords: siteConfig.keywords,
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+  },
   robots: {
     index: true,
     follow: true,

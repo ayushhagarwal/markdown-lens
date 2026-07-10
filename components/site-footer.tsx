@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Eye, Github } from "lucide-react";
+import { Github } from "lucide-react";
+import { BrandIcon } from "@/components/brand-icon";
 import { siteConfig } from "@/lib/site";
 
 const footerLinks = [
@@ -8,6 +9,8 @@ const footerLinks = [
     links: [
       { href: "/pdf-to-markdown", label: "PDF to Markdown" },
       { href: "/word-to-markdown", label: "Word to Markdown" },
+      { href: "/pptx-to-markdown", label: "PPTX to Markdown" },
+      { href: "/excel-to-markdown", label: "Excel to Markdown" },
       { href: "/editor", label: "Open the editor" },
     ],
   },
@@ -15,6 +18,7 @@ const footerLinks = [
     title: "Resources",
     links: [
       { href: "/markdown-cheatsheet", label: "Markdown cheatsheet" },
+      { href: "/supported-formats", label: "Supported formats" },
       { href: "/llms.txt", label: "AI-readable summary" },
       { href: siteConfig.githubUrl, label: "Source on GitHub", external: true },
     ],
@@ -30,9 +34,7 @@ export function SiteFooter() {
             href="/"
             className="inline-flex items-center gap-2.5 rounded-md font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-panel text-accent shadow-sm">
-              <Eye className="h-[18px] w-[18px]" aria-hidden />
-            </span>
+            <BrandIcon className="h-9 w-9 shadow-sm" />
             <span>Markdown Lens</span>
           </Link>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
