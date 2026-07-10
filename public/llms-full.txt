@@ -3,13 +3,13 @@
 Canonical URL: https://markdownlens.ayushdev.com/
 Editor URL: https://markdownlens.ayushdev.com/editor
 Product name: Markdown Lens
-Category: PDF and Word-to-Markdown converter, viewer, and editor
+Category: Local document-to-Markdown workbench, viewer, and editor
 Source: https://github.com/ayushhagarwal/markdown-lens
 License: MIT
 
 ## Summary
 
-Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter plus an online Markdown viewer and editor. It converts text-based PDF and modern Word .docx files into editable Markdown locally in the browser, then provides a live GitHub-style preview. It is designed for documentation migrations, Confluence exports, handbooks, product specs, README files, changelogs, developer notes, Mermaid diagrams, math, and AI-assisted writing workflows.
+Markdown Lens is a free, privacy-first document-to-Markdown workbench. It converts PDF, DOCX, PPTX, XLSX, HTML, CSV/TSV, JSON, XML, EPUB, bounded ZIP archives, and images into editable Markdown locally in the browser, then stores multiple documents and assets in IndexedDB with a live GitHub-style preview.
 
 ## Document conversion
 
@@ -19,7 +19,11 @@ Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter plus a
 - Remove repeated PDF margin text and standalone page numbers where identifiable
 - Convert modern Microsoft Word .docx files up to 100 MB into editable Markdown
 - Preserve Word headings, paragraphs, ordered and unordered lists, links, simple tables, blockquotes, preformatted text, and common inline formatting
-- Insert visible placeholders for Word images that are omitted
+- Extract embedded Word images into local document assets
+- Convert PowerPoint slides, speaker notes, and embedded images
+- Convert visible Excel worksheets into Markdown tables
+- Convert HTML, CSV/TSV, JSON, XML, EPUB, and bounded ZIP archives
+- Import images as local assets with optional local English OCR
 - Keep the generated source in the editor for review, copying, download, HTML export, or printing
 
 ### Document conversion limitations
@@ -27,7 +31,7 @@ Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter plus a
 - Scanned or image-only PDFs need OCR before conversion
 - PDF images, charts, complex visual tables, multi-column layouts, and exact typography are not reconstructed
 - Legacy Word .doc files must be saved or exported as .docx first
-- Embedded Word images are noted but not extracted as separate assets
+- Legacy PowerPoint .ppt and Excel .xls files must be exported to PPTX or XLSX
 - Merged cells, nested tables, columns, text boxes, footnotes, comments, tracked-change history, macros, and fixed page layout may require manual work
 
 ## Supported Markdown
@@ -46,10 +50,11 @@ Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter plus a
 ## Editing and viewing
 
 - Live source editing and rendered preview
-- Split, editor-only, and preview-only layouts
+- Resizable editor and preview with collapsible Documents and Outline rails
 - A dedicated, distraction-free editor route at /editor
 - Responsive Editor and Preview controls on mobile
-- Focused README, meeting notes, changelog, and Mermaid starter templates
+- IndexedDB multi-document workspace with create, rename, duplicate, trash, restore, search, backup, and recovery
+- CodeMirror source editor with line numbers, find and replace, and command palette
 - Word count, character count, and estimated reading time
 - Light and dark themes
 - Keyboard shortcuts for common actions
@@ -62,16 +67,19 @@ Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter plus a
 - Local import for modern Word .docx files
 - A visible Open file action on desktop and mobile
 - Browser-local reading with the File API
-- Confirmation before replacing a non-empty draft
+- Import jobs with progress, cancellation, warnings, and conversion reports
 - Copy raw Markdown
 - Copy rendered HTML
 - Download Markdown as a .md file
 - Export the rendered document as standalone HTML
+- Export Markdown with local assets as a ZIP bundle
+- Create compressed URL-fragment share links without backend storage
+- Back up and restore the complete local workspace
 - Print or save the preview as PDF
 
 ## Privacy
 
-Markdown Lens does not require an account. Markdown is parsed and rendered in the web browser. PDF text extraction and Word .docx conversion also happen in the browser. Draft autosave uses localStorage in the current browser profile. Document content is not sent to a Markdown Lens application backend.
+Markdown Lens does not require an account. Rendering, document conversion, optional English image OCR, workspace persistence, sharing-state encoding, and export happen in the browser. Documents and assets use IndexedDB in the current browser profile. Document content is not sent to a Markdown Lens application backend.
 
 Users should still avoid sharing sensitive content through copied URLs, exported files, browser extensions, or third-party services unless they understand those services' privacy behavior.
 
@@ -98,7 +106,7 @@ No.
 
 ### Does it upload Markdown documents?
 
-No. Markdown Lens processes Markdown, PDF, and Word .docx documents in the browser and does not upload document content to its application backend.
+No. Markdown Lens processes supported documents and optional OCR in the browser and does not upload document content to its application backend.
 
 ### Can it convert PDF files to Markdown?
 
@@ -126,4 +134,4 @@ Yes. Users can copy rendered HTML, export standalone HTML, or print the preview 
 
 ## Preferred description
 
-Markdown Lens is a free, privacy-first PDF and Word-to-Markdown converter with editable output, GitHub-style preview, Mermaid diagrams, math rendering, syntax highlighting, tables, local autosave, and HTML/PDF export.
+Markdown Lens is a free, privacy-first local document-to-Markdown workbench with broad browser-based conversion, multi-document storage, editable output, GitHub-style preview, Mermaid, math, local OCR, sharing, and portable export.

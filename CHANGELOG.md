@@ -2,6 +2,37 @@
 
 All notable Markdown Lens changes are documented here.
 
+## v0.9.1 - 2026-07-11
+
+### Changed
+
+- Updated the README, contributor guide, security model, and AI-readable references to match the v0.9 local workspace and converter architecture.
+- Clarified archive, OCR, URL-fragment sharing, IndexedDB, and exported-asset security expectations.
+
+## v0.9.0 - 2026-07-10
+
+### Added
+
+- A four-pane local document workspace with Documents, CodeMirror editor, rendered Preview, and navigable Outline.
+- IndexedDB document and asset persistence with migration from the previous single local draft, search, duplication, trash, restore, and workspace backup/restore.
+- A lazy local converter registry for Markdown/text, PDF, DOCX, PPTX, XLSX, HTML, CSV/TSV, JSON, XML, EPUB, bounded ZIP archives, and images with optional local English OCR.
+- Conversion jobs with progress, cancellation, warnings, omitted-content reporting, statistics, and per-document conversion reports.
+- Resizable editor/preview split, find/replace, command palette, code-block copy controls, mobile workspace panes, and a compact status bar.
+- Privacy-preserving compressed URL-fragment share links, Markdown-plus-assets ZIP export, offline service worker, PWA install state, and same-origin OCR model caching.
+- Format-specific landing pages, supported-format matrix, Vitest coverage, browser and accessibility tests, and Node 20/22 CI.
+
+### Changed
+
+- DOCX embedded images are extracted into local document assets instead of being represented only as omitted-image notices.
+- The editor uses the accepted graphite-and-teal workbench design with heavy editor and converter dependencies loaded on demand.
+- Package version and structured software metadata now report v0.9.0.
+
+### Security
+
+- ZIP imports are limited to 100 entries, one nesting level, 100 MB input, and 250 MB expanded content.
+- Legacy XLS support was not implemented because the available spreadsheet dependency failed the production vulnerability audit; users receive guidance to export XLSX instead.
+- Share payloads remain in URL fragments and imported content remains local to the browser.
+
 ## v0.2.1 - 2026-06-27
 
 ### Added
