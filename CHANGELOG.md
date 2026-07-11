@@ -2,6 +2,13 @@
 
 All notable Markdown Lens changes are documented here.
 
+## v0.9.4 - 2026-07-11
+
+### Testing
+
+- Added desktop and mobile homepage contracts for metadata, structured data, theme initialization, mobile navigation, and responsive product-preview tabs.
+- Added homepage axe coverage requiring no serious or critical accessibility violations.
+
 ## v0.9.3 - 2026-07-11
 
 ### Changed
