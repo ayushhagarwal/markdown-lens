@@ -2,6 +2,18 @@
 
 All notable Markdown Lens changes are documented here.
 
+## v0.9.2 - 2026-07-11
+
+### Changed
+
+- Simplified the shared marketing header and footer around Formats, Guide, Security, GitHub, and one workspace action.
+- Made graphite the first-visit homepage theme while preserving saved theme preferences and the adaptive light presentation.
+- Updated the public product title to position Markdown Lens as a local document-to-Markdown workspace.
+
+### Accessibility
+
+- Added a pre-hydration theme bootstrap to prevent a visible light-to-dark flash.
+
 ## v0.9.1 - 2026-07-11
 
 ### Changed
