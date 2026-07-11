@@ -2,7 +2,7 @@ export const siteConfig = {
   name: "Markdown Lens",
   url: "https://markdownlens.ayushdev.com",
   githubUrl: "https://github.com/ayushhagarwal/markdown-lens",
-  title: "Private Document to Markdown Workbench | Markdown Lens",
+  title: "Local Document to Markdown Workspace | Markdown Lens",
   description:
     "Markdown Lens is a free, privacy-first document-to-Markdown workbench with local PDF, Word, PowerPoint, Excel, HTML, EPUB, data, archive, and image OCR conversion plus editable previews.",
   shortDescription:

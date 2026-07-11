@@ -8,12 +8,13 @@ type Theme = "light" | "dark";
 const THEME_KEY = "markdown-lens:theme";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const resolvedTheme = savedTheme ?? (prefersDark ? "dark" : "light");
+    const homepageDefault = window.location.pathname === "/";
+    const resolvedTheme = savedTheme ?? (homepageDefault || prefersDark ? "dark" : "light");
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(resolvedTheme);

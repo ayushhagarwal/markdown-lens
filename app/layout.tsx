@@ -93,6 +93,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k='markdown-lens:theme';var s=localStorage.getItem(k);var d=s?s==='dark':location.pathname==='/'||matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light'}catch(e){}})()`,
+          }}
+        />
         <meta
           name="google-site-verification"
           content="Vy20wFtkl3VppdiSp2xy7A4qO22I1Ym5wJfrYb6GB4U"

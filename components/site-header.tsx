@@ -18,22 +18,16 @@ export function SiteHeader() {
 
         <nav className="flex items-center gap-1" aria-label="Main navigation">
           <Link
-            href="/editor"
-            className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+            href="/supported-formats"
+            className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
           >
-            Editor
+            Formats
           </Link>
           <Link
             href="/markdown-cheatsheet"
-            className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
-          >
-            Cheatsheet
-          </Link>
-          <Link
-            href="/supported-formats"
             className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
           >
-            Formats
+            Guide
           </Link>
           <a
             href={siteConfig.githubUrl}
@@ -45,6 +39,12 @@ export function SiteHeader() {
             <Github className="h-[18px] w-[18px]" aria-hidden />
           </a>
           <ThemeToggle />
+          <Link
+            href="/editor"
+            className="ml-1 hidden h-10 items-center rounded-md border border-accent px-4 text-sm font-semibold text-accent transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+          >
+            Open workspace
+          </Link>
         </nav>
       </div>
     </header>

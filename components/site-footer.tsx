@@ -1,82 +1,22 @@
 import Link from "next/link";
-import { Github } from "lucide-react";
 import { BrandIcon } from "@/components/brand-icon";
 import { siteConfig } from "@/lib/site";
-
-const footerLinks = [
-  {
-    title: "Convert",
-    links: [
-      { href: "/pdf-to-markdown", label: "PDF to Markdown" },
-      { href: "/word-to-markdown", label: "Word to Markdown" },
-      { href: "/pptx-to-markdown", label: "PPTX to Markdown" },
-      { href: "/excel-to-markdown", label: "Excel to Markdown" },
-      { href: "/editor", label: "Open the editor" },
-    ],
-  },
-  {
-    title: "Resources",
-    links: [
-      { href: "/markdown-cheatsheet", label: "Markdown cheatsheet" },
-      { href: "/supported-formats", label: "Supported formats" },
-      { href: "/llms.txt", label: "AI-readable summary" },
-      { href: siteConfig.githubUrl, label: "Source on GitHub", external: true },
-    ],
-  },
-] as const;
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-border/75 bg-surface">
-      <div className="mx-auto grid w-full max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1fr_auto_auto] lg:px-8">
-        <div className="max-w-md">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2.5 rounded-md font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <BrandIcon className="h-9 w-9 shadow-sm" />
-            <span>Markdown Lens</span>
-          </Link>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            Free, open-source document-to-Markdown conversion and Markdown preview. Your files are
-            processed locally in your browser.
-          </p>
-          <a
-            href={siteConfig.githubUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Github className="h-4 w-4" aria-hidden />
-            Free and open source
-          </a>
-        </div>
-
-        {footerLinks.map((group) => (
-          <nav key={group.title} aria-label={`${group.title} links`} className="min-w-40">
-            <h2 className="text-sm font-semibold">{group.title}</h2>
-            <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-              {group.links.map((link) => (
-                <li key={link.href}>
-                  {"external" in link && link.external ? (
-                    <a
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="transition hover:text-foreground"
-                    >
-                      {link.label}
-                    </a>
-                  ) : (
-                    <Link href={link.href} className="transition hover:text-foreground">
-                      {link.label}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </nav>
-        ))}
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 text-sm sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <Link href="/" className="inline-flex items-center gap-2.5 font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <BrandIcon className="h-8 w-8" />
+          Markdown Lens
+        </Link>
+        <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-muted-foreground" aria-label="Footer navigation">
+          <Link href="/supported-formats" className="transition hover:text-foreground">Formats</Link>
+          <Link href="/markdown-cheatsheet" className="transition hover:text-foreground">Guide</Link>
+          <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} className="transition hover:text-foreground">Security</a>
+          <a href={siteConfig.githubUrl} className="transition hover:text-foreground">GitHub</a>
+        </nav>
+        <p className="text-muted-foreground">Built locally. Shared openly.</p>
       </div>
     </footer>
   );
