@@ -2,6 +2,15 @@
 
 All notable Markdown Lens changes are documented here.
 
+## v0.9.3 - 2026-07-11
+
+### Changed
+
+- Rebuilt the homepage around a restrained product-led hero, a continuous local conversion workflow, and a compact privacy/open-source close.
+- Replaced crowded capability and FAQ sections with dedicated format and guide links.
+- Added a responsive code-native workspace preview with mobile Markdown and Preview tabs.
+- Removed homepage FAQ structured data while preserving WebSite, WebPage, and SoftwareApplication metadata.
+
 ## v0.9.2 - 2026-07-11
 
 ### Changed
