@@ -86,8 +86,15 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
 }
 
 function CopyableCodeBlock({ children }: { children: React.ReactNode }) {
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const text = extractText(children);
+
+  useEffect(() => {
+    if (copyStatus === "idle") return;
+    const timeout = window.setTimeout(() => setCopyStatus("idle"), 1600);
+    return () => window.clearTimeout(timeout);
+  }, [copyStatus]);
+
   return (
     <div className="group/code relative">
       <pre>{children}</pre>
@@ -96,18 +103,20 @@ function CopyableCodeBlock({ children }: { children: React.ReactNode }) {
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(text.replace(/\n$/, ""));
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 1600);
+            setCopyStatus("copied");
           } catch {
-            setCopied(false);
+            setCopyStatus("error");
           }
         }}
-        className="absolute right-2 top-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-black/60 px-2 text-[11px] font-medium text-slate-200 opacity-0 backdrop-blur transition hover:bg-black/80 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-accent group-hover/code:opacity-100"
+        className="absolute right-2 top-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-black/60 px-2 text-[11px] font-medium text-slate-200 opacity-100 backdrop-blur transition hover:bg-black/80 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-accent sm:opacity-0 sm:group-hover/code:opacity-100"
         aria-label="Copy code block"
       >
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
-        {copied ? "Copied" : "Copy"}
+        {copyStatus === "copied" ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
+        {copyStatus === "copied" ? "Copied" : copyStatus === "error" ? "Copy failed" : "Copy"}
       </button>
+      <span className="sr-only" role="status" aria-live="polite">
+        {copyStatus === "copied" ? "Code copied to clipboard." : copyStatus === "error" ? "Code could not be copied." : ""}
+      </span>
     </div>
   );
 }
