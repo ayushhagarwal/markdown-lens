@@ -28,7 +28,6 @@ import {
   FilePlus2,
   FileText,
   FileUp,
-  Github,
   HardDrive,
   Loader2,
   Menu,
@@ -42,6 +41,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { GithubIcon } from "@/components/github-icon";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "@/components/brand-icon";
@@ -574,7 +574,7 @@ export function MarkdownLensApp() {
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
           <a href="https://github.com/ayushhagarwal/markdown-lens" target="_blank" rel="noreferrer" className="hidden h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground sm:flex" aria-label="View on GitHub">
-            <Github className="h-4 w-4" />
+            <GithubIcon className="h-4 w-4" />
           </a>
           <IconButton icon={Menu} label="Open commands" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
