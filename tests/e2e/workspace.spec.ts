@@ -11,6 +11,29 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
 });
 
+test("desktop split persists keyboard resizing and can be reset", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop workspace interaction");
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("markdown-lens:split-ratio")) {
+      localStorage.setItem("markdown-lens:split-ratio", "62");
+    }
+  });
+  await page.goto("/editor");
+
+  const separator = page.getByRole("separator", { name: "Resize editor and preview" });
+  await expect(separator).toHaveAttribute("aria-valuenow", "62");
+  await separator.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(separator).toHaveAttribute("aria-valuenow", "64");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("markdown-lens:split-ratio"))).toBe("64");
+
+  await page.reload();
+  await expect(separator).toHaveAttribute("aria-valuenow", "64");
+  await page.getByRole("button", { name: "Reset split" }).click();
+  await expect(separator).toHaveAttribute("aria-valuenow", "50");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("markdown-lens:split-ratio"))).toBeNull();
+});
+
 test("@a11y editor has no serious accessibility violations", async ({ page }) => {
   await page.goto("/editor");
   await expect(page.getByRole("main")).toBeVisible();

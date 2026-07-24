@@ -464,8 +464,7 @@ export function MarkdownLensApp() {
       const bounds = centralRef.current?.getBoundingClientRect();
       if (!bounds) return;
       const ratio = Math.min(70, Math.max(30, ((clientX - bounds.left) / bounds.width) * 100));
-      setSplitRatio(ratio);
-      localStorage.setItem(SPLIT_KEY, String(ratio));
+      updateSplitRatio(ratio);
     };
     const handleMove = (moveEvent: PointerEvent) => update(moveEvent.clientX);
     const handleUp = () => {
@@ -476,12 +475,23 @@ export function MarkdownLensApp() {
     window.addEventListener("pointerup", handleUp);
   }
 
+  function updateSplitRatio(ratio: number) {
+    setSplitRatio(ratio);
+    localStorage.setItem(SPLIT_KEY, String(ratio));
+  }
+
+  function resetSplitRatio() {
+    setSplitRatio(50);
+    localStorage.removeItem(SPLIT_KEY);
+  }
+
   const commands = [
       { label: "New document", hint: "⌘N", action: () => void createNewDocument() },
       { label: "Open or convert", hint: "⌘O", action: () => fileInputRef.current?.click() },
       { label: "Find and replace", hint: "⌘F", action: () => editorActions.current?.openSearch() },
       { label: "Show Documents", action: () => setDocumentsOpen(true) },
       { label: "Show Outline", action: () => setOutlineOpen(true) },
+      { label: "Reset editor and preview split", action: resetSplitRatio },
       { label: "Download Markdown", hint: "⌘S", action: downloadMarkdown },
       { label: "Copy Markdown", action: () => void copyMarkdown() },
       { label: "Create private share link", action: () => void shareDocument() },
@@ -653,12 +663,13 @@ export function MarkdownLensApp() {
               aria-valuemax={70}
               aria-valuenow={Math.round(splitRatio)}
               onPointerDown={beginResize}
+              onDoubleClick={resetSplitRatio}
+              title="Drag or use arrow keys to resize. Double-click to reset."
               onKeyDown={(event) => {
                 if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
                 event.preventDefault();
                 const next = event.key === "Home" ? 30 : event.key === "End" ? 70 : Math.min(70, Math.max(30, splitRatio + (event.key === "ArrowLeft" ? -2 : 2)));
-                setSplitRatio(next);
-                localStorage.setItem(SPLIT_KEY, String(next));
+                updateSplitRatio(next);
               }}
             >
               <span className="grid gap-0.5 opacity-50 group-hover:opacity-100" aria-hidden><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /></span>
@@ -717,6 +728,16 @@ export function MarkdownLensApp() {
           <span className="hidden sm:inline">UTF-8</span>
           <span className="hidden md:inline">Markdown</span>
           <span className="hidden md:inline">{stats.words.toLocaleString()} words</span>
+          {splitRatio !== 50 ? (
+            <button
+              type="button"
+              onClick={resetSplitRatio}
+              className="hidden h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring lg:flex"
+            >
+              <RotateCcw className="h-3 w-3" aria-hidden />
+              Reset split
+            </button>
+          ) : null}
           <span role="status" className={cn("h-1.5 w-1.5 rounded-full", saveState === "saved" ? "bg-accent" : saveState === "saving" ? "bg-amber-400" : "bg-red-400")}>
             <span className="sr-only">{saveState}</span>
           </span>
