@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Github, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BrandIcon } from "@/components/brand-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { GithubIcon } from "@/components/github-icon";
 import { siteConfig } from "@/lib/site";
 
 const links = [
@@ -90,7 +91,7 @@ export function HomepageHeader() {
               </Link>
             ))}
             <a href={siteConfig.githubUrl} className="flex items-center gap-2 rounded-md px-3 py-3 text-base hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              GitHub <Github className="h-4 w-4" aria-hidden />
+              GitHub <GithubIcon className="h-4 w-4" aria-hidden />
             </a>
             <Link href="/editor" onClick={() => setOpen(false)} className="mt-2 inline-flex h-12 items-center justify-center rounded-md bg-accent px-4 font-semibold text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Open workspace
