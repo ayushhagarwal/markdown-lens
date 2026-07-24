@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Github } from "lucide-react";
+import { GithubIcon } from "@/components/github-icon";
 import { BrandIcon } from "@/components/brand-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { siteConfig } from "@/lib/site";
@@ -36,7 +36,7 @@ export function SiteHeader() {
             className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="View Markdown Lens on GitHub"
           >
-            <Github className="h-[18px] w-[18px]" aria-hidden />
+            <GithubIcon className="h-[18px] w-[18px]" aria-hidden />
           </a>
           <ThemeToggle />
           <Link
