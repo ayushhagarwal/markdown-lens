@@ -34,6 +34,44 @@ test("desktop split persists keyboard resizing and can be reset", async ({ page 
   await expect.poll(() => page.evaluate(() => localStorage.getItem("markdown-lens:split-ratio"))).toBeNull();
 });
 
+test("fenced code blocks copy their source and announce success", async ({ page }, testInfo) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  await editor.fill("Inline `code` stays inline.\n\n```js\nconst answer = 42;\n```");
+  if (testInfo.project.name === "mobile") {
+    await page.getByRole("button", { name: "preview", exact: true }).click();
+  }
+
+  const copyButton = page.getByRole("button", { name: "Copy code block" });
+  await expect(copyButton).toHaveCount(1);
+  await expect(copyButton).toBeVisible();
+  if (testInfo.project.name === "mobile") await expect(copyButton).toHaveCSS("opacity", "1");
+  await copyButton.click();
+
+  await expect(page.getByText("Code copied to clipboard.", { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe("const answer = 42;");
+});
+
+test("fenced code blocks announce clipboard failures", async ({ page }, testInfo) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error("Clipboard unavailable")) },
+    });
+  });
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  await editor.fill("```text\nCopy me\n```");
+  if (testInfo.project.name === "mobile") {
+    await page.getByRole("button", { name: "preview", exact: true }).click();
+  }
+  await page.getByRole("button", { name: "Copy code block" }).click();
+
+  await expect(page.getByText("Code could not be copied.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy code block" })).toContainText("Copy failed");
+});
+
 test("@a11y editor has no serious accessibility violations", async ({ page }) => {
   await page.goto("/editor");
   await expect(page.getByRole("main")).toBeVisible();
