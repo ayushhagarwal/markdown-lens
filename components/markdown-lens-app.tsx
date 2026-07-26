@@ -135,7 +135,7 @@ export function MarkdownLensApp() {
   const [shareLink, setShareLink] = useState<ShareLinkPreview | null>(null);
   const [pendingSharedMarkdown, setPendingSharedMarkdown] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [applyServiceWorkerUpdate, setApplyServiceWorkerUpdate] = useState<(() => void) | null>(null);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [online, setOnline] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -575,7 +575,7 @@ export function MarkdownLensApp() {
         void importFiles(files);
       }}
     >
-      <ServiceWorkerRegister onUpdate={() => setUpdateAvailable(true)} />
+      <ServiceWorkerRegister onUpdate={(applyUpdate) => setApplyServiceWorkerUpdate(() => applyUpdate)} />
       <input
         ref={fileInputRef}
         type="file"
@@ -604,7 +604,7 @@ export function MarkdownLensApp() {
 
       <header className="flex h-[54px] shrink-0 items-center justify-between border-b border-border bg-background px-3">
         <div className="flex min-w-0 items-center gap-1">
-          <Link href="/" aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus:outline-none focus:ring-2 focus:ring-ring">
+          <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus:outline-none focus:ring-2 focus:ring-ring">
             <BrandIcon className="h-6 w-6" priority />
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
@@ -624,19 +624,22 @@ export function MarkdownLensApp() {
             {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "error" ? <HardDrive className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5 text-accent" />}
             {saveState === "saving" ? "Saving…" : saveState === "error" ? "Storage unavailable" : "Saved locally"}
           </span>
-          {!online ? <span className="hidden px-2 text-xs text-amber-400 md:inline">Offline</span> : null}
+          {!online ? <span role="status" aria-live="polite" aria-label="Offline. Changes remain on this device." className="px-1.5 text-[11px] text-amber-400 sm:px-2 sm:text-xs">Offline</span> : null}
           {installPrompt ? (
             <button
               type="button"
+              aria-label="Install Markdown Lens"
+              title="Install Markdown Lens"
               onClick={async () => {
                 await installPrompt.prompt();
                 const choice = await installPrompt.userChoice;
                 setInstallPrompt(null);
                 if (choice.outcome === "accepted") setNotice("Markdown Lens was installed.");
               }}
-              className="hidden h-9 items-center rounded-md px-3 text-xs text-muted-foreground hover:bg-muted hover:text-foreground md:flex"
+              className="flex h-9 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground sm:px-3"
             >
-              Install
+              <Download className="h-3.5 w-3.5" aria-hidden />
+              <span className="hidden sm:inline">Install</span>
             </button>
           ) : null}
           <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted lg:flex">
@@ -829,7 +832,18 @@ export function MarkdownLensApp() {
       </footer>
 
       {notice ? <Notice message={notice} onClose={() => setNotice(null)} /> : null}
-      {updateAvailable ? <Notice message="A new Markdown Lens version is ready. Reload when convenient." onClose={() => setUpdateAvailable(false)} /> : null}
+      {applyServiceWorkerUpdate ? (
+        <Notice
+          message="A new Markdown Lens version is ready."
+          actionLabel="Reload"
+          onAction={() => {
+            applyServiceWorkerUpdate();
+            setApplyServiceWorkerUpdate(null);
+          }}
+          onClose={() => setApplyServiceWorkerUpdate(null)}
+          persistent
+        />
+      ) : null}
       {commandOpen ? <CommandPalette search={commandSearch} onSearch={setCommandSearch} commands={visibleCommands} onClose={() => { setCommandOpen(false); setCommandSearch(""); }} /> : null}
       {formatGuideOpen ? <FormatGuide onClose={() => setFormatGuideOpen(false)} /> : null}
       {reportOpen && activeDocument?.conversion ? <ConversionReportDialog document={activeDocument} onClose={() => setReportOpen(false)} /> : null}
@@ -1020,9 +1034,31 @@ function ReportList({ title, items, empty }: { title: string; items: string[]; e
   return <section className="mt-5"><h3 className="text-sm font-semibold">{title}</h3>{items.length ? <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-muted-foreground">{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">{empty}</p>}</section>;
 }
 
-function Notice({ message, onClose }: { message: string; onClose: () => void }) {
-  useEffect(() => { const timeout = window.setTimeout(onClose, 6000); return () => window.clearTimeout(timeout); }, [onClose]);
-  return <div role="status" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl"><span>{message}</span><button type="button" onClick={onClose} aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button></div>;
+function Notice({
+  message,
+  onClose,
+  actionLabel,
+  onAction,
+  persistent = false,
+}: {
+  message: string;
+  onClose: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
+  persistent?: boolean;
+}) {
+  useEffect(() => {
+    if (persistent) return;
+    const timeout = window.setTimeout(onClose, 6000);
+    return () => window.clearTimeout(timeout);
+  }, [onClose, persistent]);
+  return (
+    <div role="status" aria-live="polite" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl">
+      <span>{message}</span>
+      {actionLabel && onAction ? <button type="button" onClick={onAction} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">{actionLabel}</button> : null}
+      <button type="button" onClick={onClose} aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button>
+    </div>
+  );
 }
 
 function clearShareFragment() {
