@@ -24,6 +24,27 @@ npm run test:e2e
 npm run test:pwa
 ```
 
+### Testing and fixtures
+
+The suite is split by purpose:
+
+- `npm test` runs deterministic Vitest coverage for editor helpers, sanitization and standalone HTML, local workspace persistence, converter validation, and small converter fixtures.
+- `npm run test:e2e` runs the editor, rendering, responsive, and accessibility workflows in desktop Chromium and a mobile viewport.
+- `npm run test:rendering` runs only the major Markdown syntax and Mermaid fallback fixtures while iterating on rendering behavior.
+- `npm run test:a11y` runs the Axe checks for the home page, editor, and Markdown cheatsheet.
+- `npm run test:pwa` builds and exercises the production service worker offline.
+
+Keep unit fixtures beside the module under `lib/**/*.test.ts`. Shared browser fixtures live in `tests/fixtures/`, and browser workflows live in `tests/e2e/`. Prefer semantic assertions for headings, tables, links, tasks, code, math, and diagrams; add screenshots only when layout itself is the behavior.
+
+To run one browser project or one named test:
+
+```bash
+npm run test:e2e -- --project=chromium
+npm run test:e2e -- --grep "major Markdown syntax"
+```
+
+Playwright keeps a trace and screenshot when a browser test fails. CI uploads both `playwright-report/` and `test-results/`; open the HTML report first, then inspect the attached trace for DOM, network, console, and action history.
+
 ### Offline PWA verification
 
 The service worker is intentionally disabled by `npm run dev`. Use the production-only regression to build the app, start it on port 3100, warm the application caches, switch Chromium offline, and verify the editor plus code, math, and Mermaid rendering:

@@ -53,7 +53,7 @@ const inlineExamples = [
       "[Markdown Lens](https://markdownlens.ayushdev.com)\n\n![Alt text](https://example.com/image.png)",
     output: (
       <div className="space-y-3">
-        <a className="font-semibold text-accent underline underline-offset-4" href={siteConfig.url}>
+        <a className="font-semibold text-emerald-700 underline underline-offset-4 dark:text-accent" href={siteConfig.url}>
           Markdown Lens
         </a>
         <div className="rounded-md border border-dashed border-border bg-muted/50 px-3 py-4 text-sm text-muted-foreground">
@@ -137,7 +137,7 @@ export default function MarkdownCheatsheetPage() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-accent/25 bg-accent-soft text-accent">
             <BookOpen className="h-7 w-7" aria-hidden />
           </div>
-          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-accent">
+          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-accent">
             Quick reference
           </p>
           <h1 className="mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight sm:text-5xl">
@@ -278,7 +278,10 @@ export default function MarkdownCheatsheetPage() {
               title="Fenced code block"
               syntax={'```ts\nconst greeting = "Hello, Markdown!";\nconsole.log(greeting);\n```'}
               output={
-                <pre className="overflow-x-auto rounded-md border border-slate-700 bg-[#0d1117] p-4 text-sm text-slate-100">
+                <pre
+                  tabIndex={0}
+                  className="overflow-x-auto rounded-md border border-slate-700 bg-[#0d1117] p-4 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
                   <code>{'const greeting = "Hello, Markdown!";\nconsole.log(greeting);'}</code>
                 </pre>
               }
@@ -386,7 +389,10 @@ function ExampleCard({
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Markdown
           </p>
-          <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-sm leading-6 text-slate-100">
+          <pre
+            tabIndex={0}
+            className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-sm leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
             <code>{syntax}</code>
           </pre>
         </div>

@@ -34,6 +34,13 @@ test("@a11y homepage has no serious accessibility violations", async ({ page }) 
   expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
 });
 
+test("@a11y Markdown cheatsheet has no serious accessibility violations", async ({ page }) => {
+  await page.goto("/markdown-cheatsheet");
+  await expect(page.getByRole("heading", { level: 1, name: "Markdown cheatsheet" })).toBeVisible();
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+});
+
 test("mobile navigation and preview tabs respond", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
   await page.goto("/");
