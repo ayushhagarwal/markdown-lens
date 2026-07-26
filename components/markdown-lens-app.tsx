@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
-  startTransition,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -33,6 +32,7 @@ import {
   Menu,
   Moon,
   PanelLeft,
+  Pencil,
   RotateCcw,
   Search,
   Share2,
@@ -58,6 +58,8 @@ import {
   putAssets,
   restoreDocument,
   saveDocument,
+  subscribeToWorkspaceStorage,
+  type WorkspaceStorageStatus,
 } from "@/lib/workspace/db";
 import {
   createDocumentRecord,
@@ -136,6 +138,11 @@ export function MarkdownLensApp() {
   const [pendingSharedMarkdown, setPendingSharedMarkdown] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [applyServiceWorkerUpdate, setApplyServiceWorkerUpdate] = useState<(() => void) | null>(null);
+  const [workspaceStorage, setWorkspaceStorage] = useState<WorkspaceStorageStatus>({
+    mode: "persistent",
+    message: null,
+  });
+  const [storageWarningDismissed, setStorageWarningDismissed] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [online, setOnline] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -160,12 +167,32 @@ export function MarkdownLensApp() {
     });
   }, [documentSearch, documents, showTrash]);
 
+  const persistActiveDraft = useCallback(async () => {
+    if (!ready || !activeDocument || activeDocument.markdown === markdown) return activeDocument;
+    setSaveState("saving");
+    try {
+      const inferredTitle = activeDocument.title === "Untitled document" ? getDocumentTitle(markdown) : activeDocument.title;
+      const saved = await saveDocument({ ...activeDocument, title: inferredTitle, markdown });
+      setDocuments((current) => current.map((document) => (document.id === saved.id ? saved : document)));
+      setSaveState("saved");
+      return saved;
+    } catch {
+      setSaveState("error");
+      setNotice("This draft could not be saved. Export a workspace backup before leaving the page.");
+      return null;
+    }
+  }, [activeDocument, markdown, ready]);
+
   useEffect(() => {
-    const storedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
+    const unsubscribe = subscribeToWorkspaceStorage((status) => {
+      setWorkspaceStorage(status);
+      if (status.mode === "memory") setStorageWarningDismissed(false);
+    });
+    const storedTheme = readLocalPreference(THEME_KEY) as Theme | null;
     const nextTheme = storedTheme ?? "dark";
     setTheme(nextTheme);
     document.documentElement.classList.toggle("dark", nextTheme === "dark");
-    const storedRatio = Number(localStorage.getItem(SPLIT_KEY));
+    const storedRatio = Number(readLocalPreference(SPLIT_KEY));
     if (storedRatio >= 30 && storedRatio <= 70) setSplitRatio(storedRatio);
 
     async function load() {
@@ -185,6 +212,7 @@ export function MarkdownLensApp() {
       setReady(true);
     }
     void load();
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -243,25 +271,14 @@ export function MarkdownLensApp() {
   useEffect(() => {
     if (!ready || !activeDocument || activeDocument.markdown === markdown) return;
     setSaveState("saving");
-    const timeout = window.setTimeout(async () => {
-      try {
-        const inferredTitle = activeDocument.title === "Untitled document" ? getDocumentTitle(markdown) : activeDocument.title;
-        const saved = await saveDocument({ ...activeDocument, title: inferredTitle, markdown });
-        startTransition(() => {
-          setDocuments((current) => current.map((document) => (document.id === saved.id ? saved : document)));
-          setSaveState("saved");
-        });
-      } catch {
-        setSaveState("error");
-      }
-    }, 400);
+    const timeout = window.setTimeout(() => void persistActiveDraft(), 400);
     return () => window.clearTimeout(timeout);
-  }, [activeDocument, markdown, ready]);
+  }, [activeDocument, markdown, persistActiveDraft, ready]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
-    if (ready) localStorage.setItem(THEME_KEY, theme);
+    if (ready) writeLocalPreference(THEME_KEY, theme);
   }, [ready, theme]);
 
   useEffect(() => {
@@ -291,6 +308,7 @@ export function MarkdownLensApp() {
   }, []);
 
   const createNewDocument = useCallback(async () => {
+    if (!(await persistActiveDraft()) && activeDocument) return;
     const document = createDocumentRecord();
     await addDocument(document);
     setDocuments((current) => [document, ...current]);
@@ -298,23 +316,28 @@ export function MarkdownLensApp() {
     setMarkdown("");
     setMobilePane("editor");
     window.setTimeout(() => editorActions.current?.focus(), 0);
-  }, []);
+  }, [activeDocument, persistActiveDraft]);
 
-  const selectDocument = useCallback((document: DocumentRecord) => {
+  const selectDocument = useCallback(async (document: DocumentRecord) => {
+    if (document.id === activeId) return;
+    if (!(await persistActiveDraft()) && activeDocument) return;
     setActiveId(document.id);
     setMarkdown(document.markdown);
     setMobilePane("editor");
-  }, []);
+  }, [activeDocument, activeId, persistActiveDraft]);
 
   const renameDocument = useCallback(async (document: DocumentRecord) => {
     const title = window.prompt("Rename document", document.title)?.trim();
     if (!title || title === document.title) return;
-    const saved = await saveDocument({ ...document, title });
+    const current = document.id === activeId ? await persistActiveDraft() : document;
+    if (!current) return;
+    const saved = await saveDocument({ ...current, title });
     setDocuments((current) => current.map((item) => (item.id === document.id ? saved : item)));
-  }, []);
+  }, [activeId, persistActiveDraft]);
 
   const removeDocument = useCallback(
     async (document: DocumentRecord) => {
+      if (document.id === activeId && !(await persistActiveDraft())) return;
       await moveDocumentToTrash(document.id);
       if (activeId === document.id) {
         const next = documents.find((item) => item.id !== document.id && item.deletedAt === undefined);
@@ -324,7 +347,7 @@ export function MarkdownLensApp() {
       await refreshDocuments();
       setNotice(`“${document.title}” moved to Trash.`);
     },
-    [activeId, documents, refreshDocuments],
+    [activeId, documents, persistActiveDraft, refreshDocuments],
   );
 
   const restoreFromTrash = useCallback(async (document: DocumentRecord) => {
@@ -340,10 +363,12 @@ export function MarkdownLensApp() {
   }, [refreshDocuments]);
 
   const duplicate = useCallback(async (document: DocumentRecord) => {
-    const copy = await duplicateDocument(document);
+    const current = document.id === activeId ? await persistActiveDraft() : document;
+    if (!current) return;
+    const copy = await duplicateDocument(current);
     setDocuments((current) => [copy, ...current]);
     setActiveId(copy.id);
-  }, []);
+  }, [activeId, persistActiveDraft]);
 
   const importFiles = useCallback(async (files: File[]) => {
     for (const file of files) {
@@ -457,6 +482,7 @@ export function MarkdownLensApp() {
   async function openSharedDocument() {
     if (pendingSharedMarkdown === null) return;
     try {
+      if (!(await persistActiveDraft()) && activeDocument) return;
       const shared = createDocumentRecord({
         title: getDocumentTitle(pendingSharedMarkdown),
         markdown: pendingSharedMarkdown,
@@ -480,6 +506,7 @@ export function MarkdownLensApp() {
   }
 
   async function downloadWorkspaceBackup() {
+    if (!(await persistActiveDraft()) && activeDocument) return;
     const backup = await exportWorkspace();
     downloadBlob(
       new Blob([JSON.stringify(backup)], { type: "application/json" }),
@@ -529,12 +556,12 @@ export function MarkdownLensApp() {
 
   function updateSplitRatio(ratio: number) {
     setSplitRatio(ratio);
-    localStorage.setItem(SPLIT_KEY, String(ratio));
+    writeLocalPreference(SPLIT_KEY, String(ratio));
   }
 
   function resetSplitRatio() {
     setSplitRatio(50);
-    localStorage.removeItem(SPLIT_KEY);
+    removeLocalPreference(SPLIT_KEY);
   }
 
   function navigateToHeading(id: string) {
@@ -620,9 +647,9 @@ export function MarkdownLensApp() {
           </button>
         </div>
         <div className="flex items-center gap-1">
-          <span className={cn("hidden items-center gap-1.5 px-2 text-xs md:flex", saveState === "error" ? "text-red-400" : "text-muted-foreground")}>
-            {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "error" ? <HardDrive className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5 text-accent" />}
-            {saveState === "saving" ? "Saving…" : saveState === "error" ? "Storage unavailable" : "Saved locally"}
+          <span className={cn("hidden items-center gap-1.5 px-2 text-xs md:flex", saveState === "error" || workspaceStorage.mode === "memory" ? "text-amber-400" : "text-muted-foreground")}>
+            {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "error" || workspaceStorage.mode === "memory" ? <HardDrive className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5 text-accent" />}
+            {saveState === "saving" ? "Saving…" : saveState === "error" ? "Save failed" : workspaceStorage.mode === "memory" ? "Session only" : "Saved locally"}
           </span>
           {!online ? <span role="status" aria-live="polite" aria-label="Offline. Changes remain on this device." className="px-1.5 text-[11px] text-amber-400 sm:px-2 sm:text-xs">Offline</span> : null}
           {installPrompt ? (
@@ -686,7 +713,7 @@ export function MarkdownLensApp() {
                   document={document}
                   active={activeId === document.id}
                   trashed={showTrash}
-                  onSelect={() => selectDocument(document)}
+                  onSelect={() => void selectDocument(document)}
                   onRename={() => void renameDocument(document)}
                   onDuplicate={() => void duplicate(document)}
                   onDelete={() => void removeDocument(document)}
@@ -832,6 +859,18 @@ export function MarkdownLensApp() {
       </footer>
 
       {notice ? <Notice message={notice} onClose={() => setNotice(null)} /> : null}
+      {workspaceStorage.mode === "memory" && !storageWarningDismissed ? (
+        <Notice
+          message={workspaceStorage.message}
+          actionLabel="Export backup"
+          onAction={() => {
+            void downloadWorkspaceBackup();
+            setStorageWarningDismissed(true);
+          }}
+          onClose={() => setStorageWarningDismissed(true)}
+          persistent
+        />
+      ) : null}
       {applyServiceWorkerUpdate ? (
         <Notice
           message="A new Markdown Lens version is ready."
@@ -884,7 +923,7 @@ function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicat
         {trashed ? (
           <><IconButton icon={RotateCcw} label="Restore document" onClick={onRestore} compact /><IconButton icon={Trash2} label="Delete permanently" onClick={onDeleteForever} compact /></>
         ) : (
-          <><IconButton icon={Copy} label="Duplicate document" onClick={onDuplicate} compact /><IconButton icon={Trash2} label="Move to Trash" onClick={onDelete} compact /></>
+          <><IconButton icon={Pencil} label="Rename document" onClick={onRename} compact /><IconButton icon={Copy} label="Duplicate document" onClick={onDuplicate} compact /><IconButton icon={Trash2} label="Move to Trash" onClick={onDelete} compact /></>
         )}
       </div>
     </div>
@@ -1063,6 +1102,30 @@ function Notice({
 
 function clearShareFragment() {
   window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+}
+
+function readLocalPreference(key: string) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalPreference(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // IndexedDB workspace persistence is handled separately.
+  }
+}
+
+function removeLocalPreference(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Preference storage is optional.
+  }
 }
 
 function RailHeader({ label, onClose }: { label: string; onClose: () => void }) {
