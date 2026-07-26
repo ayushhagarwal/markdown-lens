@@ -85,3 +85,32 @@ test("mobile switches between editor and preview", async ({ page }, testInfo) =>
   await page.getByRole("button", { name: "preview", exact: true }).click();
   await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 });
+
+test("outline follows rendered headings and focuses the selected target", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop outline interaction");
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  await editor.fill(
+    [
+      "Document title",
+      "==============",
+      "",
+      "```md",
+      "# Not a heading",
+      "```",
+      "",
+      "## Details",
+      "",
+      "## Details",
+    ].join("\n"),
+  );
+
+  await expect(page.getByRole("button", { name: "Document title, heading level 1" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Not a heading, heading level 1" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Details, heading level 2" })).toHaveCount(2);
+
+  await page.getByRole("button", { name: "Document title, heading level 1" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Document title" })).toBeFocused();
+  await expect(page.getByRole("heading", { level: 2, name: "Details" })).toHaveCount(2);
+  await expect(page.locator("#details-1")).toHaveCount(1);
+});

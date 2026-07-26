@@ -485,6 +485,14 @@ export function MarkdownLensApp() {
     localStorage.removeItem(SPLIT_KEY);
   }
 
+  function navigateToHeading(id: string) {
+    const target = previewRef.current?.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
+    if (!target) return;
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const commands = [
       { label: "New document", hint: "⌘N", action: () => void createNewDocument() },
       { label: "Open or convert", hint: "⌘O", action: () => fileInputRef.current?.click() },
@@ -705,8 +713,8 @@ export function MarkdownLensApp() {
           <RailHeader label="Outline" onClose={() => setOutlineOpen(false)} />
           <nav className="min-h-0 flex-1 overflow-y-auto py-2" aria-label="Document outline">
             {headings.length ? headings.map((heading) => (
-              <button key={`${heading.id}-${heading.line}`} type="button" onClick={() => previewRef.current?.querySelector(`#${CSS.escape(heading.id)}`)?.scrollIntoView({ behavior: "smooth", block: "start" })} className="flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground" style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
-                <span className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
+              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} onClick={() => navigateToHeading(heading.id)} className="flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground" style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
+                <span aria-hidden className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
                 <span className="line-clamp-2 leading-4">{heading.text}</span>
               </button>
             )) : <p className="px-5 py-10 text-center text-xs leading-5 text-muted-foreground">Add Markdown headings to build an outline.</p>}
