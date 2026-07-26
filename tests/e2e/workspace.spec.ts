@@ -114,3 +114,29 @@ test("outline follows rendered headings and focuses the selected target", async 
   await expect(page.getByRole("heading", { level: 2, name: "Details" })).toHaveCount(2);
   await expect(page.locator("#details-1")).toHaveCount(1);
 });
+
+test("find and replace reports match position and honors search options", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop editor interaction");
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  await editor.fill("Alpha alpha alphabet");
+  await editor.press(process.platform === "darwin" ? "Meta+f" : "Control+f");
+
+  const find = page.getByRole("textbox", { name: "Find" });
+  await find.pressSequentially("alpha");
+  await page.getByRole("button", { name: "next", exact: true }).click();
+  await expect(page.getByText("1 of 3 matches", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "next", exact: true }).click();
+  await expect(page.getByText("2 of 3 matches", { exact: true })).toBeVisible();
+
+  await page.getByRole("checkbox", { name: "by word" }).check();
+  await expect(page.getByText("2 of 2 matches", { exact: true })).toBeVisible();
+  await page.getByRole("checkbox", { name: "match case" }).check();
+  await expect(page.getByText("1 of 1 matches", { exact: true })).toBeVisible();
+
+  await page.getByRole("textbox", { name: "Replace" }).pressSequentially("gamma");
+  await page.getByRole("button", { name: "replace all", exact: true }).click();
+  await expect(editor).toContainText("Alpha gamma alphabet");
+  await expect(page.getByText("replaced 1 matches.", { exact: true })).toBeVisible();
+});
