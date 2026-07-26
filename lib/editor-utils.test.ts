@@ -14,4 +14,31 @@ describe("editor utilities", () => {
     expect(headings.map((heading) => heading.id)).toEqual(["intro", "details", "details-1"]);
     expect(headings.map((heading) => heading.line)).toEqual([1, 2, 3]);
   });
+
+  test("matches rendered Markdown heading semantics", () => {
+    const markdown = [
+      "Title with *emphasis*",
+      "=====================",
+      "",
+      "> ## Nested [link](https://example.com)",
+      "",
+      "```md",
+      "# Not a heading",
+      "```",
+      "",
+      "Repeated",
+      "--------",
+      "",
+      "Repeated",
+      "--------",
+    ].join("\n");
+
+    expect(getDocumentHeadings(markdown)).toEqual([
+      { level: 1, text: "Title with emphasis", id: "title-with-emphasis", line: 1 },
+      { level: 2, text: "Nested link", id: "nested-link", line: 4 },
+      { level: 2, text: "Repeated", id: "repeated", line: 10 },
+      { level: 2, text: "Repeated", id: "repeated-1", line: 13 },
+    ]);
+    expect(getDocumentTitle(markdown)).toBe("Title with emphasis");
+  });
 });

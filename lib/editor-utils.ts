@@ -1,9 +1,14 @@
 import GithubSlugger from "github-slugger";
+import { toString } from "mdast-util-to-string";
+import type { Heading, Nodes } from "mdast";
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
 
 export type DocumentHeading = { level: number; text: string; id: string; line: number };
 
 export function getDocumentTitle(markdown: string) {
-  return markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || "Untitled document";
+  return getDocumentHeadings(markdown).find((heading) => heading.level === 1)?.text || "Untitled document";
 }
 
 export function getDocumentStats(markdown: string) {
@@ -17,12 +22,28 @@ export function getDocumentStats(markdown: string) {
 
 export function getDocumentHeadings(markdown: string): DocumentHeading[] {
   const slugger = new GithubSlugger();
-  return markdown.split("\n").flatMap((line, index) => {
-    const match = line.match(/^(#{1,6})\s+(.+?)\s*#*$/);
-    if (!match) return [];
-    const text = match[2].trim();
-    return [{ level: match[1].length, text, id: slugger.slug(text), line: index + 1 }];
+  const headings: DocumentHeading[] = [];
+  const tree = unified().use(remarkParse).use(remarkGfm).parse(markdown);
+
+  visit(tree, (node) => {
+    if (node.type !== "heading") return;
+    const heading = node as Heading;
+    const text = toString(heading).trim();
+    headings.push({
+      level: heading.depth,
+      text,
+      id: slugger.slug(text),
+      line: heading.position?.start.line ?? 1,
+    });
   });
+
+  return headings;
+}
+
+function visit(node: Nodes, visitor: (node: Nodes) => void) {
+  visitor(node);
+  if (!("children" in node)) return;
+  for (const child of node.children) visit(child as Nodes, visitor);
 }
 
 export function toFileName(title: string) {
