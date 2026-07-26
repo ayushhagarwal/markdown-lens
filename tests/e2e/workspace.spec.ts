@@ -11,6 +11,65 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
 });
 
+test("documents persist independently across immediate switches, rename, trash, and reload", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop document rail interaction");
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const documents = page.getByRole("complementary", { name: "Documents" });
+
+  await page.getByRole("button", { name: "New document" }).click();
+  await editor.fill("# First independent draft");
+  await page.getByRole("button", { name: "New document" }).click();
+  await expect(documents.getByRole("button", { name: /First independent draft/ })).toBeVisible();
+
+  await editor.fill("# Second independent draft");
+  await documents.getByRole("button", { name: /First independent draft/ }).click();
+  await expect(editor).toContainText("First independent draft");
+
+  const firstRow = documents.getByRole("button", { name: /First independent draft/ }).locator("..");
+  await firstRow.hover();
+  page.once("dialog", (dialog) => dialog.accept("Renamed first draft"));
+  await firstRow.getByRole("button", { name: "Rename document" }).click();
+  await expect(documents.getByRole("button", { name: /Renamed first draft/ })).toBeVisible();
+
+  const secondRow = documents.getByRole("button", { name: /Second independent draft/ }).locator("..");
+  await secondRow.hover();
+  await secondRow.getByRole("button", { name: "Move to Trash" }).click();
+  await expect(page.getByText("moved to Trash.")).toBeVisible();
+  await page.getByRole("button", { name: "Trash", exact: true }).click();
+  const trashedRow = documents.getByRole("button", { name: /Second independent draft/ }).locator("..");
+  await trashedRow.hover();
+  await trashedRow.getByRole("button", { name: "Restore document" }).click();
+  await page.getByRole("button", { name: "Back to documents" }).click();
+
+  await page.reload();
+  await expect(documents.getByRole("button", { name: /Renamed first draft/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /Second independent draft/ })).toBeVisible();
+  await documents.getByRole("button", { name: /Second independent draft/ }).click();
+  await expect(editor).toContainText("Second independent draft");
+});
+
+test("blocked IndexedDB falls back to an actionable session workspace", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "indexedDB", {
+      configurable: true,
+      value: {
+        open() {
+          throw new DOMException("Blocked for this browser profile.", "SecurityError");
+        },
+      },
+    });
+  });
+  await page.goto("/editor");
+
+  await expect(page.getByRole("main")).toBeVisible();
+  await expect(page.getByText("Persistent browser storage is unavailable.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export backup" })).toBeVisible();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  await editor.fill("# Session-only draft");
+  await expect(editor).toContainText("Session-only draft");
+});
+
 test("desktop split persists keyboard resizing and can be reset", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop workspace interaction");
   await page.addInitScript(() => {
