@@ -112,6 +112,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+The development server does not register a service worker. Run `npm run test:pwa` to exercise the production service worker and verify offline editing/rendering in Chromium.
+
 Useful checks:
 
 ```bash
@@ -119,6 +121,7 @@ npm run lint
 npm run typecheck
 npm run check:release
 npm run build
+npm run test:pwa
 ```
 
 ## Project Structure

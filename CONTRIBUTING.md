@@ -21,7 +21,18 @@ npm run typecheck
 npm test
 npm run build
 npm run test:e2e
+npm run test:pwa
 ```
+
+### Offline PWA verification
+
+The service worker is intentionally disabled by `npm run dev`. Use the production-only regression to build the app, start it on port 3100, warm the application caches, switch Chromium offline, and verify the editor plus code, math, and Mermaid rendering:
+
+```bash
+npm run test:pwa
+```
+
+For a manual installability audit, run `npm run build` and `npm run start`, open `/editor` in Chromium, and inspect **Application → Manifest** and **Application → Service Workers**. Confirm that the 192 px and 512 px icons render cleanly, the start URL is `/editor`, the display mode is `standalone`, and an offline reload succeeds after one online visit. Lighthouse versions that still expose installability checks should report no PWA installability failures; newer versions have moved these checks to the Application panel.
 
 ## Branch Naming
 
