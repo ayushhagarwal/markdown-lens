@@ -140,3 +140,47 @@ test("find and replace reports match position and honors search options", async 
   await expect(editor).toContainText("Alpha gamma alphabet");
   await expect(page.getByText("replaced 1 matches.", { exact: true })).toBeVisible();
 });
+
+test("share links require explicit consent and preserve existing local drafts", async ({ page }) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const requestedUrls: string[] = [];
+  page.on("request", (request) => requestedUrls.push(request.url()));
+
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  await editor.fill("# Shared payload\n\nVisible only in the fragment.");
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  await page.getByRole("button", { name: "Create share link" }).click();
+
+  const createDialog = page.getByRole("dialog", { name: "Create share link" });
+  await expect(createDialog).toContainText("Anyone with this URL can read and copy the document.");
+  await expect(createDialog.getByText(/[\d,]+ characters/)).toBeVisible();
+  await createDialog.getByRole("button", { name: "Copy share link" }).click();
+
+  const shareUrl = await page.evaluate(() => navigator.clipboard.readText());
+  expect(new URL(shareUrl).hash).toMatch(/^#v1:/);
+  await expect(page.getByText("Share link copied. Anyone with the URL can read this document.")).toBeVisible();
+
+  await editor.fill("# Existing local draft");
+  await page.waitForTimeout(600);
+  await page.goto(shareUrl);
+
+  const openDialog = page.getByRole("dialog", { name: "Open shared document?" });
+  await expect(openDialog).toContainText("will not be replaced");
+  await expect(editor).toContainText("Existing local draft");
+  await openDialog.getByRole("button", { name: "Open as new document" }).click();
+
+  await expect(editor).toContainText("Shared payload");
+  await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("");
+  expect(requestedUrls.every((url) => !url.includes("#v1:"))).toBe(true);
+});
+
+test("malformed and unsupported share links show safe errors", async ({ page }) => {
+  await page.goto("/editor#v2:unsupported");
+  await expect(page.getByText("This Markdown Lens share-link version is not supported.")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("");
+
+  await page.goto("/editor#v1:not-valid-compressed-data");
+  await expect(page.getByText("This Markdown Lens share link is malformed.")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("");
+});

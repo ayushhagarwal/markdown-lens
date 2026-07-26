@@ -98,6 +98,10 @@ type ImportJob = {
   progress?: ConverterProgress;
   error?: string;
 };
+type ShareLinkPreview = {
+  url: string;
+  length: number;
+};
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -128,6 +132,8 @@ export function MarkdownLensApp() {
   const [exportOpen, setExportOpen] = useState(false);
   const [formatGuideOpen, setFormatGuideOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [shareLink, setShareLink] = useState<ShareLinkPreview | null>(null);
+  const [pendingSharedMarkdown, setPendingSharedMarkdown] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -164,17 +170,13 @@ export function MarkdownLensApp() {
 
     async function load() {
       await initializeWorkspace();
-      let records = await listDocuments({ includeDeleted: true });
+      const records = await listDocuments({ includeDeleted: true });
       try {
         const sharedMarkdown = readShareFragment(window.location.hash);
-        if (sharedMarkdown) {
-          const shared = createDocumentRecord({ title: getDocumentTitle(sharedMarkdown), markdown: sharedMarkdown });
-          await addDocument(shared);
-          records = [shared, ...records];
-          history.replaceState(null, "", `${location.pathname}${location.search}`);
-        }
+        if (sharedMarkdown !== null) setPendingSharedMarkdown(sharedMarkdown);
       } catch (error) {
         setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
+        clearShareFragment();
       }
       setDocuments(records);
       const first = records.find((record) => record.deletedAt === undefined);
@@ -201,6 +203,20 @@ export function MarkdownLensApp() {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("beforeinstallprompt", handleInstall);
     };
+  }, []);
+
+  useEffect(() => {
+    const handleSharedFragment = () => {
+      try {
+        const sharedMarkdown = readShareFragment(window.location.hash);
+        if (sharedMarkdown !== null) setPendingSharedMarkdown(sharedMarkdown);
+      } catch (error) {
+        setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
+        clearShareFragment();
+      }
+    };
+    window.addEventListener("hashchange", handleSharedFragment);
+    return () => window.removeEventListener("hashchange", handleSharedFragment);
   }, []);
 
   useEffect(() => {
@@ -416,15 +432,51 @@ export function MarkdownLensApp() {
     setNotice("Markdown copied.");
   }
 
-  async function shareDocument() {
+  function prepareShareLink() {
     try {
       const fragment = createShareFragment(markdown);
       const url = `${location.origin}${location.pathname}${fragment}`;
-      await navigator.clipboard.writeText(url);
-      setNotice(`Share link copied (${url.length.toLocaleString()} characters). Encoding is not encryption.`);
+      setShareLink({ url, length: url.length });
+      setExportOpen(false);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "A share link could not be created.");
     }
+  }
+
+  async function copyShareLink() {
+    if (!shareLink) return;
+    try {
+      await navigator.clipboard.writeText(shareLink.url);
+      setShareLink(null);
+      setNotice("Share link copied. Anyone with the URL can read this document.");
+    } catch {
+      setNotice("The share link could not be copied. Check browser clipboard permissions.");
+    }
+  }
+
+  async function openSharedDocument() {
+    if (pendingSharedMarkdown === null) return;
+    try {
+      const shared = createDocumentRecord({
+        title: getDocumentTitle(pendingSharedMarkdown),
+        markdown: pendingSharedMarkdown,
+      });
+      await addDocument(shared);
+      setDocuments((current) => [shared, ...current]);
+      setActiveId(shared.id);
+      setMarkdown(shared.markdown);
+      setMobilePane("editor");
+      setPendingSharedMarkdown(null);
+      clearShareFragment();
+      setNotice("Shared document opened as a new local document.");
+    } catch {
+      setNotice("The shared document could not be saved locally.");
+    }
+  }
+
+  function dismissSharedDocument() {
+    setPendingSharedMarkdown(null);
+    clearShareFragment();
   }
 
   async function downloadWorkspaceBackup() {
@@ -502,7 +554,7 @@ export function MarkdownLensApp() {
       { label: "Reset editor and preview split", action: resetSplitRatio },
       { label: "Download Markdown", hint: "⌘S", action: downloadMarkdown },
       { label: "Copy Markdown", action: () => void copyMarkdown() },
-      { label: "Create private share link", action: () => void shareDocument() },
+      { label: "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
     ];
   const visibleCommands = commands.filter((command) => command.label.toLowerCase().includes(commandSearch.toLowerCase()));
@@ -766,7 +818,7 @@ export function MarkdownLensApp() {
               <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
               <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
               {activeDocument?.assetIds.length ? <MenuAction icon={FileArchive} label="Export Markdown + assets" onClick={() => void exportDocumentBundle()} /> : null}
-              <MenuAction icon={Share2} label="Copy share link" onClick={() => void shareDocument()} />
+              <MenuAction icon={Share2} label="Create share link" onClick={prepareShareLink} />
               <MenuAction icon={FileArchive} label="Export workspace backup" onClick={() => void downloadWorkspaceBackup()} />
               <MenuAction icon={ArchiveRestore} label="Restore workspace backup" onClick={() => backupInputRef.current?.click()} />
               <MenuAction icon={FileText} label="Print / save PDF" onClick={() => window.print()} />
@@ -781,6 +833,15 @@ export function MarkdownLensApp() {
       {commandOpen ? <CommandPalette search={commandSearch} onSearch={setCommandSearch} commands={visibleCommands} onClose={() => { setCommandOpen(false); setCommandSearch(""); }} /> : null}
       {formatGuideOpen ? <FormatGuide onClose={() => setFormatGuideOpen(false)} /> : null}
       {reportOpen && activeDocument?.conversion ? <ConversionReportDialog document={activeDocument} onClose={() => setReportOpen(false)} /> : null}
+      {shareLink ? <ShareLinkDialog preview={shareLink} onCopy={() => void copyShareLink()} onClose={() => setShareLink(null)} /> : null}
+      {pendingSharedMarkdown !== null ? (
+        <SharedDocumentDialog
+          markdown={pendingSharedMarkdown}
+          existingDocumentCount={documents.filter((document) => document.deletedAt === undefined).length}
+          onOpen={() => void openSharedDocument()}
+          onClose={dismissSharedDocument}
+        />
+      ) : null}
     </div>
   );
 }
@@ -878,6 +939,79 @@ function ConversionReportDialog({ document, onClose }: { document: DocumentRecor
   );
 }
 
+function ShareLinkDialog({
+  preview,
+  onCopy,
+  onClose,
+}: {
+  preview: ShareLinkPreview;
+  onCopy: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="share-link-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="share-link-title" className="text-lg font-semibold">Create share link</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">The Markdown is compressed into the URL fragment and restored entirely in the browser.</p>
+          </div>
+          <IconButton icon={X} label="Close share link dialog" onClick={onClose} />
+        </div>
+        <div className="mt-5 rounded-md border border-amber-400/35 bg-amber-400/10 p-3 text-sm leading-6 text-amber-100">
+          Anyone with this URL can read and copy the document. Encoding is not encryption—do not use this for secrets or confidential content.
+        </div>
+        <dl className="mt-4 border-y border-border py-3 text-sm">
+          <div className="flex items-center justify-between gap-4">
+            <dt className="text-muted-foreground">URL length</dt>
+            <dd className="font-mono">{preview.length.toLocaleString()} characters</dd>
+          </div>
+        </dl>
+        <p className="mt-4 text-xs leading-5 text-muted-foreground">The document stays after the <code>#</code> in the URL. Browsers do not include URL fragments in network requests.</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Cancel</button>
+          <button type="button" onClick={onCopy} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">Copy share link</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SharedDocumentDialog({
+  markdown,
+  existingDocumentCount,
+  onOpen,
+  onClose,
+}: {
+  markdown: string;
+  existingDocumentCount: number;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="shared-document-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="shared-document-title" className="text-lg font-semibold">Open shared document?</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">This untrusted Markdown will be added as a new local document. Your {existingDocumentCount === 1 ? "existing draft" : `${existingDocumentCount.toLocaleString()} existing drafts`} will not be replaced.</p>
+          </div>
+          <IconButton icon={X} label="Close shared document dialog" onClick={onClose} />
+        </div>
+        <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden border border-border bg-border text-sm">
+          <ReportFact label="Title" value={getDocumentTitle(markdown)} />
+          <ReportFact label="Size" value={`${markdown.length.toLocaleString()} characters`} />
+        </dl>
+        <p className="mt-4 text-xs leading-5 text-muted-foreground">Only open links from people you trust. The existing safe Markdown renderer will treat the content as untrusted input.</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Cancel</button>
+          <button type="button" onClick={onOpen} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">Open as new document</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReportFact({ label, value }: { label: string; value: string }) {
   return <div className="bg-panel p-3"><dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-mono text-xs">{value}</dd></div>;
 }
@@ -889,6 +1023,10 @@ function ReportList({ title, items, empty }: { title: string; items: string[]; e
 function Notice({ message, onClose }: { message: string; onClose: () => void }) {
   useEffect(() => { const timeout = window.setTimeout(onClose, 6000); return () => window.clearTimeout(timeout); }, [onClose]);
   return <div role="status" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl"><span>{message}</span><button type="button" onClick={onClose} aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button></div>;
+}
+
+function clearShareFragment() {
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
 }
 
 function RailHeader({ label, onClose }: { label: string; onClose: () => void }) {
