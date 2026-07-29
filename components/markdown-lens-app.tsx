@@ -157,6 +157,8 @@ export function MarkdownLensApp() {
     () => documents.find((document) => document.id === activeId),
     [activeId, documents],
   );
+  const activeDocumentId = activeDocument?.id;
+  const activeAssetIds = activeDocument?.assetIds;
   const headings = useMemo(() => getDocumentHeadings(deferredMarkdown), [deferredMarkdown]);
   const stats = useMemo(() => getDocumentStats(markdown), [markdown]);
   const filteredDocuments = useMemo(() => {
@@ -250,8 +252,17 @@ export function MarkdownLensApp() {
   useEffect(() => {
     if (!activeDocument) return;
     setMarkdown(activeDocument.markdown);
+    // Selection owns the editor source; autosave updates must not reset it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDocumentId]);
+
+  useEffect(() => {
+    if (!activeDocumentId || !activeAssetIds) {
+      setAssetUrls({});
+      return;
+    }
     let revoked: string[] = [];
-    void getDocumentAssets(activeDocument.id, activeDocument.assetIds).then((assets) => {
+    void getDocumentAssets(activeDocumentId, activeAssetIds).then((assets) => {
       const next: Record<string, string> = {};
       for (const asset of assets) {
         const url = URL.createObjectURL(asset.blob);
@@ -264,7 +275,7 @@ export function MarkdownLensApp() {
       revoked.forEach((url) => URL.revokeObjectURL(url));
       revoked = [];
     };
-  }, [activeDocument]);
+  }, [activeAssetIds, activeDocumentId]);
 
   useEffect(() => {
     if (!ready || !activeDocument || activeDocument.markdown === markdown) return;
