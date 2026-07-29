@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const source = join(
+const languageSource = join(
   root,
   "node_modules",
   "@tesseract.js-data",
@@ -11,7 +11,29 @@ const source = join(
   "4.0.0",
   "eng.traineddata.gz",
 );
-const destinationDirectory = join(root, "public", "tessdata");
+const languageDirectory = join(root, "public", "tessdata");
+const runtimeDirectory = join(root, "public", "tesseract");
+const coreDirectory = join(runtimeDirectory, "core");
 
-await mkdir(destinationDirectory, { recursive: true });
-await copyFile(source, join(destinationDirectory, "eng.traineddata.gz"));
+await Promise.all([
+  mkdir(languageDirectory, { recursive: true }),
+  mkdir(coreDirectory, { recursive: true }),
+]);
+
+await Promise.all([
+  copyFile(languageSource, join(languageDirectory, "eng.traineddata.gz")),
+  copyFile(
+    join(root, "node_modules", "tesseract.js", "dist", "worker.min.js"),
+    join(runtimeDirectory, "worker.min.js"),
+  ),
+  ...[
+    "tesseract-core-lstm.wasm.js",
+    "tesseract-core-simd-lstm.wasm.js",
+    "tesseract-core-relaxedsimd-lstm.wasm.js",
+  ].map((filename) =>
+    copyFile(
+      join(root, "node_modules", "tesseract.js-core", filename),
+      join(coreDirectory, filename),
+    ),
+  ),
+]);

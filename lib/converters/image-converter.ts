@@ -18,6 +18,8 @@ export const imageConverter: LocalConverter = {
       context.onProgress({ stage: "ocr", message: `Loading local English OCR for “${file.name}”…` });
       const { createWorker } = await import("tesseract.js");
       const worker = await createWorker("eng", 1, {
+        workerPath: "/tesseract/worker.min.js",
+        corePath: "/tesseract/core",
         langPath: "/tessdata",
         logger(message) {
           if (message.status === "recognizing text") {
