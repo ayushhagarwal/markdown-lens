@@ -4,6 +4,10 @@ import type { Heading, Nodes } from "mdast";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
+import {
+  analyzeMarkdownBudget,
+  countWordsBounded,
+} from "@/lib/markdown-limits";
 
 export type DocumentHeading = { level: number; text: string; id: string; line: number };
 
@@ -12,7 +16,7 @@ export function getDocumentTitle(markdown: string) {
 }
 
 export function getDocumentStats(markdown: string) {
-  const words = markdown.trim().match(/\S+/g)?.length ?? 0;
+  const words = countWordsBounded(markdown);
   return {
     words,
     characters: markdown.length,
@@ -21,6 +25,7 @@ export function getDocumentStats(markdown: string) {
 }
 
 export function getDocumentHeadings(markdown: string): DocumentHeading[] {
+  if (!analyzeMarkdownBudget(markdown).allowed) return [];
   const slugger = new GithubSlugger();
   const headings: DocumentHeading[] = [];
   const tree = unified().use(remarkParse).use(remarkGfm).parse(markdown);

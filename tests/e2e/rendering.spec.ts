@@ -18,6 +18,7 @@ test("major Markdown syntax renders with semantic output", async ({ page }, test
   await showPreviewOnMobile(page, testInfo.project.name);
 
   const preview = page.locator(".markdown-body:visible");
+  await preview.getByRole("button", { name: "Render diagram" }).click();
   await expect(preview.getByRole("heading", { level: 1, name: "Rendering fixture" })).toHaveAttribute(
     "id",
     "rendering-fixture",
@@ -48,8 +49,33 @@ test("malformed Mermaid keeps the preview usable with an explicit fallback", asy
   await showPreviewOnMobile(page, testInfo.project.name);
 
   const preview = page.locator(".markdown-body:visible");
+  await preview.getByRole("button", { name: "Render diagram" }).click();
   await expect(preview.getByText("Mermaid diagram could not be rendered.", { exact: true })).toBeVisible();
   await expect(preview.getByRole("heading", { level: 1, name: "Diagram fallback" })).toBeVisible();
+});
+
+test("remote Markdown images require explicit per-image consent", async ({ page }, testInfo) => {
+  const requestedUrls: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("attacker.invalid")) requestedUrls.push(request.url());
+  });
+
+  await page.goto("/editor");
+  await page
+    .locator('.cm-content[contenteditable="true"]:visible')
+    .fill("# Privacy check\n\n![Tracking pixel](https://attacker.invalid/pixel.png)");
+  await showPreviewOnMobile(page, testInfo.project.name);
+
+  const preview = page.locator(".markdown-body:visible");
+  await expect(preview.getByText("Remote image blocked from", { exact: false })).toBeVisible();
+  await expect(preview.locator('img[src*="attacker.invalid"]')).toHaveCount(0);
+  expect(requestedUrls).toEqual([]);
+
+  await preview.getByRole("button", { name: "Load image" }).click();
+  await expect(preview.locator('img[src="https://attacker.invalid/pixel.png"]')).toHaveAttribute(
+    "referrerpolicy",
+    "no-referrer",
+  );
 });
 
 test("keyboard shortcuts open commands and create an independent draft", async ({ page }, testInfo) => {

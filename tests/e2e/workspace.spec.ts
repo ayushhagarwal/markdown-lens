@@ -70,6 +70,39 @@ test("blocked IndexedDB falls back to an actionable session workspace", async ({
   await expect(editor).toContainText("Session-only draft");
 });
 
+test("malformed workspace backups are rejected without replacing local content", async ({ page }) => {
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  await editor.fill("# Keep this local draft");
+  const malformedDocument = {
+    id: "malformed-document",
+    title: null,
+    markdown: "must not be restored",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    assetIds: [],
+    schemaVersion: 1,
+  };
+
+  await page.getByLabel("Restore Markdown Lens workspace backup").setInputFiles({
+    name: "malformed.markdownlens.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        format: "markdown-lens-workspace",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        documents: [malformedDocument],
+        assets: [],
+      }),
+    ),
+  });
+
+  await expect(page.getByText("Invalid workspace backup:")).toBeVisible();
+  await expect(editor).toContainText("Keep this local draft");
+  await expect(page.getByText("must not be restored")).toHaveCount(0);
+});
+
 test("desktop split persists keyboard resizing and can be reset", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop workspace interaction");
   await page.addInitScript(() => {
@@ -224,6 +257,10 @@ test("share links require explicit consent and preserve existing local drafts", 
   await page.waitForTimeout(600);
   await page.goto(shareUrl);
 
+  const inspectDialog = page.getByRole("dialog", { name: "Inspect shared document?" });
+  await expect(inspectDialog).toContainText("has not been decompressed or parsed");
+  await expect(page.getByRole("dialog", { name: "Open shared document?" })).toHaveCount(0);
+  await inspectDialog.getByRole("button", { name: "Inspect safely" }).click();
   const openDialog = page.getByRole("dialog", { name: "Open shared document?" });
   await expect(openDialog).toContainText("will not be replaced");
   await expect(editor).toContainText("Existing local draft");
@@ -240,6 +277,10 @@ test("malformed and unsupported share links show safe errors", async ({ page }) 
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("");
 
   await page.goto("/editor#v1:not-valid-compressed-data");
+  await page
+    .getByRole("dialog", { name: "Inspect shared document?" })
+    .getByRole("button", { name: "Inspect safely" })
+    .click();
   await expect(page.getByText("This Markdown Lens share link is malformed.")).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("");
 });

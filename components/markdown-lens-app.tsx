@@ -65,8 +65,8 @@ import {
   createDocumentRecord,
   createId,
   type DocumentRecord,
-  type WorkspaceBackup,
 } from "@/lib/workspace/types";
+import { parseWorkspaceBackupFile } from "@/lib/workspace/backup-validation";
 import {
   downloadBlob,
   getDocumentHeadings,
@@ -78,7 +78,12 @@ import {
 import { convertLocalFile, converterCapabilities } from "@/lib/converters/registry";
 import { ConverterError } from "@/lib/converters/error";
 import type { ConversionResult, ConverterProgress } from "@/lib/converters/types";
-import { createShareFragment, readShareFragment } from "@/lib/share-state";
+import {
+  createShareFragment,
+  inspectShareFragment,
+  readShareFragment,
+  type ShareFragmentPreview,
+} from "@/lib/share-state";
 import { ServiceWorkerRegister } from "@/components/workspace/service-worker-register";
 
 const MarkdownEditor = dynamic(
@@ -135,6 +140,7 @@ export function MarkdownLensApp() {
   const [formatGuideOpen, setFormatGuideOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [shareLink, setShareLink] = useState<ShareLinkPreview | null>(null);
+  const [pendingShareFragment, setPendingShareFragment] = useState<ShareFragmentPreview | null>(null);
   const [pendingSharedMarkdown, setPendingSharedMarkdown] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [applyServiceWorkerUpdate, setApplyServiceWorkerUpdate] = useState<(() => void) | null>(null);
@@ -157,6 +163,8 @@ export function MarkdownLensApp() {
     () => documents.find((document) => document.id === activeId),
     [activeId, documents],
   );
+  const activeDocumentId = activeDocument?.id;
+  const activeAssetIds = activeDocument?.assetIds;
   const headings = useMemo(() => getDocumentHeadings(deferredMarkdown), [deferredMarkdown]);
   const stats = useMemo(() => getDocumentStats(markdown), [markdown]);
   const filteredDocuments = useMemo(() => {
@@ -199,8 +207,8 @@ export function MarkdownLensApp() {
       await initializeWorkspace();
       const records = await listDocuments({ includeDeleted: true });
       try {
-        const sharedMarkdown = readShareFragment(window.location.hash);
-        if (sharedMarkdown !== null) setPendingSharedMarkdown(sharedMarkdown);
+        const sharedFragment = inspectShareFragment(window.location.hash);
+        setPendingShareFragment(sharedFragment);
       } catch (error) {
         setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
         clearShareFragment();
@@ -236,8 +244,8 @@ export function MarkdownLensApp() {
   useEffect(() => {
     const handleSharedFragment = () => {
       try {
-        const sharedMarkdown = readShareFragment(window.location.hash);
-        if (sharedMarkdown !== null) setPendingSharedMarkdown(sharedMarkdown);
+        const sharedFragment = inspectShareFragment(window.location.hash);
+        setPendingShareFragment(sharedFragment);
       } catch (error) {
         setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
         clearShareFragment();
@@ -250,8 +258,17 @@ export function MarkdownLensApp() {
   useEffect(() => {
     if (!activeDocument) return;
     setMarkdown(activeDocument.markdown);
+    // Selection owns the editor source; autosave updates must not reset it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDocumentId]);
+
+  useEffect(() => {
+    if (!activeDocumentId || !activeAssetIds) {
+      setAssetUrls({});
+      return;
+    }
     let revoked: string[] = [];
-    void getDocumentAssets(activeDocument.id).then((assets) => {
+    void getDocumentAssets(activeDocumentId, activeAssetIds).then((assets) => {
       const next: Record<string, string> = {};
       for (const asset of assets) {
         const url = URL.createObjectURL(asset.blob);
@@ -264,9 +281,7 @@ export function MarkdownLensApp() {
       revoked.forEach((url) => URL.revokeObjectURL(url));
       revoked = [];
     };
-    // Asset URLs are owned by the selected document ID; record edits do not change them.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDocument?.id]);
+  }, [activeAssetIds, activeDocumentId]);
 
   useEffect(() => {
     if (!ready || !activeDocument || activeDocument.markdown === markdown) return;
@@ -479,6 +494,25 @@ export function MarkdownLensApp() {
     }
   }
 
+  function inspectPendingSharedDocument() {
+    if (pendingShareFragment === null) return;
+    try {
+      const sharedMarkdown = readShareFragment(pendingShareFragment.fragment);
+      if (sharedMarkdown === null) throw new Error("This Markdown Lens share link is malformed.");
+      setPendingShareFragment(null);
+      setPendingSharedMarkdown(sharedMarkdown);
+    } catch (error) {
+      setPendingShareFragment(null);
+      setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
+      clearShareFragment();
+    }
+  }
+
+  function dismissPendingShareFragment() {
+    setPendingShareFragment(null);
+    clearShareFragment();
+  }
+
   async function openSharedDocument() {
     if (pendingSharedMarkdown === null) return;
     try {
@@ -518,7 +552,7 @@ export function MarkdownLensApp() {
     if (!activeDocument) return;
     const [{ zipSync, strToU8 }, assets] = await Promise.all([
       import("fflate"),
-      getDocumentAssets(activeDocument.id),
+      getDocumentAssets(activeDocument.id, activeDocument.assetIds),
     ]);
     const entries: Record<string, Uint8Array> = {
       [`${toFileName(activeDocument.title)}.md`]: strToU8(markdown),
@@ -531,10 +565,14 @@ export function MarkdownLensApp() {
   }
 
   async function restoreWorkspace(file: File) {
-    const backup = JSON.parse(await file.text()) as WorkspaceBackup;
-    await importWorkspace(backup);
-    await refreshDocuments();
-    setNotice("Workspace backup restored locally.");
+    try {
+      const backup = await parseWorkspaceBackupFile(file);
+      await importWorkspace(backup);
+      await refreshDocuments();
+      setNotice("Workspace backup restored locally.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "The workspace backup could not be restored.");
+    }
   }
 
   function beginResize(event: React.PointerEvent<HTMLButtonElement>) {
@@ -887,6 +925,14 @@ export function MarkdownLensApp() {
       {formatGuideOpen ? <FormatGuide onClose={() => setFormatGuideOpen(false)} /> : null}
       {reportOpen && activeDocument?.conversion ? <ConversionReportDialog document={activeDocument} onClose={() => setReportOpen(false)} /> : null}
       {shareLink ? <ShareLinkDialog preview={shareLink} onCopy={() => void copyShareLink()} onClose={() => setShareLink(null)} /> : null}
+      {pendingShareFragment !== null ? (
+        <SharedLinkConsentDialog
+          preview={pendingShareFragment}
+          existingDocumentCount={documents.filter((document) => document.deletedAt === undefined).length}
+          onInspect={inspectPendingSharedDocument}
+          onClose={dismissPendingShareFragment}
+        />
+      ) : null}
       {pendingSharedMarkdown !== null ? (
         <SharedDocumentDialog
           markdown={pendingSharedMarkdown}
@@ -895,6 +941,40 @@ export function MarkdownLensApp() {
           onClose={dismissSharedDocument}
         />
       ) : null}
+    </div>
+  );
+}
+
+function SharedLinkConsentDialog({
+  preview,
+  existingDocumentCount,
+  onInspect,
+  onClose,
+}: {
+  preview: ShareFragmentPreview;
+  existingDocumentCount: number;
+  onInspect: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="shared-link-consent-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="shared-link-consent-title" className="text-lg font-semibold">Inspect shared document?</h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">The URL contains compressed, untrusted Markdown. It has not been decompressed or parsed. Your {existingDocumentCount === 1 ? "existing draft" : `${existingDocumentCount.toLocaleString()} existing drafts`} will not be replaced.</p>
+          </div>
+          <IconButton icon={X} label="Close shared link dialog" onClick={onClose} />
+        </div>
+        <dl className="mt-5 grid grid-cols-1 gap-px overflow-hidden border border-border bg-border text-sm">
+          <ReportFact label="Compressed size" value={`${preview.compressedCharacters.toLocaleString()} characters`} />
+        </dl>
+        <p className="mt-4 text-xs leading-5 text-muted-foreground">Inspection uses strict decompression output and work limits before showing any document details.</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Cancel</button>
+          <button type="button" onClick={onInspect} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">Inspect safely</button>
+        </div>
+      </div>
     </div>
   );
 }

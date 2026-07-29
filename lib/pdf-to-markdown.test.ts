@@ -100,3 +100,33 @@ test("rejects a fully scanned or empty PDF", () => {
     NoExtractablePdfTextError,
   );
 });
+
+test("escapes attacker-controlled PDF metadata before generating the title heading", () => {
+  const markdown = convertPdfPagesToMarkdown({
+    title: "![opened](https://attacker.invalid/pixel)",
+    pages: [page(1, [span("Readable body.", 20, 700)])],
+  });
+
+  assert.match(
+    markdown,
+    /^# \\\!\\\[opened\\\]\\\(https:\/\/attacker\.invalid\/pixel\\\)$/m,
+  );
+  assert.doesNotMatch(markdown, /^# !\[opened\]\(/m);
+});
+
+test("stops when PDF extraction or generated output crosses its budget", () => {
+  assert.throws(
+    () =>
+      convertPdfPagesToMarkdown({
+        title: "Dense",
+        pages: [page(1, [span("one", 10, 700), span("two", 40, 700)])],
+        limits: {
+          maxPages: 1,
+          maxTextItems: 1,
+          maxExtractedCharacters: 100,
+          maxOutputCharacters: 100,
+        },
+      }),
+    /too many text items/,
+  );
+});

@@ -1,13 +1,40 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactElement, type RefObject } from "react";
+/* eslint-disable @next/next/no-img-element -- preview images may be local blobs or consent-gated remote URLs */
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactElement,
+  type RefObject,
+} from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
-import { Check, Clipboard, FileCode2, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  Clipboard,
+  FileCode2,
+  ImageOff,
+  Loader2,
+  Play,
+} from "lucide-react";
+import {
+  analyzeMarkdownBudget,
+  assertMermaidSourceBudget,
+  MARKDOWN_DEGRADED_PREVIEW_CHARACTERS,
+  MAX_MERMAID_GRAPH_STATEMENTS,
+  MAX_MERMAID_SOURCE_CHARACTERS,
+  MAX_MERMAID_SVG_CHARACTERS,
+} from "@/lib/markdown-limits";
+
+let mermaidRenderQueue: Promise<void> = Promise.resolve();
 
 export function MarkdownPreview({
   markdown,
@@ -21,6 +48,7 @@ export function MarkdownPreview({
   assetUrls: Record<string, string>;
 }) {
   const components = useMarkdownComponents(theme, assetUrls);
+  const budget = useMemo(() => analyzeMarkdownBudget(markdown), [markdown]);
   if (!markdown.trim()) {
     return (
       <div className="flex h-full items-center justify-center px-8 text-center">
@@ -29,6 +57,27 @@ export function MarkdownPreview({
           <h2 className="mt-4 text-lg font-semibold">No preview yet</h2>
           <p className="mt-1 text-sm text-muted-foreground">Write or import Markdown to begin.</p>
         </div>
+      </div>
+    );
+  }
+  if (!budget.allowed) {
+    return (
+      <div ref={previewRef} className="mx-auto w-full max-w-[860px] px-7 pb-24 pt-6 lg:px-9">
+        <div className="border border-amber-500/35 bg-amber-500/10 p-4 text-sm text-amber-200">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+            Interactive preview paused
+          </div>
+          <p className="mt-2 text-xs leading-5 text-amber-100/80">
+            {budget.reason} The full source remains editable and exportable.
+          </p>
+        </div>
+        <pre className="mt-4 max-h-[60vh] overflow-auto whitespace-pre-wrap border border-border bg-muted p-4 text-xs">
+          {markdown.slice(0, MARKDOWN_DEGRADED_PREVIEW_CHARACTERS)}
+          {markdown.length > MARKDOWN_DEGRADED_PREVIEW_CHARACTERS
+            ? "\n\n… preview excerpt truncated …"
+            : ""}
+        </pre>
       </div>
     );
   }
@@ -56,7 +105,9 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
         const { className, children, ...rest } = props;
         const language = /language-(\w+)/.exec(className ?? "")?.[1]?.toLowerCase();
         const code = String(children).replace(/\n$/, "");
-        if (language === "mermaid") return <MermaidDiagram code={code} theme={theme} />;
+        if (language === "mermaid") {
+          return <MermaidDiagram key={`${theme}:${code}`} code={code} theme={theme} />;
+        }
         return (
           <code className={className} {...rest}>
             {children}
@@ -71,18 +122,87 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
       a(props) {
         return <a {...props} target="_blank" rel="noreferrer" />;
       },
-      img({ src, alt, ...props }) {
-        const resolved =
-          typeof src === "string" && src.startsWith("assets/")
-            ? assetUrls[src.slice("assets/".length)]
-            : src;
-        // User-owned blob/data URLs cannot use the Next image optimizer safely.
-        // eslint-disable-next-line @next/next/no-img-element
-        return <img {...props} src={resolved} alt={alt ?? ""} loading="lazy" />;
+      img({ src, alt, node, ...props }) {
+        void node;
+        return (
+          <SafeMarkdownImage
+            {...props}
+            src={src}
+            alt={alt ?? ""}
+            assetUrls={assetUrls}
+          />
+        );
       },
     }),
     [assetUrls, theme],
   );
+}
+
+function SafeMarkdownImage({
+  src,
+  alt,
+  assetUrls,
+  ...props
+}: ComponentPropsWithoutRef<"img"> & { assetUrls: Record<string, string> }) {
+  const [loadedRemote, setLoadedRemote] = useState<string | null>(null);
+  const localAsset =
+    typeof src === "string" && src.startsWith("assets/")
+      ? assetUrls[src.slice("assets/".length)]
+      : undefined;
+  const remoteUrl = normalizeRemoteImageUrl(src);
+
+  if (localAsset) {
+    return <img {...props} src={localAsset} alt={alt} loading="lazy" />;
+  }
+
+  if (remoteUrl && loadedRemote === remoteUrl) {
+    return (
+      <img
+        {...props}
+        src={remoteUrl}
+        alt={alt}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+
+  if (remoteUrl) {
+    return (
+      <span className="not-prose my-3 inline-flex max-w-full items-center gap-3 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+        <ImageOff className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          Remote image blocked from{" "}
+          <span className="font-medium text-foreground">{new URL(remoteUrl).hostname}</span>
+          {alt ? ` (${alt})` : ""}
+        </span>
+        <button
+          type="button"
+          onClick={() => setLoadedRemote(remoteUrl)}
+          className="shrink-0 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          Load image
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span className="not-prose my-3 inline-flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+      <ImageOff className="h-4 w-4" aria-hidden />
+      Image source blocked{alt ? ` (${alt})` : ""}
+    </span>
+  );
+}
+
+function normalizeRemoteImageUrl(value: unknown) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function CopyableCodeBlock({ children }: { children: React.ReactNode }) {
@@ -131,24 +251,60 @@ function extractText(value: React.ReactNode): string {
 }
 
 function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark" }) {
-  const [state, setState] = useState<{ status: "loading" | "ready" | "error"; svg?: string; error?: string }>({
-    status: "loading",
+  const [request, setRequest] = useState(0);
+  const [state, setState] = useState<{ status: "idle" | "loading" | "ready" | "error"; svg?: string; error?: string }>({
+    status: "idle",
   });
+
   useEffect(() => {
+    if (request === 0) return;
     let cancelled = false;
-    import("mermaid")
-      .then(async ({ default: mermaid }) => {
-        mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: theme === "dark" ? "dark" : "default" });
+    const render = async () => {
+      assertMermaidSourceBudget(code);
+      const { default: mermaid } = await import("mermaid");
+      if (cancelled) return;
+      await enqueueMermaidRender(async () => {
+        if (cancelled) return;
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: "strict",
+          theme: theme === "dark" ? "dark" : "default",
+          maxEdges: MAX_MERMAID_GRAPH_STATEMENTS,
+          maxTextSize: MAX_MERMAID_SOURCE_CHARACTERS,
+        });
         const { svg } = await mermaid.render(`markdown-lens-mermaid-${crypto.randomUUID()}`, code);
+        if (svg.length > MAX_MERMAID_SVG_CHARACTERS) {
+          throw new Error("The rendered Mermaid diagram exceeds the SVG output limit.");
+        }
         if (!cancelled) setState({ status: "ready", svg });
-      })
+      });
+    };
+    void render()
       .catch((error) => {
         if (!cancelled) setState({ status: "error", error: error instanceof Error ? error.message : "Diagram failed." });
       });
     return () => {
       cancelled = true;
     };
-  }, [code, theme]);
+  }, [code, request, theme]);
+  if (state.status === "idle") {
+    return (
+      <div className="not-prose my-5 flex items-center justify-between gap-3 border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+        <span>Mermaid diagram is paused until you choose to render it.</span>
+        <button
+          type="button"
+          onClick={() => {
+            setState({ status: "loading" });
+            setRequest((current) => current + 1);
+          }}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent/10"
+        >
+          <Play className="h-3.5 w-3.5" aria-hidden />
+          Render diagram
+        </button>
+      </div>
+    );
+  }
   if (state.status === "loading") {
     return (
       <div className="not-prose my-5 flex items-center gap-2 border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
@@ -165,4 +321,13 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
     );
   }
   return <div className="not-prose my-5 overflow-auto border border-border bg-white p-4 dark:bg-slate-950" dangerouslySetInnerHTML={{ __html: state.svg ?? "" }} />;
+}
+
+function enqueueMermaidRender<T>(task: () => Promise<T>) {
+  const result = mermaidRenderQueue.then(task, task);
+  mermaidRenderQueue = result.then(
+    () => undefined,
+    () => undefined,
+  );
+  return result;
 }

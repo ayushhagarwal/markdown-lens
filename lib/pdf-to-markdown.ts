@@ -1,3 +1,5 @@
+import { escapeMarkdownText, fencedCodeBlock } from "@/lib/converters/helpers";
+
 export type PdfTextSpan = {
   text: string;
   x: number;
@@ -19,6 +21,12 @@ export type PdfPageInput = {
 export type PdfConversionInput = {
   title: string;
   pages: PdfPageInput[];
+  limits?: {
+    maxPages: number;
+    maxTextItems: number;
+    maxExtractedCharacters: number;
+    maxOutputCharacters: number;
+  };
 };
 
 type PdfLine = {
@@ -41,6 +49,12 @@ const BULLET_PATTERN = /^[\u2022\u2023\u25e6\u2043\u2219\u25aa\u25cf\u00b7\-*]\s
 const NUMBERED_LIST_PATTERN = /^(\d+)[.)]\s+/;
 const URL_PATTERN = /\bhttps?:\/\/[^\s<>()]+/gi;
 const MONOSPACE_PATTERN = /(mono|courier|consolas|menlo|code)/i;
+const DEFAULT_PDF_MARKDOWN_LIMITS = {
+  maxPages: 500,
+  maxTextItems: 250_000,
+  maxExtractedCharacters: 5_000_000,
+  maxOutputCharacters: 2 * 1024 * 1024,
+};
 
 export class NoExtractablePdfTextError extends Error {
   constructor() {
@@ -49,7 +63,29 @@ export class NoExtractablePdfTextError extends Error {
   }
 }
 
-export function convertPdfPagesToMarkdown({ title, pages }: PdfConversionInput) {
+export function convertPdfPagesToMarkdown({
+  title,
+  pages,
+  limits = DEFAULT_PDF_MARKDOWN_LIMITS,
+}: PdfConversionInput) {
+  let textItems = 0;
+  let extractedCharacters = 0;
+  if (pages.length > limits.maxPages) {
+    throw new ConverterError("resource-limit", "This PDF has too many pages to convert safely.");
+  }
+  for (const page of pages) {
+    textItems += page.spans.length;
+    extractedCharacters += page.spans.reduce((total, span) => total + span.text.length, 0);
+    if (
+      textItems > limits.maxTextItems ||
+      extractedCharacters > limits.maxExtractedCharacters
+    ) {
+      throw new ConverterError(
+        "resource-limit",
+        "This PDF contains too many text items or extracted characters.",
+      );
+    }
+  }
   const preparedPages = pages.map(preparePage);
   const safeTitle = normalizeText(title) || "Imported PDF";
   const firstLine = preparedPages[0]?.lines[0];
@@ -71,9 +107,21 @@ export function convertPdfPagesToMarkdown({ title, pages }: PdfConversionInput) 
 
   removeRepeatedMargins(preparedPages);
   const bodyFontSize = inferBodyFontSize(preparedPages);
-  const sections = preparedPages.map((page) => pageToMarkdown(page, bodyFontSize));
+  const sections: string[] = [];
+  let outputCharacters = safeTitle.length + 4;
+  for (const page of preparedPages) {
+    const section = pageToMarkdown(page, bodyFontSize);
+    outputCharacters += section.length + 7;
+    if (outputCharacters > limits.maxOutputCharacters) {
+      throw new ConverterError(
+        "resource-limit",
+        "This PDF would generate more Markdown than can be opened safely.",
+      );
+    }
+    sections.push(section);
+  }
 
-  return `# ${escapeHeading(safeTitle)}\n\n${sections.join("\n\n---\n\n")}`.trim() + "\n";
+  return `# ${escapeMarkdownText(safeTitle)}\n\n${sections.join("\n\n---\n\n")}`.trim() + "\n";
 }
 
 export function groupPdfTextIntoLines(page: PdfPageInput): PdfLine[] {
@@ -157,7 +205,7 @@ function pageToMarkdown(page: PreparedPage, bodyFontSize: number) {
 
   const flushCode = () => {
     if (codeLines.length === 0) return;
-    blocks.push(`\`\`\`text\n${codeLines.join("\n")}\n\`\`\``);
+    blocks.push(fencedCodeBlock("text", codeLines.join("\n")));
     codeLines = [];
   };
 
@@ -175,7 +223,7 @@ function pageToMarkdown(page: PreparedPage, bodyFontSize: number) {
 
     if (headingLevel) {
       flushParagraph();
-      blocks.push(`${"#".repeat(headingLevel)} ${escapeHeading(line.text)}`);
+      blocks.push(`${"#".repeat(headingLevel)} ${escapeMarkdownText(line.text)}`);
       continue;
     }
 
@@ -299,7 +347,7 @@ function joinParagraphLines(lines: PdfLine[]) {
   return lines.reduce((output, line, index) => {
     const text = linkBareUrls(line.text);
     if (index === 0) return text;
-    if (output.endsWith("-") && /^[a-z]/.test(text)) {
+    if (output.endsWith("-") && /^[a-z]/.test(line.text)) {
       return output.slice(0, -1) + text;
     }
     return `${output} ${text}`;
@@ -320,11 +368,30 @@ function normalizeListItem(text: string) {
 }
 
 function linkBareUrls(text: string) {
-  return text.replace(URL_PATTERN, (url) => {
+  const matches = [...text.matchAll(URL_PATTERN)];
+  if (matches.length === 0) return escapeMarkdownText(text);
+
+  let output = "";
+  let cursor = 0;
+  for (const match of matches) {
+    const index = match.index ?? cursor;
+    const url = match[0];
     const trailing = url.match(/[.,;:!?]+$/)?.[0] ?? "";
     const cleanUrl = trailing ? url.slice(0, -trailing.length) : url;
-    return `<${cleanUrl}>${trailing}`;
-  });
+    output += escapePdfTextSegment(text.slice(cursor, index));
+    output += isSafeWebUrl(cleanUrl)
+      ? `<${cleanUrl}>`
+      : escapeMarkdownText(cleanUrl);
+    output += escapeMarkdownText(trailing);
+    cursor = index + url.length;
+  }
+  return output + escapePdfTextSegment(text.slice(cursor));
+}
+
+function escapePdfTextSegment(value: string) {
+  const escaped = escapeMarkdownText(value);
+  if (!escaped) return /\s/.test(value) ? " " : "";
+  return `${/^\s/.test(value) ? " " : ""}${escaped}${/\s$/.test(value) ? " " : ""}`;
 }
 
 function isStandalonePageNumber(text: string) {
@@ -342,10 +409,6 @@ function normalizeText(text: string) {
   return text.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function escapeHeading(text: string) {
-  return linkBareUrls(text.replace(/^#+\s*/, "").trim());
-}
-
 function isSafeWebUrl(value: string) {
   try {
     const url = new URL(value);
@@ -361,3 +424,4 @@ function median(values: number[]) {
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
+import { ConverterError } from "@/lib/converters/error";

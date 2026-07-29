@@ -41,11 +41,17 @@ Markdown Lens should remain safe by default:
 - Keep share payloads in URL fragments. Do not place document content in query parameters, paths, analytics, or logs.
 - Do not describe URL compression as encryption; anyone with the complete share URL can read its contents.
 - Store OCR language data and workers on the same origin, and never send image or document bytes to an OCR service.
-- Validate workspace backups before writing records and keep schema migrations idempotent.
+- Validate workspace backups and document-to-asset ownership before writing records, reject ID collisions, and keep schema migrations idempotent.
 
 ## Current Limits
 
 - Input files are limited to 100 MB.
-- ZIP archives are limited to 100 files, one archive level, and 250 MB expanded content.
-- Share fragments are capped to protect browsers from unstable URLs and decompression abuse.
+- Workspace backup files are limited to 64 MiB, 1,000 documents, and 2,000 assets. A single decoded asset is limited to 16 MiB and decoded assets are limited to 48 MiB in aggregate.
+- Interactive Markdown preview parsing is limited to 1,000,000 characters, 50,000 lines, 2,000 headings, bounded code/math/nesting, and eight consent-gated Mermaid diagrams.
+- Plain Markdown output is limited to 2 MiB and structured text/HTML input is limited to 4 MiB.
+- ZIP-based formats are limited to 100 entries, 32 MiB per expanded entry, 128 MiB aggregate expansion, and a 200:1 compression ratio. Declared limits are checked before inflation and produced bytes are checked while streaming.
+- Tables are limited to 10,000 rows, Excel's 16,384-column maximum, and 250,000 rectangular cells.
+- Images are limited to 16,384 pixels per dimension and 40 million total pixels; animated inputs are rejected.
+- PDFs are limited to 500 pages, 5,000 text items per page, 250,000 text items, 10,000 annotations, and 5,000,000 extracted characters.
+- Share fragments are limited to 32,000 compressed characters and 200,000 output characters. Decompression requires explicit consent and stops at fixed output and work budgets.
 - Legacy binary DOC, PPT, and XLS parsers are intentionally excluded.

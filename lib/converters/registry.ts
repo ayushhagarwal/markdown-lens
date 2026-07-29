@@ -1,6 +1,11 @@
-import { unzipSync } from "fflate";
 import { ConverterError, throwIfAborted } from "@/lib/converters/error";
-import { baseResult, extensionOf, titleFromFile } from "@/lib/converters/helpers";
+import {
+  assertGeneratedMarkdown,
+  baseResult,
+  extensionOf,
+  titleFromFile,
+} from "@/lib/converters/helpers";
+import { extractBoundedZip } from "@/lib/converters/bounded-zip";
 import {
   DEFAULT_CONVERSION_LIMITS,
   type ConversionContext,
@@ -71,22 +76,13 @@ export async function convertLocalFile(
 }
 
 async function convertArchive(file: File, options: ConversionOptions, context: ConversionContext) {
-  if (file.size > context.limits.maxFileBytes) throw new ConverterError("too-large", "This ZIP exceeds the local file limit.");
   context.onProgress({ stage: "archive", message: `Inspecting “${file.name}” safely…` });
-  let entries: Record<string, Uint8Array>;
-  try {
-    entries = unzipSync(new Uint8Array(await file.arrayBuffer()));
-  } catch {
-    throw new ConverterError("invalid", "This ZIP archive is invalid or encrypted.");
-  }
-  const paths = Object.keys(entries).filter((path) => !path.endsWith("/") && !path.startsWith("__MACOSX/"));
-  if (paths.length > context.limits.maxArchiveEntries) {
-    throw new ConverterError("archive-limit", `This ZIP has more than ${context.limits.maxArchiveEntries} entries.`);
-  }
-  const expandedBytes = paths.reduce((total, path) => total + entries[path].byteLength, 0);
-  if (expandedBytes > context.limits.maxExpandedBytes) {
-    throw new ConverterError("archive-limit", "This ZIP expands beyond the safe local processing limit.");
-  }
+  const { entries, expandedBytes } = await extractBoundedZip(
+    file,
+    context,
+    (entry) => !entry.directory && !entry.name.startsWith("__MACOSX/"),
+  );
+  const paths = Object.keys(entries);
   const children: ConversionResult[] = [];
   const warnings: string[] = [];
   for (let index = 0; index < paths.length; index += 1) {
@@ -116,11 +112,13 @@ async function convertArchive(file: File, options: ConversionOptions, context: C
   }
   if (children.length === 0) throw new ConverterError("no-text", "This ZIP contains no supported readable documents.");
   const title = titleFromFile(file);
+  const markdown = `# ${title}\n\n${children.map((child) => child.markdown).join("\n\n---\n\n")}`;
+  assertGeneratedMarkdown(markdown, context, "ZIP archive");
   return baseResult(file, {
     converterId: "archive",
     detectedFormat: "zip",
     title,
-    markdown: `# ${title}\n\n${children.map((child) => child.markdown).join("\n\n---\n\n")}`,
+    markdown,
     children,
     warnings,
     statistics: { entries: paths.length, converted: children.length, expandedBytes },

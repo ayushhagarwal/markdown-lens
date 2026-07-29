@@ -3,8 +3,11 @@ import { describe, expect, test } from "vitest";
 import { ConverterError } from "@/lib/converters/error";
 import {
   assertFileAllowed,
+  escapeMarkdownText,
   escapeTableCell,
   extensionOf,
+  fencedCodeBlock,
+  markdownHeading,
   matchesFile,
   matrixToMarkdown,
   titleFromFile,
@@ -51,7 +54,7 @@ describe("converter input helpers", () => {
         ["Name", "Note"],
         ["Ada", "one | two"],
         ["Lin"],
-      ]),
+      ], DEFAULT_CONVERSION_LIMITS),
     ).toBe(
       [
         "| Name | Note |",
@@ -60,5 +63,21 @@ describe("converter input helpers", () => {
         "| Lin |  |",
       ].join("\n"),
     );
+  });
+
+  test("escapes untrusted inline Markdown and chooses a non-conflicting code fence", () => {
+    expect(escapeMarkdownText("![opened](https://attacker.invalid/pixel)")).toBe(
+      "\\!\\[opened\\]\\(https://attacker.invalid/pixel\\)",
+    );
+    expect(markdownHeading(2, "[Account](https://attacker.invalid)")).toBe(
+      "## \\[Account\\]\\(https://attacker.invalid\\)",
+    );
+
+    const fenced = fencedCodeBlock(
+      "xml",
+      "<value><![CDATA[\n```\n![opened](https://attacker.invalid)\n]]></value>",
+    );
+    expect(fenced.startsWith("````xml\n")).toBe(true);
+    expect(fenced.endsWith("\n````")).toBe(true);
   });
 });
