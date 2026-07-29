@@ -2,6 +2,13 @@ import {
   convertWordHtmlToMarkdown,
   NoExtractableWordTextError,
 } from "@/lib/word-to-markdown";
+import { zipSync } from "fflate";
+import { extractBoundedZip } from "@/lib/converters/bounded-zip";
+import {
+  DEFAULT_CONVERSION_LIMITS,
+  type ConversionLimits,
+} from "@/lib/converters/types";
+import { ConverterError } from "@/lib/converters/error";
 
 export const WORD_SIZE_LIMIT_BYTES = 100 * 1024 * 1024;
 
@@ -10,7 +17,7 @@ export type WordImportProgress = {
 };
 
 export class WordImportError extends Error {
-  code: "too-large" | "legacy-doc" | "invalid" | "no-text" | "unknown";
+  code: "too-large" | "legacy-doc" | "invalid" | "no-text" | "resource-limit" | "unknown";
 
   constructor(code: WordImportError["code"], message: string) {
     super(message);
@@ -42,6 +49,8 @@ const WORD_STYLE_MAP = [
 export async function importWordAsMarkdown(
   file: File,
   onProgress: (progress: WordImportProgress) => void,
+  limits: ConversionLimits = DEFAULT_CONVERSION_LIMITS,
+  signal: AbortSignal = new AbortController().signal,
 ) {
   const extension = file.name.split(".").pop()?.toLowerCase();
   if (extension === "doc") {
@@ -69,8 +78,23 @@ export async function importWordAsMarkdown(
       turndownModule,
     ) as TurndownModule;
     const title = file.name.replace(/\.docx$/i, "") || "Imported Word Document";
-    const arrayBuffer = await file.arrayBuffer();
+    const { entries } = await extractBoundedZip(
+      file,
+      {
+        signal,
+        onProgress: () => undefined,
+        limits,
+      },
+      (entry) =>
+        !entry.directory &&
+        (entry.name === "[Content_Types].xml" ||
+          entry.name.startsWith("_rels/") ||
+          entry.name.startsWith("word/")),
+    );
+    const packageBytes = zipSync(entries, { level: 0 });
+    const arrayBuffer = packageBytes.slice().buffer;
     let imageCount = 0;
+    let totalImageBytes = 0;
     const assets: Array<{
       name: string;
       mimeType: string;
@@ -87,14 +111,32 @@ export async function importWordAsMarkdown(
         includeDefaultStyleMap: true,
         convertImage: mammoth.images.imgElement(async (image) => {
           imageCount += 1;
+          if (imageCount > limits.maxAssets) {
+            throw new WordImportError(
+              "resource-limit",
+              "This Word document contains too many embedded images.",
+            );
+          }
           const extension = extensionForImageType(image.contentType);
           const name = `embedded-image-${imageCount}.${extension}`;
-          const base64 = await image.readAsBase64String();
-          const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+          const imageBuffer = await image.readAsArrayBuffer();
+          if (imageBuffer.byteLength > limits.maxAssetBytes) {
+            throw new WordImportError(
+              "resource-limit",
+              "This Word document contains an embedded image that is too large.",
+            );
+          }
+          totalImageBytes += imageBuffer.byteLength;
+          if (totalImageBytes > limits.maxTotalAssetBytes) {
+            throw new WordImportError(
+              "resource-limit",
+              "This Word document contains too much embedded image data.",
+            );
+          }
           assets.push({
             name,
             mimeType: image.contentType,
-            blob: new Blob([bytes], { type: image.contentType }),
+            blob: new Blob([imageBuffer], { type: image.contentType }),
             altText: `Embedded image ${imageCount}`,
             sourceLocation: `word/${name}`,
           });
@@ -107,12 +149,24 @@ export async function importWordAsMarkdown(
     );
 
     onProgress({ stage: "finishing" });
+    if (result.value.length > limits.maxGeneratedHtmlChars) {
+      throw new WordImportError(
+        "resource-limit",
+        "This Word document expands to too much HTML to convert safely.",
+      );
+    }
     const markdown = convertWordHtmlToMarkdown({
       html: result.value,
       title,
       dependencies: { TurndownService, gfm },
       imageCount,
     });
+    if (markdown.length > limits.maxGeneratedMarkdownChars) {
+      throw new WordImportError(
+        "resource-limit",
+        "This Word document would generate more Markdown than can be opened safely.",
+      );
+    }
 
     await yieldToBrowser();
 
@@ -125,6 +179,9 @@ export async function importWordAsMarkdown(
     };
   } catch (error) {
     if (error instanceof WordImportError) throw error;
+    if (error instanceof ConverterError && error.code === "archive-limit") {
+      throw new WordImportError("resource-limit", error.message);
+    }
     if (error instanceof NoExtractableWordTextError) {
       throw new WordImportError(
         "no-text",

@@ -100,3 +100,20 @@ test("rejects a fully scanned or empty PDF", () => {
     NoExtractablePdfTextError,
   );
 });
+
+test("stops when PDF extraction or generated output crosses its budget", () => {
+  assert.throws(
+    () =>
+      convertPdfPagesToMarkdown({
+        title: "Dense",
+        pages: [page(1, [span("one", 10, 700), span("two", 40, 700)])],
+        limits: {
+          maxPages: 1,
+          maxTextItems: 1,
+          maxExtractedCharacters: 100,
+          maxOutputCharacters: 100,
+        },
+      }),
+    /too many text items/,
+  );
+});

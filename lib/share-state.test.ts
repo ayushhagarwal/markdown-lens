@@ -1,6 +1,8 @@
 import { describe, expect, test } from "vitest";
+import LZString from "lz-string";
 import {
   createShareFragment,
+  inspectShareFragment,
   readShareFragment,
   SHARE_FRAGMENT_LIMIT,
   SHARE_MARKDOWN_LIMIT,
@@ -16,6 +18,20 @@ describe("share fragments", () => {
     expect(() => readShareFragment("#v1:not-valid-compressed-data")).toThrow();
     expect(() => readShareFragment(`#v1:${"a".repeat(SHARE_FRAGMENT_LIMIT)}`)).toThrow();
     expect(() => createShareFragment("a".repeat(SHARE_MARKDOWN_LIMIT + 1))).toThrow();
+  });
+
+  test("inspects compressed payloads without decoding and stops expansion at the output limit", () => {
+    const oversizedPayload = LZString.compressToEncodedURIComponent(
+      "a".repeat(SHARE_MARKDOWN_LIMIT + 1),
+    );
+    const fragment = `#v1:${oversizedPayload}`;
+    expect(inspectShareFragment(fragment)).toMatchObject({
+      compressedCharacters: oversizedPayload.length,
+    });
+    expect(() => readShareFragment(fragment)).toThrow("too large to open safely");
+
+    const boundaryMarkdown = "b".repeat(SHARE_MARKDOWN_LIMIT);
+    expect(readShareFragment(createShareFragment(boundaryMarkdown))).toBe(boundaryMarkdown);
   });
 
   test("rejects unsupported share-link versions without treating ordinary anchors as errors", () => {

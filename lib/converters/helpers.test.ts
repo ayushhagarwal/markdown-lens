@@ -51,7 +51,7 @@ describe("converter input helpers", () => {
         ["Name", "Note"],
         ["Ada", "one | two"],
         ["Lin"],
-      ]),
+      ], DEFAULT_CONVERSION_LIMITS),
     ).toBe(
       [
         "| Name | Note |",

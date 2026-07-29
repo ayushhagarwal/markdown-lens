@@ -24,6 +24,21 @@ describe("structured text converters", () => {
     expect(result.markdown).toContain("| Ada | Uses, commas |");
   });
 
+  test("rejects ragged CSV before rectangular padding amplifies it", async () => {
+    const wideRow = Array.from({ length: 20 }, (_, index) => `column-${index}`).join(",");
+    const narrowRows = Array.from({ length: 20 }, (_, index) => `row-${index}`).join("\n");
+    await expect(
+      csvConverter.convert(
+        file([`${wideRow}\n${narrowRows}`], "ragged.csv", "text/csv"),
+        {},
+        {
+          ...context,
+          limits: { ...DEFAULT_CONVERSION_LIMITS, maxTableCells: 100 },
+        },
+      ),
+    ).rejects.toThrow("cell limit");
+  });
+
   test("formats JSON without flattening its structure", async () => {
     const result = await jsonConverter.convert(
       file(['{"ready":true,"items":[1,2]}'], "state.json", "application/json"),
