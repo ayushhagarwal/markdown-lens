@@ -9,6 +9,31 @@ export function titleFromFile(file: File) {
   return file.name.replace(/\.[^.]+$/, "").trim() || "Imported document";
 }
 
+export function escapeMarkdownText(value: unknown) {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/([\\`*_[\]{}()#!|<>~])/g, "\\$1");
+}
+
+export function markdownHeading(level: number, value: unknown, fallback = "Untitled") {
+  const text = escapeMarkdownText(value) || fallback;
+  return `${"#".repeat(Math.min(6, Math.max(1, level)))} ${text}`;
+}
+
+export function markdownListItem(value: unknown) {
+  return `- ${escapeMarkdownText(value)}`;
+}
+
+export function fencedCodeBlock(language: string, content: string) {
+  const longestBacktickRun = Math.max(
+    0,
+    ...[...content.matchAll(/`+/g)].map((match) => match[0].length),
+  );
+  const fence = "`".repeat(Math.max(3, longestBacktickRun + 1));
+  return `${fence}${language}\n${content}\n${fence}`;
+}
+
 export function matchesFile(
   file: File,
   extensions: readonly string[],

@@ -4,6 +4,8 @@ import {
   assertNonEmpty,
   baseResult,
   escapeTableCell,
+  fencedCodeBlock,
+  markdownHeading,
   matchesFile,
   matrixToMarkdown,
   titleFromFile,
@@ -72,7 +74,9 @@ export const htmlConverter: LocalConverter = {
       converterId: this.id,
       detectedFormat: "html",
       title,
-      markdown: /^#\s+/m.test(markdown) ? `${markdown}\n` : `# ${title}\n\n${markdown}\n`,
+      markdown: /^#\s+/m.test(markdown)
+        ? `${markdown}\n`
+        : `${markdownHeading(1, title)}\n\n${markdown}\n`,
       statistics: { characters: markdown.length },
     });
   },
@@ -101,7 +105,7 @@ export const csvConverter: LocalConverter = {
       converterId: this.id,
       detectedFormat: file.name.toLowerCase().endsWith(".tsv") ? "tsv" : "csv",
       title,
-      markdown: `# ${title}\n\n${matrixToMarkdown(rows)}\n`,
+      markdown: `${markdownHeading(1, title)}\n\n${matrixToMarkdown(rows)}\n`,
       warnings,
       statistics: { rows: rows.length, columns: Math.max(0, ...rows.map((row) => row.length)) },
     });
@@ -126,7 +130,7 @@ export const jsonConverter: LocalConverter = {
       converterId: this.id,
       detectedFormat: "json",
       title,
-      markdown: `# ${title}\n\n\`\`\`json\n${formatted}\n\`\`\`\n`,
+      markdown: `${markdownHeading(1, title)}\n\n${fencedCodeBlock("json", formatted)}\n`,
       statistics: { characters: formatted.length },
     });
   },
@@ -155,7 +159,7 @@ export const xmlConverter: LocalConverter = {
       converterId: this.id,
       detectedFormat: "xml",
       title,
-      markdown: `# ${title}\n\n\`\`\`xml\n${formatted}\n\`\`\`\n`,
+      markdown: `${markdownHeading(1, title)}\n\n${fencedCodeBlock("xml", formatted)}\n`,
       statistics: { characters: formatted.length },
     });
   },

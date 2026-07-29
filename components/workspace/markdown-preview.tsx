@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactElement, type RefObject } from "react";
+/* eslint-disable @next/next/no-img-element -- preview images may be local blobs or consent-gated remote URLs */
+
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentPropsWithoutRef,
+  type ReactElement,
+  type RefObject,
+} from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
-import { Check, Clipboard, FileCode2, Loader2 } from "lucide-react";
+import { Check, Clipboard, FileCode2, ImageOff, Loader2 } from "lucide-react";
 
 export function MarkdownPreview({
   markdown,
@@ -71,18 +80,87 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
       a(props) {
         return <a {...props} target="_blank" rel="noreferrer" />;
       },
-      img({ src, alt, ...props }) {
-        const resolved =
-          typeof src === "string" && src.startsWith("assets/")
-            ? assetUrls[src.slice("assets/".length)]
-            : src;
-        // User-owned blob/data URLs cannot use the Next image optimizer safely.
-        // eslint-disable-next-line @next/next/no-img-element
-        return <img {...props} src={resolved} alt={alt ?? ""} loading="lazy" />;
+      img({ src, alt, node, ...props }) {
+        void node;
+        return (
+          <SafeMarkdownImage
+            {...props}
+            src={src}
+            alt={alt ?? ""}
+            assetUrls={assetUrls}
+          />
+        );
       },
     }),
     [assetUrls, theme],
   );
+}
+
+function SafeMarkdownImage({
+  src,
+  alt,
+  assetUrls,
+  ...props
+}: ComponentPropsWithoutRef<"img"> & { assetUrls: Record<string, string> }) {
+  const [loadedRemote, setLoadedRemote] = useState<string | null>(null);
+  const localAsset =
+    typeof src === "string" && src.startsWith("assets/")
+      ? assetUrls[src.slice("assets/".length)]
+      : undefined;
+  const remoteUrl = normalizeRemoteImageUrl(src);
+
+  if (localAsset) {
+    return <img {...props} src={localAsset} alt={alt} loading="lazy" />;
+  }
+
+  if (remoteUrl && loadedRemote === remoteUrl) {
+    return (
+      <img
+        {...props}
+        src={remoteUrl}
+        alt={alt}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+
+  if (remoteUrl) {
+    return (
+      <span className="not-prose my-3 inline-flex max-w-full items-center gap-3 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+        <ImageOff className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          Remote image blocked from{" "}
+          <span className="font-medium text-foreground">{new URL(remoteUrl).hostname}</span>
+          {alt ? ` (${alt})` : ""}
+        </span>
+        <button
+          type="button"
+          onClick={() => setLoadedRemote(remoteUrl)}
+          className="shrink-0 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-accent"
+        >
+          Load image
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <span className="not-prose my-3 inline-flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+      <ImageOff className="h-4 w-4" aria-hidden />
+      Image source blocked{alt ? ` (${alt})` : ""}
+    </span>
+  );
+}
+
+function normalizeRemoteImageUrl(value: unknown) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function CopyableCodeBlock({ children }: { children: React.ReactNode }) {

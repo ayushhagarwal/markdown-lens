@@ -1,5 +1,12 @@
 import type { LocalConverter } from "@/lib/converters/types";
-import { assertFileAllowed, baseResult, matchesFile, titleFromFile } from "@/lib/converters/helpers";
+import {
+  assertFileAllowed,
+  baseResult,
+  escapeMarkdownText,
+  markdownHeading,
+  matchesFile,
+  titleFromFile,
+} from "@/lib/converters/helpers";
 
 export const imageConverter: LocalConverter = {
   id: "image",
@@ -40,10 +47,11 @@ export const imageConverter: LocalConverter = {
       }
     }
     const imageName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const safeTitle = escapeMarkdownText(title);
     const metadata = [`- Dimensions: ${dimensions.width} × ${dimensions.height}`, `- Type: ${file.type || "image"}`, `- Size: ${formatBytes(file.size)}`].join("\n");
     const markdown = [
-      `# ${title}`,
-      `![${title}](assets/${imageName})`,
+      markdownHeading(1, title),
+      `![${safeTitle}](assets/${imageName})`,
       "## Image details",
       metadata,
       extractedText ? `## Extracted text\n\n${extractedText}` : "",
