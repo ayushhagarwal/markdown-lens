@@ -1,3 +1,5 @@
+import { escapeMarkdownText, fencedCodeBlock } from "@/lib/converters/helpers";
+
 export type PdfTextSpan = {
   text: string;
   x: number;
@@ -73,7 +75,7 @@ export function convertPdfPagesToMarkdown({ title, pages }: PdfConversionInput) 
   const bodyFontSize = inferBodyFontSize(preparedPages);
   const sections = preparedPages.map((page) => pageToMarkdown(page, bodyFontSize));
 
-  return `# ${escapeHeading(safeTitle)}\n\n${sections.join("\n\n---\n\n")}`.trim() + "\n";
+  return `# ${escapeMarkdownText(safeTitle)}\n\n${sections.join("\n\n---\n\n")}`.trim() + "\n";
 }
 
 export function groupPdfTextIntoLines(page: PdfPageInput): PdfLine[] {
@@ -157,7 +159,7 @@ function pageToMarkdown(page: PreparedPage, bodyFontSize: number) {
 
   const flushCode = () => {
     if (codeLines.length === 0) return;
-    blocks.push(`\`\`\`text\n${codeLines.join("\n")}\n\`\`\``);
+    blocks.push(fencedCodeBlock("text", codeLines.join("\n")));
     codeLines = [];
   };
 
@@ -175,7 +177,7 @@ function pageToMarkdown(page: PreparedPage, bodyFontSize: number) {
 
     if (headingLevel) {
       flushParagraph();
-      blocks.push(`${"#".repeat(headingLevel)} ${escapeHeading(line.text)}`);
+      blocks.push(`${"#".repeat(headingLevel)} ${escapeMarkdownText(line.text)}`);
       continue;
     }
 
@@ -299,7 +301,7 @@ function joinParagraphLines(lines: PdfLine[]) {
   return lines.reduce((output, line, index) => {
     const text = linkBareUrls(line.text);
     if (index === 0) return text;
-    if (output.endsWith("-") && /^[a-z]/.test(text)) {
+    if (output.endsWith("-") && /^[a-z]/.test(line.text)) {
       return output.slice(0, -1) + text;
     }
     return `${output} ${text}`;
@@ -320,11 +322,30 @@ function normalizeListItem(text: string) {
 }
 
 function linkBareUrls(text: string) {
-  return text.replace(URL_PATTERN, (url) => {
+  const matches = [...text.matchAll(URL_PATTERN)];
+  if (matches.length === 0) return escapeMarkdownText(text);
+
+  let output = "";
+  let cursor = 0;
+  for (const match of matches) {
+    const index = match.index ?? cursor;
+    const url = match[0];
     const trailing = url.match(/[.,;:!?]+$/)?.[0] ?? "";
     const cleanUrl = trailing ? url.slice(0, -trailing.length) : url;
-    return `<${cleanUrl}>${trailing}`;
-  });
+    output += escapePdfTextSegment(text.slice(cursor, index));
+    output += isSafeWebUrl(cleanUrl)
+      ? `<${cleanUrl}>`
+      : escapeMarkdownText(cleanUrl);
+    output += escapeMarkdownText(trailing);
+    cursor = index + url.length;
+  }
+  return output + escapePdfTextSegment(text.slice(cursor));
+}
+
+function escapePdfTextSegment(value: string) {
+  const escaped = escapeMarkdownText(value);
+  if (!escaped) return /\s/.test(value) ? " " : "";
+  return `${/^\s/.test(value) ? " " : ""}${escaped}${/\s$/.test(value) ? " " : ""}`;
 }
 
 function isStandalonePageNumber(text: string) {
@@ -340,10 +361,6 @@ function normalizeRepeatedLine(text: string) {
 
 function normalizeText(text: string) {
   return text.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function escapeHeading(text: string) {
-  return linkBareUrls(text.replace(/^#+\s*/, "").trim());
 }
 
 function isSafeWebUrl(value: string) {

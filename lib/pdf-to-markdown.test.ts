@@ -100,3 +100,16 @@ test("rejects a fully scanned or empty PDF", () => {
     NoExtractablePdfTextError,
   );
 });
+
+test("escapes attacker-controlled PDF metadata before generating the title heading", () => {
+  const markdown = convertPdfPagesToMarkdown({
+    title: "![opened](https://attacker.invalid/pixel)",
+    pages: [page(1, [span("Readable body.", 20, 700)])],
+  });
+
+  assert.match(
+    markdown,
+    /^# \\\!\\\[opened\\\]\\\(https:\/\/attacker\.invalid\/pixel\\\)$/m,
+  );
+  assert.doesNotMatch(markdown, /^# !\[opened\]\(/m);
+});

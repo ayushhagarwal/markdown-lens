@@ -6,6 +6,9 @@ import {
   assertFileAllowed,
   assertNonEmpty,
   baseResult,
+  escapeMarkdownText,
+  markdownHeading,
+  markdownListItem,
   matchesFile,
   matrixToMarkdown,
   titleFromFile,
@@ -58,11 +61,11 @@ export const spreadsheetConverter: LocalConverter = {
       const worksheet = parseXml(archive, normalizedTarget)?.worksheet;
       const rows = asArray(worksheet?.sheetData?.row).map((row) => rowToValues(row, sharedStrings));
       totalRows += rows.length;
-      sections.push(`## ${sheet.name}\n\n${matrixToMarkdown(rows)}`);
+      sections.push(`${markdownHeading(2, sheet.name, `Sheet ${index + 1}`)}\n\n${matrixToMarkdown(rows)}`);
     }
 
     const title = titleFromFile(file);
-    const markdown = `# ${title}\n\n${sections.join("\n\n")}\n`;
+    const markdown = `${markdownHeading(1, title)}\n\n${sections.join("\n\n")}\n`;
     assertNonEmpty(sections.join(""), "Excel workbook");
     return baseResult(file, {
       converterId: this.id,
@@ -104,7 +107,13 @@ export const presentationConverter: LocalConverter = {
       const heading = texts[0] || `Slide ${index + 1}`;
       const body = texts.slice(1).filter((text) => text !== heading);
       sections.push(
-        [`## ${heading}`, body.map((text) => `- ${text}`).join("\n"), notes.length ? `### Speaker notes\n\n${notes.join(" ")}` : ""]
+        [
+          markdownHeading(2, heading, `Slide ${index + 1}`),
+          body.map(markdownListItem).join("\n"),
+          notes.length
+            ? `${markdownHeading(3, "Speaker notes")}\n\n${escapeMarkdownText(notes.join(" "))}`
+            : "",
+        ]
           .filter(Boolean)
           .join("\n\n"),
       );
@@ -119,7 +128,7 @@ export const presentationConverter: LocalConverter = {
         altText: "Image extracted from presentation",
       }));
     const title = titleFromFile(file);
-    const markdown = `# ${title}\n\n${sections.join("\n\n---\n\n")}\n`;
+    const markdown = `${markdownHeading(1, title)}\n\n${sections.join("\n\n---\n\n")}\n`;
     assertNonEmpty(sections.join(""), "PowerPoint presentation");
     return baseResult(file, {
       converterId: this.id,
@@ -172,7 +181,7 @@ export const epubConverter: LocalConverter = {
       converterId: this.id,
       detectedFormat: "epub",
       title,
-      markdown: `# ${title}\n\n${sections.join("\n\n---\n\n")}\n`,
+      markdown: `${markdownHeading(1, title)}\n\n${sections.join("\n\n---\n\n")}\n`,
       statistics: { chapters: sections.length },
     });
   },

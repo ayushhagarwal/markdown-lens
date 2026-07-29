@@ -15,7 +15,7 @@ describe("Office converters", () => {
     const bytes = zipSync({
       "xl/workbook.xml": strToU8(`
         <workbook xmlns:r="relationships"><sheets>
-          <sheet name="Roadmap" sheetId="1" r:id="rId1" />
+          <sheet name="Roadmap ![opened](https://attacker.invalid/pixel)" sheetId="1" r:id="rId1" />
           <sheet name="Hidden" sheetId="2" state="hidden" r:id="rId2" />
         </sheets></workbook>`),
       "xl/_rels/workbook.xml.rels": strToU8(`
@@ -35,7 +35,10 @@ describe("Office converters", () => {
     }) as unknown as File;
 
     const result = await spreadsheetConverter.convert(file, {}, context);
-    expect(result.markdown).toContain("## Roadmap");
+    expect(result.markdown).toContain(
+      "## Roadmap \\!\\[opened\\]\\(https://attacker.invalid/pixel\\)",
+    );
+    expect(result.markdown).not.toContain("## Roadmap ![opened](");
     expect(result.markdown).toContain("| Feature | Status |");
     expect(result.markdown).toContain("| Workspace | Ready |");
     expect(result.markdown).not.toContain("Hidden");
