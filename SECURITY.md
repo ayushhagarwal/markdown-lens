@@ -41,11 +41,12 @@ Markdown Lens should remain safe by default:
 - Keep share payloads in URL fragments. Do not place document content in query parameters, paths, analytics, or logs.
 - Do not describe URL compression as encryption; anyone with the complete share URL can read its contents.
 - Store OCR language data and workers on the same origin, and never send image or document bytes to an OCR service.
-- Validate workspace backups before writing records and keep schema migrations idempotent.
+- Validate workspace backups and document-to-asset ownership before writing records, reject ID collisions, and keep schema migrations idempotent.
 
 ## Current Limits
 
 - Input files are limited to 100 MB.
+- Workspace backup files are limited to 64 MiB, 1,000 documents, and 2,000 assets. A single decoded asset is limited to 16 MiB and decoded assets are limited to 48 MiB in aggregate.
 - ZIP archives are limited to 100 files, one archive level, and 250 MB expanded content.
 - Share fragments are capped to protect browsers from unstable URLs and decompression abuse.
 - Legacy binary DOC, PPT, and XLS parsers are intentionally excluded.
