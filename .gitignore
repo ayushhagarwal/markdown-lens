@@ -78,6 +78,7 @@ web_modules/
 .next
 out
 public/tessdata/
+public/tesseract/
 
 # Nuxt.js build / generate output
 .nuxt
