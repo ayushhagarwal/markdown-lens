@@ -18,6 +18,7 @@ test("major Markdown syntax renders with semantic output", async ({ page }, test
   await showPreviewOnMobile(page, testInfo.project.name);
 
   const preview = page.locator(".markdown-body:visible");
+  await preview.getByRole("button", { name: "Render diagram" }).click();
   await expect(preview.getByRole("heading", { level: 1, name: "Rendering fixture" })).toHaveAttribute(
     "id",
     "rendering-fixture",
@@ -48,6 +49,7 @@ test("malformed Mermaid keeps the preview usable with an explicit fallback", asy
   await showPreviewOnMobile(page, testInfo.project.name);
 
   const preview = page.locator(".markdown-body:visible");
+  await preview.getByRole("button", { name: "Render diagram" }).click();
   await expect(preview.getByText("Mermaid diagram could not be rendered.", { exact: true })).toBeVisible();
   await expect(preview.getByRole("heading", { level: 1, name: "Diagram fallback" })).toBeVisible();
 });

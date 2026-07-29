@@ -14,14 +14,19 @@ export const pdfConverter: LocalConverter = {
     assertFileAllowed(file, context);
     const { importPdfAsMarkdown, PdfImportError } = await import("@/lib/pdf-import");
     try {
-      const result = await importPdfAsMarkdown(file, ({ currentPage, totalPages }) => {
-        context.onProgress({
-          stage: "pages",
-          current: currentPage,
-          total: totalPages,
-          message: `Converting page ${currentPage} of ${totalPages}…`,
-        });
-      });
+      const result = await importPdfAsMarkdown(
+        file,
+        ({ currentPage, totalPages }) => {
+          context.onProgress({
+            stage: "pages",
+            current: currentPage,
+            total: totalPages,
+            message: `Converting page ${currentPage} of ${totalPages}…`,
+          });
+        },
+        context.limits,
+        context.signal,
+      );
       return baseResult(file, {
         converterId: this.id,
         detectedFormat: "pdf",
@@ -50,9 +55,14 @@ export const wordConverter: LocalConverter = {
   async convert(file, _options, context) {
     assertFileAllowed(file, context);
     const { importWordAsMarkdown } = await import("@/lib/word-import");
-    const result = await importWordAsMarkdown(file, ({ stage }) => {
-      context.onProgress({ stage, message: `${stage[0].toUpperCase()}${stage.slice(1)} “${file.name}”…` });
-    });
+    const result = await importWordAsMarkdown(
+      file,
+      ({ stage }) => {
+        context.onProgress({ stage, message: `${stage[0].toUpperCase()}${stage.slice(1)} “${file.name}”…` });
+      },
+      context.limits,
+      context.signal,
+    );
     return baseResult(file, {
       converterId: this.id,
       detectedFormat: "docx",

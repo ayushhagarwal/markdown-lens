@@ -16,11 +16,30 @@ export type ConversionOptions = {
 export type ConversionContext = {
   signal: AbortSignal;
   onProgress: (progress: ConverterProgress) => void;
-  limits: {
-    maxFileBytes: number;
-    maxArchiveEntries: number;
-    maxExpandedBytes: number;
-  };
+  limits: ConversionLimits;
+};
+
+export type ConversionLimits = {
+  maxFileBytes: number;
+  maxArchiveEntries: number;
+  maxArchiveEntryBytes: number;
+  maxExpandedBytes: number;
+  maxCompressionRatio: number;
+  maxGeneratedMarkdownChars: number;
+  maxGeneratedHtmlChars: number;
+  maxTableRows: number;
+  maxTableColumns: number;
+  maxTableCells: number;
+  maxAssets: number;
+  maxAssetBytes: number;
+  maxTotalAssetBytes: number;
+  maxImageDimension: number;
+  maxImagePixels: number;
+  maxPdfPages: number;
+  maxPdfItemsPerPage: number;
+  maxPdfTextItems: number;
+  maxPdfAnnotations: number;
+  maxPdfExtractedCharacters: number;
 };
 
 export type ConversionResult = {
@@ -50,8 +69,25 @@ export type LocalConverter = {
   ): Promise<ConversionResult>;
 };
 
-export const DEFAULT_CONVERSION_LIMITS = {
+export const DEFAULT_CONVERSION_LIMITS: ConversionLimits = {
   maxFileBytes: 100 * 1024 * 1024,
   maxArchiveEntries: 100,
-  maxExpandedBytes: 250 * 1024 * 1024,
+  maxArchiveEntryBytes: 32 * 1024 * 1024,
+  maxExpandedBytes: 128 * 1024 * 1024,
+  maxCompressionRatio: 200,
+  maxGeneratedMarkdownChars: 2 * 1024 * 1024,
+  maxGeneratedHtmlChars: 4 * 1024 * 1024,
+  maxTableRows: 10_000,
+  maxTableColumns: 16_384,
+  maxTableCells: 250_000,
+  maxAssets: 200,
+  maxAssetBytes: 16 * 1024 * 1024,
+  maxTotalAssetBytes: 64 * 1024 * 1024,
+  maxImageDimension: 16_384,
+  maxImagePixels: 40_000_000,
+  maxPdfPages: 500,
+  maxPdfItemsPerPage: 5_000,
+  maxPdfTextItems: 250_000,
+  maxPdfAnnotations: 10_000,
+  maxPdfExtractedCharacters: 5_000_000,
 };

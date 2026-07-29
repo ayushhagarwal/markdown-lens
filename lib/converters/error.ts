@@ -6,6 +6,7 @@ export type ConverterErrorCode =
   | "no-text"
   | "cancelled"
   | "archive-limit"
+  | "resource-limit"
   | "ocr-required"
   | "storage";
 

@@ -1,9 +1,10 @@
 import type { LocalConverter } from "@/lib/converters/types";
+import { ConverterError } from "@/lib/converters/error";
 import {
   assertFileAllowed,
+  assertGeneratedMarkdown,
   assertNonEmpty,
   baseResult,
-  escapeTableCell,
   fencedCodeBlock,
   markdownHeading,
   matchesFile,
@@ -41,9 +42,11 @@ export const markdownConverter: LocalConverter = {
   },
   async convert(file, _options, context) {
     assertFileAllowed(file, context);
+    assertTextFileSize(file, context.limits.maxGeneratedMarkdownChars, "Markdown");
     context.onProgress({ stage: "reading", message: `Opening “${file.name}” locally…` });
     const markdown = await file.text();
     assertNonEmpty(markdown, "text");
+    assertGeneratedMarkdown(markdown, context, "Markdown document");
     return baseResult(file, {
       converterId: this.id,
       detectedFormat: file.name.endsWith(".txt") ? "plain-text" : "markdown",
@@ -64,19 +67,22 @@ export const htmlConverter: LocalConverter = {
   },
   async convert(file, _options, context) {
     assertFileAllowed(file, context);
+    assertTextFileSize(file, context.limits.maxGeneratedHtmlChars, "HTML");
     context.onProgress({ stage: "converting", message: `Converting “${file.name}” from HTML…` });
     const html = await file.text();
     const markdown = await htmlToMarkdown(html);
     assertNonEmpty(markdown, "HTML");
     const parsedTitle = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/<[^>]+>/g, "").trim();
     const title = parsedTitle || titleFromFile(file);
+    const output = /^#\s+/m.test(markdown)
+      ? `${markdown}\n`
+      : `${markdownHeading(1, title)}\n\n${markdown}\n`;
+    assertGeneratedMarkdown(output, context, "HTML document");
     return baseResult(file, {
       converterId: this.id,
       detectedFormat: "html",
       title,
-      markdown: /^#\s+/m.test(markdown)
-        ? `${markdown}\n`
-        : `${markdownHeading(1, title)}\n\n${markdown}\n`,
+      markdown: output,
       statistics: { characters: markdown.length },
     });
   },
@@ -92,20 +98,23 @@ export const csvConverter: LocalConverter = {
   },
   async convert(file, _options, context) {
     assertFileAllowed(file, context);
+    assertTextFileSize(file, context.limits.maxGeneratedHtmlChars, "CSV");
     context.onProgress({ stage: "converting", message: `Building a Markdown table from “${file.name}”…` });
     const [{ default: Papa }, text] = await Promise.all([import("papaparse"), file.text()]);
     const result = Papa.parse<string[]>(text, {
       delimiter: file.name.toLowerCase().endsWith(".tsv") ? "\t" : "",
       skipEmptyLines: "greedy",
     });
-    const rows = result.data.map((row) => row.map(escapeTableCell));
+    const rows = result.data;
     const title = titleFromFile(file);
     const warnings = result.errors.slice(0, 8).map((error) => `Row ${error.row ?? "?"}: ${error.message}`);
+    const markdown = `${markdownHeading(1, title)}\n\n${matrixToMarkdown(rows, context.limits)}\n`;
+    assertGeneratedMarkdown(markdown, context, "CSV document");
     return baseResult(file, {
       converterId: this.id,
       detectedFormat: file.name.toLowerCase().endsWith(".tsv") ? "tsv" : "csv",
       title,
-      markdown: `${markdownHeading(1, title)}\n\n${matrixToMarkdown(rows)}\n`,
+      markdown,
       warnings,
       statistics: { rows: rows.length, columns: Math.max(0, ...rows.map((row) => row.length)) },
     });
@@ -122,15 +131,18 @@ export const jsonConverter: LocalConverter = {
   },
   async convert(file, _options, context) {
     assertFileAllowed(file, context);
+    assertTextFileSize(file, context.limits.maxGeneratedHtmlChars, "JSON");
     const text = await file.text();
     const parsed = JSON.parse(text) as unknown;
     const title = titleFromFile(file);
     const formatted = JSON.stringify(parsed, null, 2);
+    const markdown = `${markdownHeading(1, title)}\n\n${fencedCodeBlock("json", formatted)}\n`;
+    assertGeneratedMarkdown(markdown, context, "JSON document");
     return baseResult(file, {
       converterId: this.id,
       detectedFormat: "json",
       title,
-      markdown: `${markdownHeading(1, title)}\n\n${fencedCodeBlock("json", formatted)}\n`,
+      markdown,
       statistics: { characters: formatted.length },
     });
   },
@@ -146,6 +158,7 @@ export const xmlConverter: LocalConverter = {
   },
   async convert(file, _options, context) {
     assertFileAllowed(file, context);
+    assertTextFileSize(file, context.limits.maxGeneratedHtmlChars, "XML");
     const [{ XMLParser, XMLBuilder, XMLValidator }, text] = await Promise.all([
       import("fast-xml-parser"),
       file.text(),
@@ -155,11 +168,13 @@ export const xmlConverter: LocalConverter = {
     const parsed = new XMLParser({ ignoreAttributes: false }).parse(text);
     const formatted = new XMLBuilder({ ignoreAttributes: false, format: true }).build(parsed);
     const title = titleFromFile(file);
+    const markdown = `${markdownHeading(1, title)}\n\n${fencedCodeBlock("xml", formatted)}\n`;
+    assertGeneratedMarkdown(markdown, context, "XML document");
     return baseResult(file, {
       converterId: this.id,
       detectedFormat: "xml",
       title,
-      markdown: `${markdownHeading(1, title)}\n\n${fencedCodeBlock("xml", formatted)}\n`,
+      markdown,
       statistics: { characters: formatted.length },
     });
   },
@@ -172,3 +187,12 @@ export const textConverters = [
   jsonConverter,
   xmlConverter,
 ];
+
+function assertTextFileSize(file: File, maximumBytes: number, format: string) {
+  if (file.size > maximumBytes) {
+    throw new ConverterError(
+      "resource-limit",
+      `${format} files must be ${Math.floor(maximumBytes / 1024 / 1024)} MiB or smaller.`,
+    );
+  }
+}

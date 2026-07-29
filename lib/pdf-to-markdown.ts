@@ -21,6 +21,12 @@ export type PdfPageInput = {
 export type PdfConversionInput = {
   title: string;
   pages: PdfPageInput[];
+  limits?: {
+    maxPages: number;
+    maxTextItems: number;
+    maxExtractedCharacters: number;
+    maxOutputCharacters: number;
+  };
 };
 
 type PdfLine = {
@@ -43,6 +49,12 @@ const BULLET_PATTERN = /^[\u2022\u2023\u25e6\u2043\u2219\u25aa\u25cf\u00b7\-*]\s
 const NUMBERED_LIST_PATTERN = /^(\d+)[.)]\s+/;
 const URL_PATTERN = /\bhttps?:\/\/[^\s<>()]+/gi;
 const MONOSPACE_PATTERN = /(mono|courier|consolas|menlo|code)/i;
+const DEFAULT_PDF_MARKDOWN_LIMITS = {
+  maxPages: 500,
+  maxTextItems: 250_000,
+  maxExtractedCharacters: 5_000_000,
+  maxOutputCharacters: 2 * 1024 * 1024,
+};
 
 export class NoExtractablePdfTextError extends Error {
   constructor() {
@@ -51,7 +63,29 @@ export class NoExtractablePdfTextError extends Error {
   }
 }
 
-export function convertPdfPagesToMarkdown({ title, pages }: PdfConversionInput) {
+export function convertPdfPagesToMarkdown({
+  title,
+  pages,
+  limits = DEFAULT_PDF_MARKDOWN_LIMITS,
+}: PdfConversionInput) {
+  let textItems = 0;
+  let extractedCharacters = 0;
+  if (pages.length > limits.maxPages) {
+    throw new ConverterError("resource-limit", "This PDF has too many pages to convert safely.");
+  }
+  for (const page of pages) {
+    textItems += page.spans.length;
+    extractedCharacters += page.spans.reduce((total, span) => total + span.text.length, 0);
+    if (
+      textItems > limits.maxTextItems ||
+      extractedCharacters > limits.maxExtractedCharacters
+    ) {
+      throw new ConverterError(
+        "resource-limit",
+        "This PDF contains too many text items or extracted characters.",
+      );
+    }
+  }
   const preparedPages = pages.map(preparePage);
   const safeTitle = normalizeText(title) || "Imported PDF";
   const firstLine = preparedPages[0]?.lines[0];
@@ -73,7 +107,19 @@ export function convertPdfPagesToMarkdown({ title, pages }: PdfConversionInput) 
 
   removeRepeatedMargins(preparedPages);
   const bodyFontSize = inferBodyFontSize(preparedPages);
-  const sections = preparedPages.map((page) => pageToMarkdown(page, bodyFontSize));
+  const sections: string[] = [];
+  let outputCharacters = safeTitle.length + 4;
+  for (const page of preparedPages) {
+    const section = pageToMarkdown(page, bodyFontSize);
+    outputCharacters += section.length + 7;
+    if (outputCharacters > limits.maxOutputCharacters) {
+      throw new ConverterError(
+        "resource-limit",
+        "This PDF would generate more Markdown than can be opened safely.",
+      );
+    }
+    sections.push(section);
+  }
 
   return `# ${escapeMarkdownText(safeTitle)}\n\n${sections.join("\n\n---\n\n")}`.trim() + "\n";
 }
@@ -378,3 +424,4 @@ function median(values: number[]) {
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
+import { ConverterError } from "@/lib/converters/error";

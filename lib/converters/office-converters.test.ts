@@ -1,7 +1,10 @@
 import { File as NodeFile } from "node:buffer";
 import { strToU8, zipSync } from "fflate";
 import { describe, expect, test } from "vitest";
-import { spreadsheetConverter } from "@/lib/converters/office-converters";
+import {
+  parseCellReference,
+  spreadsheetConverter,
+} from "@/lib/converters/office-converters";
 import { DEFAULT_CONVERSION_LIMITS } from "@/lib/converters/types";
 
 const context = {
@@ -43,5 +46,12 @@ describe("Office converters", () => {
     expect(result.markdown).toContain("| Workspace | Ready |");
     expect(result.markdown).not.toContain("Hidden");
     expect(result.warnings).toContain("Hidden worksheets were excluded.");
+  });
+
+  test("accepts Excel's last column and rejects malformed or out-of-range references", () => {
+    expect(parseCellReference("XFD1")).toEqual({ column: 16_383, row: 1 });
+    for (const reference of ["XFE1", "ZZZZZ1", "A0", "A-1", "A+1", "a1", "A", "1"]) {
+      expect(() => parseCellReference(reference)).toThrow();
+    }
   });
 });
