@@ -65,8 +65,8 @@ import {
   createDocumentRecord,
   createId,
   type DocumentRecord,
-  type WorkspaceBackup,
 } from "@/lib/workspace/types";
+import { parseWorkspaceBackupFile } from "@/lib/workspace/backup-validation";
 import {
   downloadBlob,
   getDocumentHeadings,
@@ -251,7 +251,7 @@ export function MarkdownLensApp() {
     if (!activeDocument) return;
     setMarkdown(activeDocument.markdown);
     let revoked: string[] = [];
-    void getDocumentAssets(activeDocument.id).then((assets) => {
+    void getDocumentAssets(activeDocument.id, activeDocument.assetIds).then((assets) => {
       const next: Record<string, string> = {};
       for (const asset of assets) {
         const url = URL.createObjectURL(asset.blob);
@@ -264,9 +264,7 @@ export function MarkdownLensApp() {
       revoked.forEach((url) => URL.revokeObjectURL(url));
       revoked = [];
     };
-    // Asset URLs are owned by the selected document ID; record edits do not change them.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDocument?.id]);
+  }, [activeDocument]);
 
   useEffect(() => {
     if (!ready || !activeDocument || activeDocument.markdown === markdown) return;
@@ -518,7 +516,7 @@ export function MarkdownLensApp() {
     if (!activeDocument) return;
     const [{ zipSync, strToU8 }, assets] = await Promise.all([
       import("fflate"),
-      getDocumentAssets(activeDocument.id),
+      getDocumentAssets(activeDocument.id, activeDocument.assetIds),
     ]);
     const entries: Record<string, Uint8Array> = {
       [`${toFileName(activeDocument.title)}.md`]: strToU8(markdown),
@@ -531,10 +529,14 @@ export function MarkdownLensApp() {
   }
 
   async function restoreWorkspace(file: File) {
-    const backup = JSON.parse(await file.text()) as WorkspaceBackup;
-    await importWorkspace(backup);
-    await refreshDocuments();
-    setNotice("Workspace backup restored locally.");
+    try {
+      const backup = await parseWorkspaceBackupFile(file);
+      await importWorkspace(backup);
+      await refreshDocuments();
+      setNotice("Workspace backup restored locally.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "The workspace backup could not be restored.");
+    }
   }
 
   function beginResize(event: React.PointerEvent<HTMLButtonElement>) {
