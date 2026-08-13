@@ -3,26 +3,17 @@ import Link from "next/link";
 import { ArrowLeft, BookOpen, Check, Eye } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { pageMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: {
-    absolute: "Markdown Cheatsheet – Common Markdown Syntax | Markdown Lens",
-  },
+export const metadata: Metadata = pageMetadata({
+  title: "Markdown Cheatsheet – Common Markdown Syntax | Markdown Lens",
   description:
     "Learn common Markdown syntax for headings, lists, tables, links, code blocks, Mermaid diagrams, and math with simple examples.",
-  alternates: {
-    canonical: "/markdown-cheatsheet",
-  },
-  openGraph: {
-    type: "article",
-    url: "/markdown-cheatsheet",
-    title: "Markdown Cheatsheet – Common Markdown Syntax | Markdown Lens",
-    description:
-      "Learn Markdown syntax through concise examples for headings, lists, tables, code, Mermaid diagrams, and math.",
-    siteName: siteConfig.name,
-  },
-};
+  path: "/markdown-cheatsheet",
+  type: "article",
+  absoluteTitle: true,
+});
 
 const inlineExamples = [
   {
@@ -85,7 +76,7 @@ export default function MarkdownCheatsheetPage() {
         "A concise Markdown reference for headings, lists, tables, links, code, Mermaid diagrams, and math.",
       url: `${siteConfig.url}/markdown-cheatsheet`,
       mainEntityOfPage: `${siteConfig.url}/markdown-cheatsheet`,
-      dateModified: "2026-06-20",
+      dateModified: siteConfig.dateModified,
       inLanguage: "en",
       author: {
         "@type": "Person",
@@ -124,7 +115,7 @@ export default function MarkdownCheatsheetPage() {
       <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between gap-4 border-b border-border/80 pb-5">
           <Link
-            href="/editor?sample=1"
+            href="/"
             className="inline-flex items-center gap-2 rounded-md text-sm font-semibold text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
@@ -334,12 +325,26 @@ export default function MarkdownCheatsheetPage() {
             Paste any example into the editor to see GitHub-flavored Markdown, Mermaid, code
             highlighting, and math render together.
           </p>
-          <Link
-            href="/"
-            className="mt-5 inline-flex h-10 items-center justify-center rounded-md bg-foreground px-5 text-sm font-semibold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-accent-soft"
-          >
-            Open Markdown Lens
-          </Link>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/editor"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-foreground px-5 text-sm font-semibold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-accent-soft"
+            >
+              Open the Markdown editor
+            </Link>
+            <Link
+              href="/pdf-to-markdown"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm font-semibold transition hover:bg-muted"
+            >
+              PDF to Markdown
+            </Link>
+            <Link
+              href="/word-to-markdown"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm font-semibold transition hover:bg-muted"
+            >
+              Word to Markdown
+            </Link>
+          </div>
         </section>
       </div>
       <SiteFooter />

@@ -3,40 +3,18 @@ import {
   ConversionLandingPage,
   type ConversionLandingPageConfig,
 } from "@/components/conversion-landing-page";
-import { siteConfig } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
 const title = "Free Word to Markdown Converter (.docx) | Markdown Lens";
 const description =
   "Convert a Microsoft Word .docx file to editable Markdown locally in your browser. Keep headings, lists, links, simple tables, and common text formatting without a server upload.";
 
-export const metadata: Metadata = {
-  title: { absolute: title },
+export const metadata: Metadata = pageMetadata({
+  title,
   description,
-  alternates: {
-    canonical: "/word-to-markdown",
-  },
-  openGraph: {
-    type: "website",
-    url: "/word-to-markdown",
-    title,
-    description,
-    siteName: siteConfig.name,
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Markdown Lens Word .docx to Markdown converter",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title,
-    description,
-    images: ["/opengraph-image"],
-  },
-};
+  path: "/word-to-markdown",
+  absoluteTitle: true,
+});
 
 const config = {
   path: "/word-to-markdown",
@@ -110,9 +88,9 @@ const config = {
         "Table rows and cells are converted to GitHub-flavored Markdown tables with escaped pipe characters and a generated header separator.",
     },
     {
-      title: "Explicit image placeholders",
+      title: "Embedded images as local assets",
       description:
-        "Embedded images are not silently lost. The converter inserts a visible Markdown note for each omitted image so you know where manual asset work remains.",
+        "Embedded Word images are extracted into the local document workspace so they can be previewed and exported with the Markdown bundle.",
     },
   ],
   limitsHeading: "Know the Word limitations",
@@ -120,7 +98,7 @@ const config = {
     "Markdown intentionally has fewer layout controls than Word. The converter prioritizes portable content and makes unsupported pieces visible.",
   limitations: [
     "Legacy .doc files are not supported; save them as .docx in Word, Pages, LibreOffice, or Google Docs first.",
-    "Embedded images are represented by placeholders but are not extracted into separate files.",
+    "Image quality depends on what was embedded in the .docx package; floating layouts may still need review.",
     "Merged cells, nested tables, text boxes, columns, footnotes, and complex page layout may need manual cleanup.",
     "Macros, embedded objects, tracked-change history, and comments are not carried into the Markdown output.",
   ],
@@ -160,7 +138,7 @@ const config = {
     {
       question: "What happens to images and complex Word layouts?",
       answer:
-        "Embedded images become visible omission notes rather than extracted files. Complex tables, columns, text boxes, merged cells, and precise page positioning may require manual reconstruction because Markdown does not represent fixed page layout.",
+        "Embedded images are extracted as local document assets and can be exported with the Markdown bundle. Complex tables, columns, text boxes, merged cells, and precise page positioning may still require manual reconstruction because Markdown does not represent fixed page layout.",
     },
   ],
   related: [
@@ -170,9 +148,9 @@ const config = {
       description: "Extract selectable PDF text page by page into editable Markdown locally.",
     },
     {
-      href: "/markdown-cheatsheet",
-      title: "Markdown cheatsheet",
-      description: "Learn the headings, lists, tables, links, code, and other syntax in the output.",
+      href: "/pptx-to-markdown",
+      title: "PowerPoint to Markdown converter",
+      description: "Convert PPTX slides, notes, tables, and embedded images locally.",
     },
   ],
 } as const satisfies ConversionLandingPageConfig;

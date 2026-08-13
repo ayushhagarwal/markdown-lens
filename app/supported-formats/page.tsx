@@ -3,23 +3,28 @@ import Link from "next/link";
 import { ArrowRight, Check, CircleAlert, LockKeyhole } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Supported Document and Markdown Formats",
-  description: "Compare the local PDF, DOCX, PPTX, XLSX, HTML, CSV, JSON, XML, EPUB, ZIP, image OCR, and Markdown workflows supported by Markdown Lens.",
-  alternates: { canonical: "/supported-formats" },
-};
+  description:
+    "Compare the local PDF, DOCX, PPTX, XLSX, HTML, CSV, JSON, XML, EPUB, ZIP, image OCR, and Markdown workflows supported by Markdown Lens.",
+  path: "/supported-formats",
+});
 
 const formats = [
-  ["Markdown / text", "MD, MARKDOWN, TXT", "Open directly", "Source content is retained."],
-  ["PDF", "PDF", "Text and layout inference", "Scans require local OCR; complex layout needs review."],
-  ["Word", "DOCX", "Structured conversion", "Images become local assets; legacy DOC is unsupported."],
-  ["PowerPoint", "PPTX", "Slide-by-slide conversion", "Animations and exact object placement are omitted."],
-  ["Excel", "XLSX", "Visible sheets to tables", "Macros, charts, and legacy XLS are unsupported."],
-  ["Web documents", "HTML, HTM, EPUB", "Reading-order conversion", "Styling and interactive behavior are flattened."],
-  ["Structured data", "CSV, TSV, JSON, XML", "Tables or fenced structured text", "Data remains text; formulas are not executed."],
-  ["Images", "PNG, JPG, WEBP, BMP", "Asset import + optional English OCR", "OCR does not interpret charts or diagrams."],
-  ["Archives", "ZIP", "Bounded supported-entry import", "100 entries, one nesting level, 250 MB expanded limit."],
+  ["Markdown / text", "MD, MARKDOWN, TXT", "Open directly", "Source content is retained.", "/editor"],
+  ["PDF", "PDF", "Text and layout inference", "Scans require local OCR; complex layout needs review.", "/pdf-to-markdown"],
+  ["Word", "DOCX", "Structured conversion", "Images become local assets; legacy DOC is unsupported.", "/word-to-markdown"],
+  ["PowerPoint", "PPTX", "Slide-by-slide conversion", "Animations and exact object placement are omitted.", "/pptx-to-markdown"],
+  ["Excel", "XLSX", "Visible sheets to tables", "Macros, charts, and legacy XLS are unsupported.", "/excel-to-markdown"],
+  ["HTML", "HTML, HTM", "Reading-order conversion", "Styling and interactive behavior are flattened.", "/html-to-markdown"],
+  ["EPUB", "EPUB", "Chapter conversion", "DRM-protected and fixed-layout books are unsupported or flattened.", "/epub-to-markdown"],
+  ["CSV / TSV", "CSV, TSV", "Tables from delimited text", "Merged cells and spreadsheet formatting are not represented.", "/csv-to-markdown"],
+  ["JSON", "JSON", "Pretty-printed fenced text", "Invalid JSON is rejected; nested data is not tabulated.", "/json-to-markdown"],
+  ["XML", "XML", "Validated fenced text", "Invalid XML is rejected; remote DTDs are not fetched.", "/xml-to-markdown"],
+  ["Images", "PNG, JPG, WEBP, BMP", "Asset import + optional English OCR", "OCR does not interpret charts or diagrams.", "/image-to-markdown"],
+  ["Archives", "ZIP", "Bounded supported-entry import", "100 entries, one nesting level, 128 MB expanded limit.", "/zip-to-markdown"],
 ] as const;
 
 export default function SupportedFormatsPage() {
@@ -34,7 +39,18 @@ export default function SupportedFormatsPage() {
           <div className="mt-10 overflow-x-auto border border-border">
             <table className="w-full min-w-[760px] border-collapse text-left text-sm">
               <thead className="bg-surface"><tr>{["Format", "Extensions", "Workflow", "Important limitation"].map((label) => <th key={label} className="border-b border-border px-4 py-3 font-semibold">{label}</th>)}</tr></thead>
-              <tbody>{formats.map(([format, extensions, workflow, limitation]) => <tr key={format} className="border-b border-border last:border-0"><td className="px-4 py-4 font-medium">{format}</td><td className="px-4 py-4 font-mono text-xs text-accent">{extensions}</td><td className="px-4 py-4"><span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-accent" />{workflow}</span></td><td className="px-4 py-4 text-muted-foreground">{limitation}</td></tr>)}</tbody>
+              <tbody>
+                {formats.map(([format, extensions, workflow, limitation, href]) => (
+                  <tr key={format} className="border-b border-border last:border-0">
+                    <td className="px-4 py-4 font-medium">
+                      <Link href={href} className="underline-offset-4 hover:underline">{format}</Link>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-xs text-accent">{extensions}</td>
+                    <td className="px-4 py-4"><span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-accent" />{workflow}</span></td>
+                    <td className="px-4 py-4 text-muted-foreground">{limitation}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2">

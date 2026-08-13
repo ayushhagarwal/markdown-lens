@@ -2,7 +2,7 @@ import Link from "next/link";
 import { GithubIcon } from "@/components/github-icon";
 import { BrandIcon } from "@/components/brand-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { siteConfig } from "@/lib/site";
+import { primaryNav, siteConfig } from "@/lib/site";
 
 export function SiteHeader() {
   return (
@@ -17,18 +17,15 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-1" aria-label="Main navigation">
-          <Link
-            href="/supported-formats"
-            className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
-          >
-            Formats
-          </Link>
-          <Link
-            href="/markdown-cheatsheet"
-            className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
-          >
-            Guide
-          </Link>
+          {primaryNav.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="hidden rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
+            >
+              {link.label}
+            </Link>
+          ))}
           <a
             href={siteConfig.githubUrl}
             target="_blank"

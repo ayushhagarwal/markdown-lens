@@ -6,12 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { BrandIcon } from "@/components/brand-icon";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { GithubIcon } from "@/components/github-icon";
-import { siteConfig } from "@/lib/site";
-
-const links = [
-  { href: "/supported-formats", label: "Formats" },
-  { href: "/markdown-cheatsheet", label: "Guide" },
-] as const;
+import { primaryNav, siteConfig } from "@/lib/site";
 
 export function HomepageHeader() {
   const [open, setOpen] = useState(false);
@@ -53,7 +48,7 @@ export function HomepageHeader() {
 
         <div className="hidden items-center gap-1 md:flex">
           <nav className="flex items-center" aria-label="Homepage navigation">
-            {links.map((link) => (
+            {primaryNav.map((link) => (
               <Link key={link.href} href={link.href} className="rounded-md px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {link.label}
               </Link>
@@ -85,7 +80,7 @@ export function HomepageHeader() {
       {open ? (
         <div ref={menuRef} id="homepage-mobile-menu" className="absolute inset-x-0 top-16 border-b border-border bg-background p-5 shadow-2xl md:hidden">
           <nav className="grid gap-1" aria-label="Mobile navigation">
-            {links.map((link) => (
+            {primaryNav.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-base hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {link.label}
               </Link>

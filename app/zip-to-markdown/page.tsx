@@ -4,11 +4,11 @@ import { formatPages } from "@/lib/format-pages";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "CSV to Markdown Table Converter",
-  description: formatPages.csv.summary,
-  path: formatPages.csv.path,
+  title: "ZIP to Markdown Importer",
+  description: formatPages.zip.summary,
+  path: formatPages.zip.path,
 });
 
 export default function Page() {
-  return <FormatLandingPage config={formatPages.csv} />;
+  return <FormatLandingPage config={formatPages.zip} />;
 }

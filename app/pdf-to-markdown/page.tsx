@@ -3,40 +3,18 @@ import {
   ConversionLandingPage,
   type ConversionLandingPageConfig,
 } from "@/components/conversion-landing-page";
-import { siteConfig } from "@/lib/site";
+import { pageMetadata } from "@/lib/seo";
 
 const title = "Free PDF to Markdown Converter | Markdown Lens";
 const description =
   "Convert a text-based PDF to editable Markdown locally in your browser. Free, private, and built for documents, Confluence exports, headings, lists, links, and page-by-page review.";
 
-export const metadata: Metadata = {
-  title: { absolute: title },
+export const metadata: Metadata = pageMetadata({
+  title,
   description,
-  alternates: {
-    canonical: "/pdf-to-markdown",
-  },
-  openGraph: {
-    type: "website",
-    url: "/pdf-to-markdown",
-    title,
-    description,
-    siteName: siteConfig.name,
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Markdown Lens PDF to Markdown converter",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title,
-    description,
-    images: ["/opengraph-image"],
-  },
-};
+  path: "/pdf-to-markdown",
+  absoluteTitle: true,
+});
 
 const config = {
   path: "/pdf-to-markdown",

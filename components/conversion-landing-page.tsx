@@ -68,7 +68,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
         "@id": `${siteConfig.url}/#software`,
       },
       inLanguage: "en",
-      dateModified: "2026-06-27",
+      dateModified: siteConfig.dateModified,
     },
     {
       "@context": "https://schema.org",
@@ -87,6 +87,15 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
           item: `${siteConfig.url}${config.path}`,
         },
       ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: config.faq.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
     },
   ];
 

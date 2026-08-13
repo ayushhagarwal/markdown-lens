@@ -4,7 +4,8 @@ import { HomepageHeader } from "@/components/home/homepage-header";
 import { ProductPreview } from "@/components/home/product-preview";
 import { ConversionWorkflow } from "@/components/home/conversion-workflow";
 import { BrandIcon } from "@/components/brand-icon";
-import { siteConfig } from "@/lib/site";
+import { SiteFooter } from "@/components/site-footer";
+import { converterLinks, siteConfig } from "@/lib/site";
 
 export function Homepage() {
   return (
@@ -14,11 +15,11 @@ export function Homepage() {
         <section className="mx-auto grid w-full max-w-[1500px] items-start gap-12 px-5 pb-16 pt-14 sm:px-8 lg:min-h-[860px] lg:grid-cols-[0.76fr_1.24fr] lg:gap-14 lg:px-12 lg:pb-20 lg:pt-16 xl:px-14">
           <div className="relative z-10 max-w-[560px] lg:pt-14">
             <h1 className="text-balance text-[clamp(2.75rem,4.2vw,4rem)] font-semibold leading-[1.04] tracking-[-0.055em]">
-              A local workspace for document-to-Markdown.
+              A local Markdown editor that converts documents privately.
             </h1>
             <p className="mt-7 max-w-[520px] text-[1.05rem] leading-8 text-muted-foreground sm:text-lg">
-              <span className="sm:hidden">Convert PDFs, Office files, HTML, EPUB, data, and images into clean Markdown—entirely in your browser.</span>
-              <span className="hidden sm:inline">Convert PDFs, Office files, HTML, EPUB, data, and images into clean Markdown. Review the result, edit the source, and export—entirely in your browser.</span>
+              <span className="sm:hidden">Preview GitHub-style Markdown and convert PDFs, Office files, HTML, EPUB, data, and images—entirely in your browser.</span>
+              <span className="hidden sm:inline">Preview GitHub-style Markdown, then convert PDFs, Office files, HTML, EPUB, data, and images into editable source—entirely in your browser.</span>
             </p>
             <div className="mt-9 flex flex-col items-start gap-5">
               <Link href="/editor" className="home-primary-action group">
@@ -30,6 +31,14 @@ export function Homepage() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
             </div>
+            <nav className="mt-8 flex max-w-[520px] flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground" aria-label="Popular converters">
+              {converterLinks.slice(0, 6).map((link) => (
+                <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+                  {link.label}
+                </Link>
+              ))}
+              <Link href="/supported-formats" className="transition hover:text-foreground">More formats</Link>
+            </nav>
             <p className="mt-9 text-sm tracking-[-0.01em] text-muted-foreground">
               Local processing <span aria-hidden>·</span> No account <span aria-hidden>·</span> Open source
             </p>
@@ -76,22 +85,8 @@ export function Homepage() {
             </div>
           </div>
         </section>
-
-        <footer className="border-t border-border/75 px-5 py-7 sm:px-8">
-          <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <Link href="/" className="flex items-center gap-2.5 font-semibold">
-              <BrandIcon className="h-8 w-8" /> Markdown Lens
-            </Link>
-            <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-muted-foreground" aria-label="Footer navigation">
-              <Link href="/supported-formats" className="transition hover:text-foreground">Formats</Link>
-              <Link href="/markdown-cheatsheet" className="transition hover:text-foreground">Guide</Link>
-              <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} className="transition hover:text-foreground">Security</a>
-              <a href={siteConfig.githubUrl} className="transition hover:text-foreground">GitHub</a>
-            </nav>
-            <p className="text-muted-foreground">Built locally. Shared openly.</p>
-          </div>
-        </footer>
       </main>
+      <SiteFooter />
     </div>
   );
 }

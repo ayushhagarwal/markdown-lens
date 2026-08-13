@@ -1,48 +1,20 @@
+import packageJson from "../package.json";
+
 export const siteConfig = {
   name: "Markdown Lens",
   url: "https://markdownlens.ayushdev.com",
   githubUrl: "https://github.com/ayushhagarwal/markdown-lens",
-  title: "Local Document to Markdown Workspace | Markdown Lens",
+  title: "Free Local Markdown Editor and Document Converter | Markdown Lens",
   description:
-    "Markdown Lens is a free, privacy-first document-to-Markdown workbench with local PDF, Word, PowerPoint, Excel, HTML, EPUB, data, archive, and image OCR conversion plus editable previews.",
+    "Markdown Lens is a free, privacy-first Markdown editor and document-to-Markdown workbench with local PDF, Word, PowerPoint, Excel, HTML, EPUB, data, archive, and image OCR conversion plus editable GitHub-style previews.",
   shortDescription:
-    "Open documents locally, convert them into editable Markdown, manage a private browser workspace, and preview GitHub-style output without an account or server upload.",
+    "Edit Markdown privately in your browser and convert PDF, Word, PowerPoint, Excel, HTML, and more into GitHub-style Markdown without an account or server upload.",
+  dateModified: "2026-08-13",
+  softwareVersion: packageJson.version,
   author: {
     name: "Ayush Agarwal",
     url: "https://github.com/ayushhagarwal",
   },
-  keywords: [
-    "markdown editor",
-    "markdown viewer",
-    "online markdown editor",
-    "online markdown viewer",
-    "markdown application",
-    "markdown tool",
-    "markdown preview",
-    "markdown previewer",
-    "free markdown viewer",
-    "markdown viewer online free",
-    "online markdown preview",
-    "markdown renderer",
-    "markdown to html",
-    "pdf to markdown",
-    "word to markdown",
-    "doc to markdown",
-    "docx to markdown",
-    "pdf to md",
-    "word document to markdown",
-    "confluence pdf to markdown",
-    "github markdown editor",
-    "github flavored markdown viewer",
-    "README editor",
-    "README preview",
-    "Mermaid markdown editor",
-    "markdown math editor",
-    "KaTeX markdown",
-    "developer writing tool",
-    "AI notes markdown",
-    "privacy-first markdown editor",
-  ],
   features: [
     "Live Markdown editor and preview",
     "GitHub-flavored Markdown rendering",
@@ -70,3 +42,39 @@ export const siteConfig = {
     "Light and dark mode",
   ],
 };
+
+export const primaryNav = [
+  { href: "/pdf-to-markdown", label: "PDF" },
+  { href: "/word-to-markdown", label: "Word" },
+  { href: "/supported-formats", label: "Formats" },
+  { href: "/markdown-cheatsheet", label: "Guide" },
+] as const;
+
+export const converterLinks = [
+  { href: "/pdf-to-markdown", label: "PDF", description: "Convert text-based PDFs locally." },
+  { href: "/word-to-markdown", label: "Word", description: "Convert .docx files locally." },
+  { href: "/pptx-to-markdown", label: "PowerPoint", description: "Convert PPTX slides locally." },
+  { href: "/excel-to-markdown", label: "Excel", description: "Convert XLSX sheets to tables." },
+  { href: "/html-to-markdown", label: "HTML", description: "Convert local HTML files." },
+  { href: "/csv-to-markdown", label: "CSV", description: "Convert CSV or TSV to tables." },
+  { href: "/json-to-markdown", label: "JSON", description: "Turn JSON into fenced Markdown." },
+  { href: "/xml-to-markdown", label: "XML", description: "Turn XML into fenced Markdown." },
+  { href: "/epub-to-markdown", label: "EPUB", description: "Convert EPUB chapters locally." },
+  { href: "/image-to-markdown", label: "Images", description: "Import images with optional OCR." },
+  { href: "/zip-to-markdown", label: "ZIP", description: "Import supported files from a ZIP." },
+] as const;
+
+export const sitemapPaths = [
+  { path: "", priority: 1, changeFrequency: "weekly" as const },
+  { path: "/pdf-to-markdown", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "/word-to-markdown", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "/supported-formats", priority: 0.9, changeFrequency: "monthly" as const },
+  { path: "/markdown-cheatsheet", priority: 0.8, changeFrequency: "monthly" as const },
+  ...converterLinks
+    .filter((link) => !["/pdf-to-markdown", "/word-to-markdown"].includes(link.href))
+    .map((link) => ({
+      path: link.href,
+      priority: 0.8,
+      changeFrequency: "monthly" as const,
+    })),
+];

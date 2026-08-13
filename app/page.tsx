@@ -1,12 +1,24 @@
 import type { Metadata } from "next";
 import { Homepage } from "@/components/home/homepage";
+import { pageMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: "Local Document to Markdown Workspace | Markdown Lens" },
-  description:
-    "Convert documents into clean Markdown, review the result, edit the source, and export entirely in your browser.",
-  alternates: { canonical: "/" },
+  ...pageMetadata({
+    title: siteConfig.title,
+    description: siteConfig.shortDescription,
+    path: "/",
+    absoluteTitle: true,
+  }),
+  alternates: {
+    canonical: "/",
+    types: {
+      "text/plain": [
+        { url: "/llms.txt", title: "Markdown Lens AI summary" },
+        { url: "/llms-full.txt", title: "Markdown Lens full AI reference" },
+      ],
+    },
+  },
 };
 
 export default function Home() {
@@ -26,12 +38,12 @@ export default function Home() {
       "@type": "WebPage",
       "@id": `${siteConfig.url}/#webpage`,
       url: siteConfig.url,
-      name: "Local Document to Markdown Workspace | Markdown Lens",
+      name: siteConfig.title,
       description: siteConfig.description,
       isPartOf: { "@id": `${siteConfig.url}/#website` },
       mainEntity: { "@id": `${siteConfig.url}/#software` },
       inLanguage: "en",
-      dateModified: "2026-07-11",
+      dateModified: siteConfig.dateModified,
     },
     {
       "@context": "https://schema.org",
@@ -47,7 +59,7 @@ export default function Home() {
       "@id": `${siteConfig.url}/#software`,
       name: siteConfig.name,
       applicationCategory: "DeveloperApplication",
-      applicationSubCategory: "Document to Markdown workspace",
+      applicationSubCategory: "Markdown editor and document-to-Markdown workspace",
       operatingSystem: "Any",
       browserRequirements: "Requires a modern web browser with JavaScript enabled.",
       url: siteConfig.url,
@@ -59,9 +71,9 @@ export default function Home() {
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       description: siteConfig.description,
       featureList: siteConfig.features,
-      softwareVersion: "0.9.1",
+      softwareVersion: siteConfig.softwareVersion,
       softwareHelp: `${siteConfig.url}/markdown-cheatsheet`,
-      dateModified: "2026-07-11",
+      dateModified: siteConfig.dateModified,
       inLanguage: "en",
       sameAs: [siteConfig.githubUrl],
     },

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, FileCheck2, FileText, LockKeyhole, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { converterLinks } from "@/lib/site";
 
 export function ConversionWorkflow() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -27,7 +28,13 @@ export function ConversionWorkflow() {
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-balance text-4xl font-semibold leading-[1.1] tracking-[-0.045em] sm:text-5xl lg:text-6xl">From source to Markdown,<br className="hidden sm:block" /> without leaving your browser.</h2>
           <p className="mt-6 text-base text-muted-foreground sm:text-lg">Open a file, review what changed, then export clean Markdown.</p>
-          <p className="mt-7 text-sm tracking-wide text-muted-foreground">PDF · DOCX · PPTX · XLSX · HTML · EPUB · Images</p>
+          <div className="mt-7 flex flex-wrap justify-center gap-x-3 gap-y-2 text-sm tracking-wide text-muted-foreground">
+            {converterLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+                {link.label}
+              </Link>
+            ))}
+          </div>
           <Link href="/supported-formats" className="home-text-link group mt-4 justify-center">See format details <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden /></Link>
         </div>
 

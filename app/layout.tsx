@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { siteConfig } from "@/lib/site";
-import "highlight.js/styles/github-dark.css";
-import "katex/dist/katex.min.css";
+import { defaultOgImage } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,7 +26,6 @@ export const metadata: Metadata = {
   creator: siteConfig.author.name,
   publisher: siteConfig.author.name,
   category: "DeveloperApplication",
-  keywords: siteConfig.keywords,
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -54,14 +52,7 @@ export const metadata: Metadata = {
     siteName: siteConfig.name,
     title: siteConfig.title,
     description: siteConfig.shortDescription,
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "Markdown Lens online Markdown editor and preview interface",
-      },
-    ],
+    images: [defaultOgImage],
   },
   twitter: {
     card: "summary_large_image",
@@ -101,18 +92,6 @@ export default function RootLayout({
         <meta
           name="google-site-verification"
           content="Vy20wFtkl3VppdiSp2xy7A4qO22I1Ym5wJfrYb6GB4U"
-        />
-        <link
-          rel="alternate"
-          type="text/plain"
-          href="/llms.txt"
-          title="Markdown Lens AI summary"
-        />
-        <link
-          rel="alternate"
-          type="text/plain"
-          href="/llms-full.txt"
-          title="Markdown Lens full AI reference"
         />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>

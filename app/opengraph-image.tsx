@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { siteConfig } from "@/lib/site";
 
-export const alt = "Markdown Lens free online Markdown viewer and editor";
+export const alt = "Markdown Lens local Markdown editor and document converter";
 export const size = {
   width: 1200,
   height: 630,
@@ -47,7 +47,7 @@ export default function Image() {
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ fontSize: 34, fontWeight: 800 }}>{siteConfig.name}</div>
               <div style={{ color: "#526173", fontSize: 22 }}>
-                Free Online Markdown Viewer and Editor
+                Local Markdown editor and document converter
               </div>
             </div>
           </div>
@@ -76,7 +76,7 @@ export default function Image() {
               maxWidth: 920,
             }}
           >
-            Preview Markdown instantly.
+            Edit Markdown locally. Convert documents privately.
           </div>
           <div
             style={{
@@ -86,13 +86,13 @@ export default function Image() {
               maxWidth: 980,
             }}
           >
-            GitHub-style Markdown, Mermaid diagrams, math, code highlighting, tables,
-            local autosave, and dark mode.
+            GitHub-style Markdown, local PDF and Word conversion, Mermaid, math,
+            code highlighting, and a private browser workspace.
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 14 }}>
-          {["Markdown editor", "Markdown viewer", "Markdown preview tool"].map((label) => (
+          {["Markdown editor", "PDF to Markdown", "Word to Markdown"].map((label) => (
             <div
               key={label}
               style={{

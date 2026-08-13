@@ -1,5 +1,8 @@
 "use client";
 
+import "highlight.js/styles/github-dark.css";
+import "katex/dist/katex.min.css";
+
 /* eslint-disable @next/next/no-img-element -- preview images may be local blobs or consent-gated remote URLs */
 
 import {
