@@ -56,7 +56,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
-    "@openai/codex-security": "^0.1.1",
+    "@openai/codex-security": "^0.1.11",
     "@playwright/test": "^1.55.0",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.10.2",
