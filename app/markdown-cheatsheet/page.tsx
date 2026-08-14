@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Check, Eye } from "lucide-react";
+import { GithubStarLink } from "@/components/github-star-link";
 import { SiteFooter } from "@/components/site-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { pageMetadata } from "@/lib/seo";
@@ -344,6 +345,7 @@ export default function MarkdownCheatsheetPage() {
             >
               Word to Markdown
             </Link>
+            <GithubStarLink variant="button" className="h-10 rounded-md" />
           </div>
         </section>
       </div>

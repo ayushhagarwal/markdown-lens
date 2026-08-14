@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandIcon } from "@/components/brand-icon";
+import { GithubStarLink } from "@/components/github-star-link";
 import { converterLinks, siteConfig } from "@/lib/site";
 
 export function SiteFooter() {
@@ -15,7 +16,7 @@ export function SiteFooter() {
             <Link href="/supported-formats" className="transition hover:text-foreground">Formats</Link>
             <Link href="/markdown-cheatsheet" className="transition hover:text-foreground">Guide</Link>
             <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} className="transition hover:text-foreground">Security</a>
-            <a href={siteConfig.githubUrl} className="transition hover:text-foreground">GitHub</a>
+            <GithubStarLink variant="text" className="transition hover:text-foreground">Star</GithubStarLink>
           </nav>
         </div>
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-muted-foreground" aria-label="Document converters">
@@ -25,7 +26,12 @@ export function SiteFooter() {
             </Link>
           ))}
         </nav>
-        <p className="text-muted-foreground">Built locally. Shared openly.</p>
+        <p className="text-muted-foreground">
+          Built locally. Shared openly.{" "}
+          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" className="transition hover:text-foreground">
+            If it helped, star the source.
+          </a>
+        </p>
       </div>
     </footer>
   );

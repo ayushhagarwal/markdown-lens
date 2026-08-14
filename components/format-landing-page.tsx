@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Check, FileUp, LockKeyhole } from "lucide-react";
+import { GithubStarLink } from "@/components/github-star-link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
@@ -88,7 +89,22 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
 
         <section className="border-t border-border/75 bg-foreground text-background">
           <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-semibold tracking-tight">Related Markdown tools</h2>
+            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+              <h2 className="text-3xl font-semibold tracking-tight">Related Markdown tools</h2>
+              <div className="flex flex-col gap-3 self-start sm:flex-row md:self-auto">
+                <Link
+                  href="/editor"
+                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-background px-5 text-sm font-semibold text-foreground transition hover:bg-background/90"
+                >
+                  Open the editor
+                  <ArrowRight className="h-4 w-4" aria-hidden />
+                </Link>
+                <GithubStarLink
+                  variant="button"
+                  className="h-11 border-background/30 bg-transparent text-background hover:bg-background/10 hover:text-background"
+                />
+              </div>
+            </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               {config.related.map((item) => (
                 <Link key={item.href} href={item.href} className="group rounded-xl border border-background/15 bg-background/5 p-5 transition hover:border-background/30 hover:bg-background/10">

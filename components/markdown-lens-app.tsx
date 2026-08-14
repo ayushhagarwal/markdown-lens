@@ -41,10 +41,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { GithubIcon } from "@/components/github-icon";
+import { GithubStarLink } from "@/components/github-star-link";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "@/components/brand-icon";
+import { siteConfig } from "@/lib/site";
 import {
   addDocument,
   duplicateDocument,
@@ -109,6 +110,11 @@ type ShareLinkPreview = {
   url: string;
   length: number;
 };
+type ToastNotice = {
+  message: string;
+  actionLabel?: string;
+  actionHref?: string;
+};
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -117,6 +123,24 @@ type BeforeInstallPromptEvent = Event & {
 
 const THEME_KEY = "markdown-lens:theme";
 const SPLIT_KEY = "markdown-lens:split-ratio";
+const STAR_ASK_KEY = "markdown-lens:star-ask";
+let starAskOfferedThisLoad = false;
+
+function offerStarAsk(setNotice: (notice: ToastNotice) => void) {
+  if (starAskOfferedThisLoad) return;
+  try {
+    if (sessionStorage.getItem(STAR_ASK_KEY) === "1") return;
+    sessionStorage.setItem(STAR_ASK_KEY, "1");
+  } catch {
+    // Private mode can block sessionStorage; the in-memory flag still gates this load.
+  }
+  starAskOfferedThisLoad = true;
+  setNotice({
+    message: "Converted locally. Star the project if it helped.",
+    actionLabel: "Star",
+    actionHref: siteConfig.githubUrl,
+  });
+}
 
 export function MarkdownLensApp() {
   const [theme, setTheme] = useState<Theme>("dark");
@@ -142,7 +166,7 @@ export function MarkdownLensApp() {
   const [shareLink, setShareLink] = useState<ShareLinkPreview | null>(null);
   const [pendingShareFragment, setPendingShareFragment] = useState<ShareFragmentPreview | null>(null);
   const [pendingSharedMarkdown, setPendingSharedMarkdown] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<ToastNotice | null>(null);
   const [applyServiceWorkerUpdate, setApplyServiceWorkerUpdate] = useState<(() => void) | null>(null);
   const [workspaceStorage, setWorkspaceStorage] = useState<WorkspaceStorageStatus>({
     mode: "persistent",
@@ -186,7 +210,7 @@ export function MarkdownLensApp() {
       return saved;
     } catch {
       setSaveState("error");
-      setNotice("This draft could not be saved. Export a workspace backup before leaving the page.");
+      setNotice({ message: "This draft could not be saved. Export a workspace backup before leaving the page." });
       return null;
     }
   }, [activeDocument, markdown, ready]);
@@ -210,7 +234,7 @@ export function MarkdownLensApp() {
         const sharedFragment = inspectShareFragment(window.location.hash);
         setPendingShareFragment(sharedFragment);
       } catch (error) {
-        setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
+        setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened." });
         clearShareFragment();
       }
       setDocuments(records);
@@ -247,7 +271,7 @@ export function MarkdownLensApp() {
         const sharedFragment = inspectShareFragment(window.location.hash);
         setPendingShareFragment(sharedFragment);
       } catch (error) {
-        setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
+        setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened." });
         clearShareFragment();
       }
     };
@@ -360,7 +384,7 @@ export function MarkdownLensApp() {
         setMarkdown(next?.markdown ?? "");
       }
       await refreshDocuments();
-      setNotice(`“${document.title}” moved to Trash.`);
+      setNotice({ message: `“${document.title}” moved to Trash.` });
     },
     [activeId, documents, persistActiveDraft, refreshDocuments],
   );
@@ -368,7 +392,7 @@ export function MarkdownLensApp() {
   const restoreFromTrash = useCallback(async (document: DocumentRecord) => {
     await restoreDocument(document.id);
     await refreshDocuments();
-    setNotice(`“${document.title}” restored.`);
+    setNotice({ message: `“${document.title}” restored.` });
   }, [refreshDocuments]);
 
   const deleteForever = useCallback(async (document: DocumentRecord) => {
@@ -413,6 +437,7 @@ export function MarkdownLensApp() {
           setActiveId(lastDocument.id);
           setMarkdown(lastDocument.markdown);
           setMobilePane("preview");
+          offerStarAsk(setNotice);
         }
         setJobs((current) => current.map((job) => (job.id === id ? { ...job, state: "completed" } : job)));
       } catch (error) {
@@ -469,7 +494,7 @@ export function MarkdownLensApp() {
 
   async function copyMarkdown() {
     await navigator.clipboard.writeText(markdown);
-    setNotice("Markdown copied.");
+    setNotice({ message: "Markdown copied." });
   }
 
   function prepareShareLink() {
@@ -479,7 +504,7 @@ export function MarkdownLensApp() {
       setShareLink({ url, length: url.length });
       setExportOpen(false);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "A share link could not be created.");
+      setNotice({ message: error instanceof Error ? error.message : "A share link could not be created." });
     }
   }
 
@@ -488,9 +513,9 @@ export function MarkdownLensApp() {
     try {
       await navigator.clipboard.writeText(shareLink.url);
       setShareLink(null);
-      setNotice("Share link copied. Anyone with the URL can read this document.");
+      setNotice({ message: "Share link copied. Anyone with the URL can read this document." });
     } catch {
-      setNotice("The share link could not be copied. Check browser clipboard permissions.");
+      setNotice({ message: "The share link could not be copied. Check browser clipboard permissions." });
     }
   }
 
@@ -503,7 +528,7 @@ export function MarkdownLensApp() {
       setPendingSharedMarkdown(sharedMarkdown);
     } catch (error) {
       setPendingShareFragment(null);
-      setNotice(error instanceof Error ? error.message : "The shared document could not be opened.");
+      setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened." });
       clearShareFragment();
     }
   }
@@ -528,9 +553,9 @@ export function MarkdownLensApp() {
       setMobilePane("editor");
       setPendingSharedMarkdown(null);
       clearShareFragment();
-      setNotice("Shared document opened as a new local document.");
+      setNotice({ message: "Shared document opened as a new local document." });
     } catch {
-      setNotice("The shared document could not be saved locally.");
+      setNotice({ message: "The shared document could not be saved locally." });
     }
   }
 
@@ -569,9 +594,9 @@ export function MarkdownLensApp() {
       const backup = await parseWorkspaceBackupFile(file);
       await importWorkspace(backup);
       await refreshDocuments();
-      setNotice("Workspace backup restored locally.");
+      setNotice({ message: "Workspace backup restored locally." });
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "The workspace backup could not be restored.");
+      setNotice({ message: error instanceof Error ? error.message : "The workspace backup could not be restored." });
     }
   }
 
@@ -621,6 +646,7 @@ export function MarkdownLensApp() {
       { label: "Copy Markdown", action: () => void copyMarkdown() },
       { label: "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
+      { label: "Star on GitHub", action: () => window.open(siteConfig.githubUrl, "_blank", "noopener,noreferrer") },
     ];
   const visibleCommands = commands.filter((command) => command.label.toLowerCase().includes(commandSearch.toLowerCase()));
 
@@ -699,7 +725,7 @@ export function MarkdownLensApp() {
                 await installPrompt.prompt();
                 const choice = await installPrompt.userChoice;
                 setInstallPrompt(null);
-                if (choice.outcome === "accepted") setNotice("Markdown Lens was installed.");
+                if (choice.outcome === "accepted") setNotice({ message: "Markdown Lens was installed." });
               }}
               className="flex h-9 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground sm:px-3"
             >
@@ -711,9 +737,7 @@ export function MarkdownLensApp() {
             <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>⌘K</kbd>
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
-          <a href="https://github.com/ayushhagarwal/markdown-lens" target="_blank" rel="noreferrer" className="hidden h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground sm:flex" aria-label="View on GitHub">
-            <GithubIcon className="h-4 w-4" />
-          </a>
+          <GithubStarLink variant="nav" className="h-9 px-2 text-xs" />
           <IconButton icon={Menu} label="Open commands" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
       </header>
@@ -896,7 +920,14 @@ export function MarkdownLensApp() {
         </div>
       </footer>
 
-      {notice ? <Notice message={notice} onClose={() => setNotice(null)} /> : null}
+      {notice ? (
+        <Notice
+          message={notice.message}
+          actionLabel={notice.actionLabel}
+          actionHref={notice.actionHref}
+          onClose={() => setNotice(null)}
+        />
+      ) : null}
       {workspaceStorage.mode === "memory" && !storageWarningDismissed ? (
         <Notice
           message={workspaceStorage.message}
@@ -1067,6 +1098,13 @@ function ConversionReportDialog({ document, onClose }: { document: DocumentRecor
         <ReportList title="Warnings" items={report.warnings} empty="No conversion warnings." />
         <ReportList title="Omitted content" items={report.omitted} empty="No omitted content was reported." />
         <p className="mt-5 text-xs leading-5 text-muted-foreground">Document conversion is structural rather than visually lossless. Review complex tables, columns, diagrams, and embedded media before publishing.</p>
+        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+          Source is public if you want to{" "}
+          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-foreground">
+            inspect or star it
+          </a>
+          .
+        </p>
       </div>
     </div>
   );
@@ -1158,12 +1196,14 @@ function Notice({
   onClose,
   actionLabel,
   onAction,
+  actionHref,
   persistent = false,
 }: {
   message: string;
   onClose: () => void;
   actionLabel?: string;
   onAction?: () => void;
+  actionHref?: string;
   persistent?: boolean;
 }) {
   useEffect(() => {
@@ -1174,7 +1214,13 @@ function Notice({
   return (
     <div role="status" aria-live="polite" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl">
       <span>{message}</span>
-      {actionLabel && onAction ? <button type="button" onClick={onAction} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">{actionLabel}</button> : null}
+      {actionLabel && actionHref ? (
+        <a href={actionHref} target="_blank" rel="noreferrer" onClick={onClose} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">
+          {actionLabel}
+        </a>
+      ) : actionLabel && onAction ? (
+        <button type="button" onClick={onAction} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">{actionLabel}</button>
+      ) : null}
       <button type="button" onClick={onClose} aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button>
     </div>
   );

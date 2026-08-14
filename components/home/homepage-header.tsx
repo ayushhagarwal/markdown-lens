@@ -4,9 +4,9 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BrandIcon } from "@/components/brand-icon";
+import { GithubStarLink } from "@/components/github-star-link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { GithubIcon } from "@/components/github-icon";
-import { primaryNav, siteConfig } from "@/lib/site";
+import { primaryNav } from "@/lib/site";
 
 export function HomepageHeader() {
   const [open, setOpen] = useState(false);
@@ -53,7 +53,7 @@ export function HomepageHeader() {
                 {link.label}
               </Link>
             ))}
-            <a href={siteConfig.githubUrl} className="rounded-md px-4 py-2 text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">GitHub</a>
+            <GithubStarLink variant="nav" className="px-4 py-2 hover:bg-transparent" />
           </nav>
           <ThemeToggle />
           <Link href="/editor" className="ml-3 inline-flex h-10 items-center rounded-md border border-accent px-4 text-sm font-semibold text-accent transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -85,9 +85,7 @@ export function HomepageHeader() {
                 {link.label}
               </Link>
             ))}
-            <a href={siteConfig.githubUrl} className="flex items-center gap-2 rounded-md px-3 py-3 text-base hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              GitHub <GithubIcon className="h-4 w-4" aria-hidden />
-            </a>
+            <GithubStarLink variant="nav" className="px-3 py-3 text-base" onClick={() => setOpen(false)} />
             <Link href="/editor" onClick={() => setOpen(false)} className="mt-2 inline-flex h-12 items-center justify-center rounded-md bg-accent px-4 font-semibold text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Open workspace
             </Link>

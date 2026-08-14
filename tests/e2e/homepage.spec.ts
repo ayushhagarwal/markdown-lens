@@ -6,6 +6,7 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   await expect(page).toHaveTitle("Free Local Markdown Editor and Document Converter | Markdown Lens");
   await expect(page.getByRole("heading", { level: 1, name: "A local Markdown editor that converts documents privately." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open workspace" }).first()).toHaveAttribute("href", "/editor");
+  await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub" }).first()).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
   await expect(page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "PDF" })).toHaveAttribute("href", "/pdf-to-markdown");
   await expect(page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "Word" })).toHaveAttribute("href", "/word-to-markdown");
   await expect(page.getByText("Quick answers")).toHaveCount(0);

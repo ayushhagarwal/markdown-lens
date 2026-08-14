@@ -4,6 +4,8 @@ A privacy-first, local document-to-Markdown workbench for PDF, Word, PowerPoint,
 
 [Live Demo](https://markdownlens.ayushdev.com) · [Report Bug](../../issues) · [Request Feature](../../issues)
 
+If this is useful, a star helps others find it.
+
 ![Markdown Lens showing a Markdown document beside its rendered preview](./public/screenshot.png)
 
 Markdown Lens helps you convert common documents into editable Markdown, manage multiple private local documents, and review the result with clean GitHub-style rendering. It is built for developers, writers, and open-source maintainers who want a zero-install workflow without accounts, ads, analytics, or backend document uploads.
@@ -161,5 +163,7 @@ Good places to start include documentation improvements, accessibility checks, M
 ## License
 
 Markdown Lens is released under the [MIT License](./LICENSE).
+
+If this is useful, a star helps others find it.
 
 Markdown Lens is an independent open-source project maintained in personal time.

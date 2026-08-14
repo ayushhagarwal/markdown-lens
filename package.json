@@ -2,7 +2,7 @@
   "name": "markdown-lens",
   "version": "0.9.4",
   "private": true,
-  "description": "A beautiful, privacy-first online Markdown viewer with GitHub-style preview, Mermaid diagrams, code highlighting, math, and dark mode.",
+  "description": "A privacy-first local Markdown editor and document converter for PDF, Word, Office, HTML, EPUB, and images in the browser.",
   "scripts": {
     "predev": "node scripts/copy-ocr-data.mjs",
     "dev": "next dev",

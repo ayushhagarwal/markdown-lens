@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { HomepageHeader } from "@/components/home/homepage-header";
 import { ProductPreview } from "@/components/home/product-preview";
 import { ConversionWorkflow } from "@/components/home/conversion-workflow";
 import { BrandIcon } from "@/components/brand-icon";
+import { GithubStarLink } from "@/components/github-star-link";
 import { SiteFooter } from "@/components/site-footer";
 import { converterLinks, siteConfig } from "@/lib/site";
 
@@ -26,10 +27,13 @@ export function Homepage() {
                 Open workspace
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
-              <Link href="/supported-formats" className="home-text-link group">
-                View supported formats
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
-              </Link>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link href="/supported-formats" className="home-text-link group">
+                  View supported formats
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
+                </Link>
+                <GithubStarLink variant="text" className="home-text-link group" />
+              </div>
             </div>
             <nav className="mt-8 flex max-w-[520px] flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground" aria-label="Popular converters">
               {converterLinks.slice(0, 6).map((link) => (
@@ -78,10 +82,7 @@ export function Homepage() {
                 Open workspace
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
-              <a href={siteConfig.githubUrl} className="home-text-link group">
-                View on GitHub
-                <ExternalLink className="h-4 w-4" aria-hidden />
-              </a>
+              <GithubStarLink variant="text" className="home-text-link group" />
             </div>
           </div>
         </section>

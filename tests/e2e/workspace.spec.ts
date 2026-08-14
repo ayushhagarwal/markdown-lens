@@ -5,6 +5,7 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   test.skip(testInfo.project.name === "mobile", "desktop workspace interaction");
   await page.goto("/editor");
   await expect(page.getByRole("link", { name: "Markdown Lens home" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open or convert", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "New document" }).click();
   await expect(page.getByText("Untitled document")).toBeVisible();
