@@ -693,7 +693,7 @@ export function MarkdownLensApp() {
         }}
       />
 
-      <header className="flex h-[54px] shrink-0 items-center justify-between border-b border-border bg-panel px-3 shadow-sm">
+      <header className="flex h-[54px] shrink-0 items-center justify-between overflow-hidden border-b border-border bg-panel px-3 shadow-sm">
         <div className="flex min-w-0 items-center gap-1">
           <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus:outline-none focus:ring-2 focus:ring-ring">
             <BrandIcon className="h-6 w-6" priority />
@@ -753,14 +753,19 @@ export function MarkdownLensApp() {
       <div className="relative flex min-h-0 flex-1">
         <aside
           className={cn(
-            "workspace-rail z-30 flex w-[260px] shrink-0 flex-col border-r border-border bg-background 2xl:w-[300px]",
-            !documentsOpen && "hidden",
-            mobilePane !== "documents" && "hidden lg:flex",
-            mobilePane === "documents" && "absolute inset-y-0 left-0 flex w-full max-w-[340px] shadow-2xl lg:static lg:shadow-none",
+            "workspace-rail z-30 w-[260px] shrink-0 flex-col border-r border-border bg-background 2xl:w-[300px]",
+            railDisplay(documentsOpen, mobilePane === "documents"),
+            mobilePane === "documents" && "absolute inset-y-0 left-0 w-full max-w-[340px] shadow-2xl lg:static lg:w-[260px] lg:max-w-none lg:shadow-none 2xl:w-[300px]",
           )}
           aria-label="Documents"
         >
-          <RailHeader label={showTrash ? "Trash" : "Documents"} onClose={() => setDocumentsOpen(false)} />
+          <RailHeader
+            label={showTrash ? "Trash" : "Documents"}
+            onClose={() => {
+              setDocumentsOpen(false);
+              setMobilePane((pane) => (pane === "documents" ? "editor" : pane));
+            }}
+          />
           <div className="border-b border-border p-2.5">
             <label className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs text-muted-foreground focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
               <Search className="h-3.5 w-3.5" />
@@ -847,14 +852,19 @@ export function MarkdownLensApp() {
 
         <aside
           className={cn(
-            "workspace-rail z-30 flex w-[220px] shrink-0 flex-col border-l border-border bg-background 2xl:w-[260px]",
-            !outlineOpen && "hidden",
-            mobilePane !== "outline" && "hidden lg:flex",
-            mobilePane === "outline" && "absolute inset-y-0 right-0 flex w-full max-w-[320px] shadow-2xl lg:static lg:shadow-none",
+            "workspace-rail z-30 w-[220px] shrink-0 flex-col border-l border-border bg-background 2xl:w-[260px]",
+            railDisplay(outlineOpen, mobilePane === "outline"),
+            mobilePane === "outline" && "absolute inset-y-0 right-0 w-full max-w-[320px] shadow-2xl lg:static lg:w-[220px] lg:max-w-none lg:shadow-none 2xl:w-[260px]",
           )}
           aria-label="Outline"
         >
-          <RailHeader label="Outline" onClose={() => setOutlineOpen(false)} />
+          <RailHeader
+            label="Outline"
+            onClose={() => {
+              setOutlineOpen(false);
+              setMobilePane((pane) => (pane === "outline" ? "editor" : pane));
+            }}
+          />
           <nav className="min-h-0 flex-1 overflow-y-auto py-2" aria-label="Document outline">
             {headings.length ? headings.map((heading) => (
               <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} onClick={() => navigateToHeading(heading.id)} className="flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground" style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
@@ -1252,6 +1262,13 @@ function removeLocalPreference(key: string) {
   } catch {
     // Preference storage is optional.
   }
+}
+
+function railDisplay(desktopOpen: boolean, mobileOpen: boolean) {
+  if (mobileOpen && desktopOpen) return "flex";
+  if (mobileOpen) return "flex lg:hidden";
+  if (desktopOpen) return "hidden lg:flex";
+  return "hidden";
 }
 
 function RailHeader({ label, onClose }: { label: string; onClose: () => void }) {
