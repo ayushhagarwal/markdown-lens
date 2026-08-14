@@ -737,7 +737,7 @@ export function MarkdownLensApp() {
             <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>⌘K</kbd>
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
-          <GithubStarLink variant="nav" className="h-9 px-2 text-xs" />
+          <GithubStarLink variant="nav" className="h-9 px-2.5 text-xs" />
           <IconButton icon={Menu} label="Open commands" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
       </header>

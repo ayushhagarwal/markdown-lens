@@ -53,7 +53,7 @@ export function HomepageHeader() {
                 {link.label}
               </Link>
             ))}
-            <GithubStarLink variant="nav" className="px-4 py-2 hover:bg-transparent" />
+            <GithubStarLink variant="nav" />
           </nav>
           <ThemeToggle />
           <Link href="/editor" className="ml-3 inline-flex h-10 items-center rounded-md border border-accent px-4 text-sm font-semibold text-accent transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -85,7 +85,7 @@ export function HomepageHeader() {
                 {link.label}
               </Link>
             ))}
-            <GithubStarLink variant="nav" className="px-3 py-3 text-base" onClick={() => setOpen(false)} />
+            <GithubStarLink variant="nav" className="h-11 justify-self-start px-3 py-3 text-base" onClick={() => setOpen(false)} />
             <Link href="/editor" onClick={() => setOpen(false)} className="mt-2 inline-flex h-12 items-center justify-center rounded-md bg-accent px-4 font-semibold text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Open workspace
             </Link>

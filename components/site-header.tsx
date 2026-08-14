@@ -26,7 +26,7 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
-          <GithubStarLink variant="nav" className="h-10" />
+          <GithubStarLink variant="nav" />
           <ThemeToggle />
           <Link
             href="/editor"

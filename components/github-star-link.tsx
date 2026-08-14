@@ -5,7 +5,7 @@ import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const variantClassName = {
-  nav: "inline-flex items-center gap-1.5 rounded-md px-3 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+  nav: "github-star-nav inline-flex h-10 items-center gap-1.5 rounded-md px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
   text: "inline-flex items-center gap-2",
   button:
     "inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border px-5 text-sm font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
