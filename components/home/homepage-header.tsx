@@ -39,7 +39,7 @@ export function HomepageHeader() {
   }, [open]);
 
   return (
-    <header className="relative z-40 border-b border-border/70 bg-background/90 backdrop-blur-xl">
+    <header className="relative z-40 border-b border-border bg-panel shadow-sm">
       <div className="mx-auto flex h-16 w-full max-w-[1500px] items-center justify-between px-5 sm:px-8 lg:px-12 xl:px-14">
         <Link href="/" className="flex items-center gap-3 rounded-md font-semibold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <BrandIcon className="h-9 w-9" priority />

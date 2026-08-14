@@ -6,7 +6,7 @@ import { primaryNav } from "@/lib/site";
 
 export function SiteHeader() {
   return (
-    <header className="border-b border-border/75 bg-background/90 backdrop-blur-xl">
+    <header className="border-b border-border bg-panel shadow-sm">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
