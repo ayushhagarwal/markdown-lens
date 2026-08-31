@@ -70,6 +70,16 @@ test("supported formats uses cards on small screens and a table from md up", asy
   await expect(table).toContainText("Scans require local OCR; complex layout needs review.");
 });
 
+test("format landing FAQs show an open/close affordance", async ({ page }) => {
+  await page.goto("/html-to-markdown");
+  const item = page.locator("details").filter({ hasText: "Does Markdown Lens execute scripts?" });
+  await expect(item.locator("summary")).toBeVisible();
+  await expect(item.locator("summary [aria-hidden]")).toHaveText("+");
+  await expect(item.getByText("No. Script, style, frame, object, and form elements are removed before Markdown conversion.")).toBeHidden();
+  await item.locator("summary").click();
+  await expect(item.getByText("No. Script, style, frame, object, and form elements are removed before Markdown conversion.")).toBeVisible();
+});
+
 test("mobile navigation and preview tabs respond", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
   await page.goto("/");

@@ -84,7 +84,19 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
 
         <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
           <h2 className="text-3xl font-semibold tracking-tight">Questions about {config.extensions}</h2>
-          <div className="divide-y divide-border border-y border-border">{config.faq.map((item) => <details key={item.question} className="group py-5"><summary className="cursor-pointer list-none font-medium">{item.question}</summary><p className="pt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p></details>)}</div>
+          <div className="divide-y divide-border border-y border-border">
+            {config.faq.map((item) => (
+              <details key={item.question} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
+                  {item.question}
+                  <span className="text-xl font-light text-muted-foreground transition group-open:rotate-45" aria-hidden>
+                    +
+                  </span>
+                </summary>
+                <p className="pt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p>
+              </details>
+            ))}
+          </div>
         </section>
 
         <section className="border-t border-border/75 bg-foreground text-background">
