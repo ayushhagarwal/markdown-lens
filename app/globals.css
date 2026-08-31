@@ -11,10 +11,10 @@
   --panel: 0 0% 100%;
   --panel-foreground: 218 35% 11%;
   --surface: 210 30% 99%;
-  --accent: 174 84% 32%;
+  --accent: 174 84% 27%;
   --accent-foreground: 0 0% 100%;
   --accent-soft: 174 76% 92%;
-  --ring: 175 70% 36%;
+  --ring: 175 70% 32%;
 }
 
 .dark {
@@ -123,9 +123,6 @@ kbd {
   --muted-foreground: 215 10% 40%;
   --panel: 0 0% 100%;
   --surface: 210 30% 99%;
-  --accent: 171 72% 35%;
-  --accent-foreground: 0 0% 100%;
-  --ring: 171 68% 38%;
 }
 
 .dark .home-shell {
@@ -136,9 +133,26 @@ kbd {
   --muted-foreground: 207 10% 67%;
   --panel: 207 32% 7%;
   --surface: 207 27% 8%;
-  --accent: 170 66% 52%;
-  --accent-foreground: 210 40% 6%;
-  --ring: 170 66% 52%;
+}
+
+@layer components {
+  .btn-primary,
+  .btn-secondary,
+  .btn-header {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .btn-primary {
+    @apply h-12 bg-accent text-accent-foreground hover:bg-accent/90;
+  }
+
+  .btn-secondary {
+    @apply h-12 border border-border bg-panel text-foreground hover:border-ring hover:bg-muted;
+  }
+
+  .btn-header {
+    @apply h-10 border border-accent px-4 text-foreground hover:bg-accent hover:text-accent-foreground;
+  }
 }
 
 .github-star-nav {
@@ -155,42 +169,10 @@ kbd {
   box-shadow: 0 0 0 1px hsl(var(--accent) / 0.18), 0 0 26px hsl(var(--accent) / 0.42);
 }
 
-.home-primary-action,
-.home-outline-action {
-  display: inline-flex;
-  min-height: 3.25rem;
-  align-items: center;
-  justify-content: center;
-  gap: 1.25rem;
-  border-radius: 0.5rem;
-  padding: 0 1.5rem;
-  font-weight: 650;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
-}
-
-.home-primary-action {
-  min-width: 16rem;
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
-.home-primary-action:hover {
-  background: hsl(var(--accent) / 0.88);
-}
-
-.home-outline-action {
+.home-action {
   min-width: 20rem;
-  border: 1px solid hsl(var(--accent));
-  color: hsl(var(--accent));
 }
 
-.home-outline-action:hover {
-  background: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
-.home-primary-action:focus-visible,
-.home-outline-action:focus-visible,
 .home-text-link:focus-visible,
 .home-inline-link:focus-visible {
   outline: 2px solid hsl(var(--ring));
@@ -252,15 +234,13 @@ kbd {
 }
 
 @media (max-width: 639px) {
-  .home-primary-action,
-  .home-outline-action { width: 100%; min-width: 0; }
+  .home-action { width: 100%; min-width: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .home-workflow-rail::before,
   .home-workflow-stage,
-  .home-primary-action svg,
-  .home-outline-action svg,
+  .home-action svg,
   .home-text-link svg {
     transition: none !important;
   }

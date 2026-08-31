@@ -23,7 +23,7 @@ export function Homepage() {
               <span className="hidden sm:inline">Preview GitHub-style Markdown, then convert PDFs, Office files, HTML, EPUB, data, and images into editable source—entirely in your browser.</span>
             </p>
             <div className="mt-9 flex flex-col items-start gap-5">
-              <Link href="/editor" className="home-primary-action group">
+              <Link href="/editor" className="btn-primary home-action group">
                 Open workspace
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
@@ -78,7 +78,7 @@ export function Homepage() {
               Work with Markdown,<br />not around it.
             </h2>
             <div className="mt-9 flex flex-col items-center gap-5">
-              <Link href="/editor" className="home-outline-action group">
+              <Link href="/editor" className="btn-secondary home-action group">
                 Open workspace
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
               </Link>
