@@ -16,14 +16,20 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   expect(schemas.join(" ")).toContain('"softwareVersion":"0.9.4"');
 });
 
-test("homepage defaults to dark and preserves a saved light preference", async ({ browser }) => {
-  const defaultContext = await browser.newContext();
-  const defaultPage = await defaultContext.newPage();
-  await defaultPage.goto("http://127.0.0.1:3000/");
-  await expect(defaultPage.locator("html")).toHaveClass(/dark/);
-  await defaultContext.close();
+test("homepage follows system color scheme and preserves a saved light preference", async ({ browser }) => {
+  const darkContext = await browser.newContext({ colorScheme: "dark" });
+  const darkPage = await darkContext.newPage();
+  await darkPage.goto("http://127.0.0.1:3000/");
+  await expect(darkPage.locator("html")).toHaveClass(/dark/);
+  await darkContext.close();
 
-  const savedContext = await browser.newContext();
+  const lightContext = await browser.newContext({ colorScheme: "light" });
+  const lightPage = await lightContext.newPage();
+  await lightPage.goto("http://127.0.0.1:3000/");
+  await expect(lightPage.locator("html")).not.toHaveClass(/dark/);
+  await lightContext.close();
+
+  const savedContext = await browser.newContext({ colorScheme: "dark" });
   await savedContext.addInitScript(() => localStorage.setItem("markdown-lens:theme", "light"));
   const savedPage = await savedContext.newPage();
   await savedPage.goto("http://127.0.0.1:3000/");
