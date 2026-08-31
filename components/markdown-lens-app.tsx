@@ -1044,7 +1044,7 @@ function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicat
         <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
         <span className="shrink-0 text-[10px] text-muted-foreground">{relativeTime(document.updatedAt)}</span>
       </button>
-      <div className="mr-1 hidden items-center group-hover:flex group-focus-within:flex">
+      <div className="mr-1 flex items-center md:hidden md:group-hover:flex md:group-focus-within:flex">
         {trashed ? (
           <><IconButton icon={RotateCcw} label="Restore document" onClick={onRestore} compact /><IconButton icon={Trash2} label="Delete permanently" onClick={onDeleteForever} compact /></>
         ) : (

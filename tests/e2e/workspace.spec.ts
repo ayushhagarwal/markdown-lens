@@ -21,6 +21,28 @@ test("mobile workspace can create a document from the header icon", async ({ pag
   await expect(page.getByText("Untitled document")).toBeVisible();
 });
 
+test("mobile document row actions are visible without hover", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
+  await page.goto("/editor");
+  await expect(page.getByRole("main")).toBeVisible();
+  await page.getByRole("button", { name: "New document" }).click();
+  await page
+    .getByRole("navigation", { name: "Workspace panes" })
+    .getByRole("button", { name: "documents", exact: true })
+    .click();
+
+  const documents = page.getByRole("complementary", { name: "Documents" });
+  const row = documents.getByRole("button", { name: /Untitled document/ }).first().locator("..");
+  await expect(row.getByRole("button", { name: "Rename document" })).toBeVisible();
+  await expect(row.getByRole("button", { name: "Move to Trash" })).toBeVisible();
+
+  await row.getByRole("button", { name: "Move to Trash" }).click();
+  await expect(page.getByText("moved to Trash.")).toBeVisible();
+  await page.getByRole("button", { name: "Trash", exact: true }).click();
+  const trashedRow = documents.getByRole("button", { name: /Untitled document/ }).first().locator("..");
+  await expect(trashedRow.getByRole("button", { name: "Restore document" })).toBeVisible();
+});
+
 test("documents persist independently across immediate switches, rename, trash, and reload", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop document rail interaction");
   await page.goto("/editor");
