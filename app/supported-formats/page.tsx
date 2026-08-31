@@ -36,7 +36,17 @@ export default function SupportedFormatsPage() {
           <h1 className="text-balance text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">Supported Markdown and document formats</h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">Markdown Lens opens, converts, edits, and exports common technical-document formats entirely in your browser. This matrix distinguishes direct support from structural conversion and clearly identifies content that needs review.</p>
           <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole className="h-4 w-4 text-accent" />No account, analytics, or document upload.</p>
-          <div className="mt-10 overflow-x-auto border border-border">
+          <ul className="mt-10 grid gap-4 md:hidden" role="list" aria-label="Supported formats">
+            {formats.map(([format, extensions, workflow, limitation, href]) => (
+              <li key={format} className="border border-border bg-panel p-5">
+                <Link href={href} className="font-medium underline-offset-4 hover:underline">{format}</Link>
+                <p className="mt-2 font-mono text-xs text-accent">{extensions}</p>
+                <p className="mt-3 flex items-center gap-2 text-sm"><Check className="h-4 w-4 shrink-0 text-accent" aria-hidden />{workflow}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{limitation}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-10 hidden overflow-x-auto border border-border md:block">
             <table className="w-full min-w-[760px] border-collapse text-left text-sm">
               <thead className="bg-surface"><tr>{["Format", "Extensions", "Workflow", "Important limitation"].map((label) => <th key={label} className="border-b border-border px-4 py-3 font-semibold">{label}</th>)}</tr></thead>
               <tbody>
