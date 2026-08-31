@@ -711,7 +711,7 @@ export function MarkdownLensApp() {
             onClick={() => setFormatGuideOpen(true)}
             className="hidden rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground lg:inline"
           >
-            Formats
+            File types
           </button>
         </div>
         <div className="flex items-center gap-1">
