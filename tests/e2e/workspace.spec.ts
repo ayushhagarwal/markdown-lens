@@ -20,10 +20,14 @@ test("documents persist independently across immediate switches, rename, trash, 
 
   await page.getByRole("button", { name: "New document" }).click();
   await editor.fill("# First independent draft");
-  await page.getByRole("button", { name: "New document" }).click();
+  await expect(page.locator(".markdown-body").getByRole("heading", { name: "First independent draft" })).toBeVisible();
   await expect(documents.getByRole("button", { name: /First independent draft/ })).toBeVisible();
+  await page.getByRole("button", { name: "New document" }).click();
+  await expect(documents.getByRole("button", { name: /Untitled document/ })).toBeVisible();
 
   await editor.fill("# Second independent draft");
+  await expect(page.locator(".markdown-body").getByRole("heading", { name: "Second independent draft" })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /Second independent draft/ })).toBeVisible();
   await documents.getByRole("button", { name: /First independent draft/ }).click();
   await expect(editor).toContainText("First independent draft");
 
