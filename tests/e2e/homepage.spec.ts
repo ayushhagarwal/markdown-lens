@@ -50,6 +50,26 @@ test("@a11y Markdown cheatsheet has no serious accessibility violations", async 
   expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
 });
 
+test("supported formats uses cards on small screens and a table from md up", async ({ page }, testInfo) => {
+  await page.goto("/supported-formats");
+  await expect(page.getByRole("heading", { level: 1, name: "Supported Markdown and document formats" })).toBeVisible();
+  const cards = page.getByRole("list", { name: "Supported formats" });
+  const table = page.getByRole("table");
+
+  if (testInfo.project.name === "mobile") {
+    await expect(cards).toBeVisible();
+    await expect(table).toBeHidden();
+    await expect(cards.getByRole("link", { name: "PDF" })).toHaveAttribute("href", "/pdf-to-markdown");
+    await expect(cards).toContainText("Scans require local OCR; complex layout needs review.");
+    return;
+  }
+
+  await expect(table).toBeVisible();
+  await expect(cards).toBeHidden();
+  await expect(table.getByRole("link", { name: "PDF" })).toHaveAttribute("href", "/pdf-to-markdown");
+  await expect(table).toContainText("Scans require local OCR; complex layout needs review.");
+});
+
 test("mobile navigation and preview tabs respond", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
   await page.goto("/");
