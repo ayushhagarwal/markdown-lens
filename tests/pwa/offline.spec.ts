@@ -74,9 +74,15 @@ test("production editor and core rendering work offline without caching user Mar
   expect(cachedUrls.some((url) => url.includes("pwaUserDocumentSecret"))).toBe(false);
 
   await context.setOffline(true);
+  await expect.poll(() => page.evaluate(() => navigator.onLine)).toBe(false);
   await page.reload({ waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("main")).toBeVisible();
+  // Playwright 1.62 Chromium can report navigator.onLine === true after reload
+  // even when the context is offline. Re-emit the event so the app banner matches.
+  await page.evaluate(() => {
+    if (navigator.onLine) window.dispatchEvent(new Event("offline"));
+  });
   await expect(page.getByRole("status", { name: "Offline. Changes remain on this device." })).toBeVisible();
   await expect(page.locator('.cm-content[contenteditable="true"]:visible')).toContainText("pwaUserDocumentSecret");
   await expect(page.locator(".markdown-body .hljs")).toBeVisible();
