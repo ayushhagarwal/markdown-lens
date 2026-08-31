@@ -61,11 +61,11 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
             <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">{config.summary}</p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{config.description}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/editor" className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-foreground px-5 text-sm font-semibold text-background hover:bg-foreground/88 focus:outline-none focus:ring-2 focus:ring-ring">
+              <Link href="/editor" className="btn-primary">
                 Open or convert {config.extensions}
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/supported-formats" className="inline-flex h-12 items-center justify-center rounded-lg border border-border bg-panel px-5 text-sm font-semibold hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring">Compare formats</Link>
+              <Link href="/supported-formats" className="btn-secondary">Compare formats</Link>
             </div>
             <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole className="h-4 w-4 text-accent" />Local browser processing. No document upload.</p>
           </div>
@@ -94,7 +94,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
               <div className="flex flex-col gap-3 self-start sm:flex-row md:self-auto">
                 <Link
                   href="/editor"
-                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-background px-5 text-sm font-semibold text-foreground transition hover:bg-background/90"
+                  className="btn-primary h-11"
                 >
                   Open the editor
                   <ArrowRight className="h-4 w-4" aria-hidden />

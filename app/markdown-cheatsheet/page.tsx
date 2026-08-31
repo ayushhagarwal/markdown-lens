@@ -45,7 +45,7 @@ const inlineExamples = [
       "[Markdown Lens](https://markdownlens.ayushdev.com)\n\n![Alt text](https://example.com/image.png)",
     output: (
       <div className="space-y-3">
-        <a className="font-semibold text-emerald-700 underline underline-offset-4 dark:text-accent" href={siteConfig.url}>
+        <a className="font-semibold text-accent underline underline-offset-4" href={siteConfig.url}>
           Markdown Lens
         </a>
         <div className="rounded-md border border-dashed border-border bg-muted/50 px-3 py-4 text-sm text-muted-foreground">
@@ -120,10 +120,10 @@ export default function MarkdownCheatsheetPage() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-accent/25 bg-accent-soft text-accent">
             <BookOpen className="h-7 w-7" aria-hidden />
           </div>
-          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-accent">
+          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-accent">
             Quick reference
           </p>
-          <h1 className="mx-auto mt-3 max-w-3xl text-3xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="mx-auto mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">
             Markdown cheatsheet
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
@@ -320,19 +320,19 @@ export default function MarkdownCheatsheetPage() {
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/editor"
-              className="inline-flex h-10 items-center justify-center rounded-md bg-foreground px-5 text-sm font-semibold text-background transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-accent-soft"
+              className="btn-primary h-10"
             >
               Open the Markdown editor
             </Link>
             <Link
               href="/pdf-to-markdown"
-              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm font-semibold transition hover:bg-muted"
+              className="btn-secondary h-10"
             >
               PDF to Markdown
             </Link>
             <Link
               href="/word-to-markdown"
-              className="inline-flex h-10 items-center justify-center rounded-md border border-border px-5 text-sm font-semibold transition hover:bg-muted"
+              className="btn-secondary h-10"
             >
               Word to Markdown
             </Link>

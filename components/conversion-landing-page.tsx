@@ -136,14 +136,14 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/editor"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-foreground px-5 text-sm font-semibold text-background transition hover:bg-foreground/88 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+                className="btn-primary"
               >
                 {config.cta}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Link>
               <a
                 href="#how-it-works"
-                className="inline-flex h-12 items-center justify-center rounded-lg border border-border bg-panel px-5 text-sm font-semibold shadow-sm transition hover:border-ring hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
+                className="btn-secondary"
               >
                 See how it works
               </a>
@@ -300,7 +300,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
               <div className="flex flex-col gap-3 self-start sm:flex-row md:self-auto">
                 <Link
                   href="/editor"
-                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-background px-5 text-sm font-semibold text-foreground transition hover:bg-background/90"
+                  className="btn-primary h-11"
                 >
                   Open the editor
                   <ArrowRight className="h-4 w-4" aria-hidden />

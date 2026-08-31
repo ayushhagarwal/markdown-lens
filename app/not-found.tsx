@@ -13,10 +13,10 @@ export default function NotFound() {
           That URL is not part of Markdown Lens. Use a converter page, the format guide, or the local editor instead.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link href="/" className="inline-flex h-11 items-center justify-center rounded-lg bg-foreground px-5 text-sm font-semibold text-background">
+          <Link href="/" className="btn-primary h-11">
             Go to the homepage
           </Link>
-          <Link href="/supported-formats" className="inline-flex h-11 items-center justify-center rounded-lg border border-border px-5 text-sm font-semibold">
+          <Link href="/supported-formats" className="btn-secondary h-11">
             View supported formats
           </Link>
         </div>

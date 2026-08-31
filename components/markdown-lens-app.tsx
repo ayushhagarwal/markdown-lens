@@ -694,11 +694,11 @@ export function MarkdownLensApp() {
       />
 
       <header className="flex h-[54px] shrink-0 items-center justify-between overflow-hidden border-b border-border bg-panel px-3 shadow-sm">
-        <a href="#main" className="sr-only left-4 top-4 z-[100] rounded-md bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus:not-sr-only focus:fixed focus:outline-none focus:ring-2 focus:ring-ring">
+        <a href="#main" className="sr-only left-4 top-4 z-[100] rounded-md bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus-visible:not-sr-only focus-visible:fixed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           Skip to main content
         </a>
         <div className="flex min-w-0 items-center gap-1">
-          <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus:outline-none focus:ring-2 focus:ring-ring">
+          <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <BrandIcon className="h-6 w-6" priority />
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
@@ -816,7 +816,7 @@ export function MarkdownLensApp() {
             </WorkspacePanel>
             <button
               type="button"
-              className="group flex cursor-col-resize items-center justify-center border-x border-border bg-background hover:bg-accent/10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-ring"
+              className="group flex cursor-col-resize items-center justify-center border-x border-border bg-background hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
               role="separator"
               aria-label="Resize editor and preview"
               aria-valuemin={30}
@@ -897,7 +897,7 @@ export function MarkdownLensApp() {
             <button
               type="button"
               onClick={resetSplitRatio}
-              className="hidden h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring lg:flex"
+              className="hidden h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
             >
               <RotateCcw className="h-3 w-3" aria-hidden />
               Reset split
@@ -1038,7 +1038,7 @@ function WorkspacePanel({ label, icon: Icon, detail, children }: { label: string
 function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicate, onDelete, onRestore, onDeleteForever }: { document: DocumentRecord; active: boolean; trashed: boolean; onSelect: () => void; onRename: () => void; onDuplicate: () => void; onDelete: () => void; onRestore: () => void; onDeleteForever: () => void }) {
   return (
     <div className={cn("group mb-0.5 flex items-center rounded-md border border-transparent", active && !trashed && "border-accent/45 bg-accent/10")}>
-      <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-2 text-left focus:outline-none">
+      <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
         <FileText className={cn("h-3.5 w-3.5 shrink-0", active ? "text-accent" : "text-muted-foreground")} />
         <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
         <span className="shrink-0 text-[10px] text-muted-foreground">{relativeTime(document.updatedAt)}</span>
@@ -1283,7 +1283,7 @@ function TopButton({ icon: Icon, label, onClick, emphasis, active, className }: 
 }
 
 function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: typeof FileText; label: string; onClick: () => void; compact?: boolean; className?: string }) {
-  return <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring", compact ? "h-7 w-7" : "h-9 w-9", className)}><Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} /></button>;
+  return <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-7 w-7" : "h-9 w-9", className)}><Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} /></button>;
 }
 
 function MenuAction({ icon: Icon, label, onClick }: { icon: typeof FileText; label: string; onClick: () => void }) {

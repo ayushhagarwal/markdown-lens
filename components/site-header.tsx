@@ -40,7 +40,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
 
   return (
     <header className="relative z-40 border-b border-border bg-panel shadow-sm">
-      <a href="#main" className="sr-only left-4 top-4 z-50 rounded-md bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus:not-sr-only focus:absolute focus:outline-none focus:ring-2 focus:ring-ring">
+      <a href="#main" className="sr-only left-4 top-4 z-50 rounded-md bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus-visible:not-sr-only focus-visible:absolute focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         Skip to main content
       </a>
       <div className={cn("mx-auto flex h-16 w-full items-center justify-between gap-4", wide ? "max-w-[1500px] px-5 sm:px-8 lg:px-12 xl:px-14" : "max-w-7xl px-4 sm:px-6 lg:px-8")}>
@@ -64,7 +64,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
           <ThemeToggle />
           <Link
             href="/editor"
-            className="ml-1 hidden h-10 items-center rounded-md border border-accent px-4 text-sm font-semibold text-foreground transition hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+            className="btn-header ml-1"
           >
             Open workspace
           </Link>
@@ -95,7 +95,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
               </Link>
             ))}
             <GithubStarLink variant="nav" className="h-11 justify-self-start px-3 py-3 text-base" onClick={() => setOpen(false)} />
-            <Link href="/editor" onClick={() => setOpen(false)} className="mt-2 inline-flex h-12 items-center justify-center rounded-md bg-accent px-4 font-semibold text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Link href="/editor" onClick={() => setOpen(false)} className="btn-primary mt-2">
               Open workspace
             </Link>
           </nav>
