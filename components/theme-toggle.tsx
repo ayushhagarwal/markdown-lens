@@ -13,8 +13,7 @@ export function ThemeToggle() {
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_KEY) as Theme | null;
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const homepageDefault = window.location.pathname === "/";
-    const resolvedTheme = savedTheme ?? (homepageDefault || prefersDark ? "dark" : "light");
+    const resolvedTheme = savedTheme ?? (prefersDark ? "dark" : "light");
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(resolvedTheme);
