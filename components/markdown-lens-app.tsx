@@ -99,6 +99,13 @@ const MarkdownPreview = dynamic(
 type Theme = "light" | "dark";
 type SaveState = "saved" | "saving" | "error";
 type MobilePane = "documents" | "editor" | "preview" | "outline";
+
+const MOBILE_PANES: { id: MobilePane; label: string; icon: typeof FileText }[] = [
+  { id: "documents", label: "Files", icon: FileText },
+  { id: "editor", label: "Edit", icon: Pencil },
+  { id: "preview", label: "Preview", icon: Eye },
+  { id: "outline", label: "Outline", icon: BookOpen },
+];
 type ImportJob = {
   id: string;
   fileName: string;
@@ -125,6 +132,17 @@ const THEME_KEY = "markdown-lens:theme";
 const SPLIT_KEY = "markdown-lens:split-ratio";
 const STAR_ASK_KEY = "markdown-lens:star-ask";
 let starAskOfferedThisLoad = false;
+
+function isApplePlatform() {
+  return (
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
+  );
+}
+
+function commandModPrefix(apple = isApplePlatform()) {
+  return apple ? "⌘" : "Ctrl+";
+}
 
 function offerStarAsk(setNotice: (notice: ToastNotice) => void) {
   if (starAskOfferedThisLoad) return;
@@ -182,6 +200,7 @@ export function MarkdownLensApp() {
   const abortControllers = useRef(new Map<string, AbortController>());
   const editorActions = useRef<{ focus: () => void; openSearch: () => void } | null>(null);
   const deferredMarkdown = useDeferredValue(markdown);
+  const modPrefix = useMemo(() => commandModPrefix(), []);
 
   const activeDocument = useMemo(
     () => documents.find((document) => document.id === activeId),
@@ -636,13 +655,13 @@ export function MarkdownLensApp() {
   }
 
   const commands = [
-      { label: "New document", hint: "⌘N", action: () => void createNewDocument() },
-      { label: "Open or convert", hint: "⌘O", action: () => fileInputRef.current?.click() },
-      { label: "Find and replace", hint: "⌘F", action: () => editorActions.current?.openSearch() },
+      { label: "New document", hint: `${modPrefix}N`, action: () => void createNewDocument() },
+      { label: "Open or convert", hint: `${modPrefix}O`, action: () => fileInputRef.current?.click() },
+      { label: "Find and replace", hint: `${modPrefix}F`, action: () => editorActions.current?.openSearch() },
       { label: "Show Documents", action: () => setDocumentsOpen(true) },
       { label: "Show Outline", action: () => setOutlineOpen(true) },
       { label: "Reset editor and preview split", action: resetSplitRatio },
-      { label: "Download Markdown", hint: "⌘S", action: downloadMarkdown },
+      { label: "Download Markdown", hint: `${modPrefix}S`, action: downloadMarkdown },
       { label: "Copy Markdown", action: () => void copyMarkdown() },
       { label: "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
@@ -738,7 +757,7 @@ export function MarkdownLensApp() {
             </button>
           ) : null}
           <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted lg:flex">
-            <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>⌘K</kbd>
+            <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>{modPrefix}K</kbd>
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
           <GithubStarLink variant="nav" className="h-9 px-2.5 text-xs" />
@@ -747,9 +766,19 @@ export function MarkdownLensApp() {
       </header>
 
       <nav className="flex h-11 shrink-0 items-center border-b border-border px-2 lg:hidden" aria-label="Workspace panes">
-        {(["documents", "editor", "preview", "outline"] as MobilePane[]).map((pane) => (
-          <button key={pane} type="button" onClick={() => setMobilePane(pane)} className={cn("flex-1 rounded-md px-2 py-2 text-xs font-medium capitalize text-muted-foreground", mobilePane === pane && "bg-muted text-foreground")}>
-            {pane}
+        {MOBILE_PANES.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMobilePane(id)}
+            aria-current={mobilePane === id ? "page" : undefined}
+            className={cn(
+              "flex min-h-11 flex-1 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs font-medium text-muted-foreground",
+              mobilePane === id && "bg-accent/10 text-accent",
+            )}
+          >
+            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            {label}
           </button>
         ))}
       </nav>

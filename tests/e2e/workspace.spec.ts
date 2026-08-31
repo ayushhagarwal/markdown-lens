@@ -174,7 +174,7 @@ test("fenced code blocks copy their source and announce success", async ({ page 
   const editor = page.locator('.cm-content[contenteditable="true"]:visible');
   await editor.fill("Inline `code` stays inline.\n\n```js\nconst answer = 42;\n```");
   if (testInfo.project.name === "mobile") {
-    await page.getByRole("button", { name: "preview", exact: true }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
   }
 
   const copyButton = page.getByRole("button", { name: "Copy code block" });
@@ -198,7 +198,7 @@ test("fenced code blocks announce clipboard failures", async ({ page }, testInfo
   const editor = page.locator('.cm-content[contenteditable="true"]:visible');
   await editor.fill("```text\nCopy me\n```");
   if (testInfo.project.name === "mobile") {
-    await page.getByRole("button", { name: "preview", exact: true }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
   }
   await page.getByRole("button", { name: "Copy code block" }).click();
 
@@ -216,8 +216,27 @@ test("@a11y editor has no serious accessibility violations", async ({ page }) =>
 test("mobile switches between editor and preview", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
   await page.goto("/editor");
-  await page.getByRole("button", { name: "preview", exact: true }).click();
+  await page.getByRole("button", { name: "Preview", exact: true }).click();
   await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
+});
+
+test("mobile workspace panes use explicit labels and switch content", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
+  await page.goto("/editor");
+
+  const paneNav = page.getByRole("navigation", { name: "Workspace panes" });
+  await expect(paneNav.getByRole("button", { name: "Files", exact: true })).toBeVisible();
+  await expect(paneNav.getByRole("button", { name: "Edit", exact: true })).toBeVisible();
+  await expect(paneNav.getByRole("button", { name: "Preview", exact: true })).toBeVisible();
+  await expect(paneNav.getByRole("button", { name: "Outline", exact: true })).toBeVisible();
+
+  await paneNav.getByRole("button", { name: "Files", exact: true }).click();
+  const documents = page.getByRole("complementary", { name: "Documents" });
+  await expect(documents).toBeVisible();
+  await expect(documents.getByPlaceholder("Search documents")).toBeVisible();
+
+  await paneNav.getByRole("button", { name: "Edit", exact: true }).click();
+  await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
 });
 
 test("outline follows rendered headings and focuses the selected target", async ({ page }, testInfo) => {
@@ -311,6 +330,24 @@ test("share links require explicit consent and preserve existing local drafts", 
   await expect(editor).toContainText("Shared payload");
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("");
   expect(requestedUrls.every((url) => !url.includes("#v1:"))).toBe(true);
+});
+
+test("command palette hints match platform modifier", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop command hints");
+  await page.goto("/editor");
+
+  const isApple = await page.evaluate(() =>
+    /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent),
+  );
+  const modPrefix = isApple ? "⌘" : "Ctrl+";
+
+  const commandsButton = page.getByRole("button", { name: /Commands/ });
+  await expect(commandsButton.locator("kbd")).toHaveText(`${modPrefix}K`);
+
+  await commandsButton.click();
+  const commandPalette = page.getByRole("dialog", { name: "Command palette" });
+  await expect(commandPalette).toBeVisible();
+  await expect(commandPalette.locator("kbd", { hasText: `${modPrefix}N` })).toBeVisible();
 });
 
 test("malformed and unsupported share links show safe errors", async ({ page }) => {

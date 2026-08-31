@@ -3,7 +3,7 @@ import { majorSyntaxMarkdown, malformedMermaidMarkdown } from "../fixtures/markd
 
 async function showPreviewOnMobile(page: import("@playwright/test").Page, projectName: string) {
   if (projectName === "mobile") {
-    await page.getByRole("button", { name: "preview", exact: true }).click();
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
   }
 }
 
