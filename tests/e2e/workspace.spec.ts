@@ -12,6 +12,12 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
 });
 
+test("editor header shows File types control on desktop", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop lg viewport control");
+  await page.goto("/editor");
+  await expect(page.getByRole("button", { name: "File types" })).toBeVisible();
+});
+
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only workspace interaction");
   await page.goto("/editor");
