@@ -64,7 +64,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.0.2",
     "@types/turndown": "^5.0.6",
-    "autoprefixer": "^10.5.2",
+    "autoprefixer": "^10.5.4",
     "eslint": "^9.17.0",
     "eslint-config-next": "^16.2.12",
     "fake-indexeddb": "^6.2.5",
