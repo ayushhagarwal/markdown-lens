@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { HomepageHeader } from "@/components/home/homepage-header";
 import { ProductPreview } from "@/components/home/product-preview";
 import { ConversionWorkflow } from "@/components/home/conversion-workflow";
 import { BrandIcon } from "@/components/brand-icon";
 import { GithubStarLink } from "@/components/github-star-link";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import { converterLinks, siteConfig } from "@/lib/site";
 
 export function Homepage() {
   return (
     <div className="home-shell min-h-screen overflow-hidden bg-background text-foreground">
-      <HomepageHeader />
-      <main>
+      <SiteHeader wide />
+      <main id="main">
         <section className="mx-auto grid w-full max-w-[1500px] items-start gap-12 px-5 pb-16 pt-14 sm:px-8 lg:min-h-[860px] lg:grid-cols-[0.76fr_1.24fr] lg:gap-14 lg:px-12 lg:pb-20 lg:pt-16 xl:px-14">
           <div className="relative z-10 max-w-[560px] lg:pt-14">
             <h1 className="text-balance text-[clamp(2.75rem,4.2vw,4rem)] font-semibold leading-[1.04] tracking-[-0.055em]">

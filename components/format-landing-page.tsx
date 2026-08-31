@@ -54,7 +54,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
     <div className="min-h-screen bg-background text-foreground">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
       <SiteHeader />
-      <main>
+      <main id="main">
         <section className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8 lg:py-24">
           <div>
             <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">{config.title}</h1>
