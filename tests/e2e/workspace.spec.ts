@@ -236,7 +236,7 @@ test("mobile workspace panes use explicit labels and switch content", async ({ p
   await expect(documents.getByPlaceholder("Search documents")).toBeVisible();
 
   await paneNav.getByRole("button", { name: "Edit", exact: true }).click();
-  await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
+  await expect(page.locator('.cm-content[contenteditable="true"]:visible')).toBeVisible();
 });
 
 test("outline follows rendered headings and focuses the selected target", async ({ page }, testInfo) => {
