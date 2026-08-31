@@ -54,4 +54,11 @@ test("mobile navigation and preview tabs respond", async ({ page }, testInfo) =>
 
   await page.getByRole("tab", { name: "Preview" }).click();
   await expect(page.getByRole("tabpanel")).toContainText("Product Requirements");
+
+  for (const path of ["/supported-formats", "/markdown-cheatsheet"]) {
+    await page.goto(path);
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Open workspace" })).toHaveAttribute("href", "/editor");
+  }
 });

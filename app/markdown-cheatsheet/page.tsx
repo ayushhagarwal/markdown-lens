@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Check, Eye } from "lucide-react";
+import { BookOpen, Check, Eye } from "lucide-react";
 import { GithubStarLink } from "@/components/github-star-link";
 import { SiteFooter } from "@/components/site-footer";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
 import { pageMetadata } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
@@ -106,25 +106,16 @@ export default function MarkdownCheatsheetPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
         }}
       />
-      <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between gap-4 border-b border-border/80 pb-5">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-md text-sm font-semibold text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-background"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            Back to Markdown Lens
-          </Link>
-          <ThemeToggle />
-        </header>
-
+      <SiteHeader />
+      <main id="main">
+        <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
         <section className="py-12 text-center sm:py-16">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-accent/25 bg-accent-soft text-accent">
             <BookOpen className="h-7 w-7" aria-hidden />
@@ -348,9 +339,10 @@ export default function MarkdownCheatsheetPage() {
             <GithubStarLink variant="button" className="h-10 rounded-md" />
           </div>
         </section>
-      </div>
+        </div>
+      </main>
       <SiteFooter />
-    </main>
+    </div>
   );
 }
 

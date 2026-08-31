@@ -694,6 +694,9 @@ export function MarkdownLensApp() {
       />
 
       <header className="flex h-[54px] shrink-0 items-center justify-between overflow-hidden border-b border-border bg-panel px-3 shadow-sm">
+        <a href="#main" className="sr-only left-4 top-4 z-[100] rounded-md bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus:not-sr-only focus:fixed focus:outline-none focus:ring-2 focus:ring-ring">
+          Skip to main content
+        </a>
         <div className="flex min-w-0 items-center gap-1">
           <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus:outline-none focus:ring-2 focus:ring-ring">
             <BrandIcon className="h-6 w-6" priority />
@@ -803,7 +806,7 @@ export function MarkdownLensApp() {
           <ImportJobs jobs={jobs} onCancel={(id) => abortControllers.current.get(id)?.abort()} onClear={() => setJobs((current) => current.filter((job) => job.state === "running" || job.state === "queued"))} />
         </aside>
 
-        <main ref={centralRef} className={cn("min-w-0 flex-1", mobilePane === "documents" || mobilePane === "outline" ? "hidden lg:block" : "block")}>
+        <main id="main" ref={centralRef} className={cn("min-w-0 flex-1", mobilePane === "documents" || mobilePane === "outline" ? "hidden lg:block" : "block")}>
           <div
             className="hidden h-full min-h-0 lg:grid"
             style={{ gridTemplateColumns: `${splitRatio}fr 7px ${100 - splitRatio}fr` }}

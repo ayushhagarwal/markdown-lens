@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
+      <main id="main" className="mx-auto w-full max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-semibold tracking-tight">Page not found</h1>
         <p className="mt-4 max-w-xl text-lg leading-8 text-muted-foreground">
           That URL is not part of Markdown Lens. Use a converter page, the format guide, or the local editor instead.

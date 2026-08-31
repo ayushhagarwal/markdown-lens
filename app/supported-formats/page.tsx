@@ -31,7 +31,7 @@ export default function SupportedFormatsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SiteHeader />
-      <main>
+      <main id="main">
         <section className="mx-auto w-full max-w-5xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <h1 className="text-balance text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">Supported Markdown and document formats</h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">Markdown Lens opens, converts, edits, and exports common technical-document formats entirely in your browser. This matrix distinguishes direct support from structural conversion and clearly identifies content that needs review.</p>
