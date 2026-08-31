@@ -12,6 +12,15 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
 });
 
+test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "mobile-only workspace interaction");
+  await page.goto("/editor");
+  await expect(page.getByRole("button", { name: "New document" })).toBeVisible();
+  await page.getByRole("button", { name: "New document" }).click();
+  await page.getByRole("navigation", { name: "Workspace panes" }).getByRole("button", { name: "documents", exact: true }).click();
+  await expect(page.getByText("Untitled document")).toBeVisible();
+});
+
 test("documents persist independently across immediate switches, rename, trash, and reload", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop document rail interaction");
   await page.goto("/editor");

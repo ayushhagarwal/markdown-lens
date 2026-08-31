@@ -703,6 +703,7 @@ export function MarkdownLensApp() {
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
           <TopButton icon={PanelLeft} label="Documents" onClick={() => setDocumentsOpen((open) => !open)} active={documentsOpen} className="hidden md:flex" />
+          <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="sm:hidden" />
           <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="hidden sm:flex" />
           <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} emphasis />
           <button
