@@ -170,6 +170,22 @@ export async function addDocument(document: DocumentRecord) {
   return document;
 }
 
+export async function addDocumentWithAssets(document: DocumentRecord, assets: DocumentAsset[]) {
+  await withStorage(
+    async (db) => {
+      const transaction = db.transaction(["documents", "assets"], "readwrite");
+      await transaction.objectStore("documents").put(document);
+      for (const asset of assets) await transaction.objectStore("assets").put(asset);
+      await transaction.done;
+    },
+    () => {
+      memoryDocuments.set(document.id, document);
+      for (const asset of assets) memoryAssets.set(asset.id, asset);
+    },
+  );
+  return document;
+}
+
 export async function duplicateDocument(document: DocumentRecord) {
   const copy = createDocumentRecord({
     title: `${document.title} copy`,
