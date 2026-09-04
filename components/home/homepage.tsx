@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FileCheck2, LockKeyhole, Sparkles } from "lucide-react";
 import { ProductPreview } from "@/components/home/product-preview";
 import { ConversionWorkflow } from "@/components/home/conversion-workflow";
 import { BrandIcon } from "@/components/brand-icon";
@@ -15,6 +15,9 @@ export function Homepage() {
       <main id="main">
         <section className="mx-auto grid w-full max-w-[1500px] items-start gap-12 px-5 pb-16 pt-14 sm:px-8 lg:min-h-[860px] lg:grid-cols-[0.76fr_1.24fr] lg:gap-14 lg:px-12 lg:pb-20 lg:pt-16 xl:px-14">
           <div className="relative z-10 max-w-[560px] lg:pt-14">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/5 px-3 py-1.5 text-xs font-semibold tracking-wide text-accent">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden /> Private document workspace
+            </p>
             <h1 className="text-balance text-[clamp(2.75rem,4.2vw,4rem)] font-semibold leading-[1.04] tracking-[-0.055em]">
               A local Markdown editor that converts documents privately.
             </h1>
@@ -48,6 +51,21 @@ export function Homepage() {
             </p>
           </div>
           <ProductPreview />
+        </section>
+
+        <section className="border-t border-border/70 px-5 py-20 sm:px-8 lg:py-28" aria-labelledby="why-title">
+          <div className="mx-auto max-w-6xl">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">A calmer way to work</p>
+              <h2 id="why-title" className="mt-4 text-balance text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Keep the source close, the workflow clear, and the output yours.</h2>
+              <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">Markdown Lens gives document-heavy work a focused place to happen—from the first import to the final review.</p>
+            </div>
+            <div className="mt-12 grid gap-4 md:grid-cols-3">
+              <ValueCard icon={LockKeyhole} title="Private by default" body="Files and drafts stay on your device while you edit and convert." />
+              <ValueCard icon={FileCheck2} title="Review before export" body="Warnings, structure, and rendered output stay visible before you publish." />
+              <ValueCard icon={Sparkles} title="Built for Markdown" body="Write in a fast editor, preview GitHub-style output, and keep clean source." />
+            </div>
+          </div>
         </section>
 
         <ConversionWorkflow />
@@ -89,5 +107,15 @@ export function Homepage() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+function ValueCard({ icon: Icon, title, body }: { icon: typeof LockKeyhole; title: string; body: string }) {
+  return (
+    <article className="rounded-xl border border-border bg-panel p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-7">
+      <Icon className="h-6 w-6 text-accent" aria-hidden />
+      <h3 className="mt-6 text-lg font-semibold">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+    </article>
   );
 }
