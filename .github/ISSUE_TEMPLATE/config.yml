@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: Questions and discussion
-    url: https://github.com/ayushhagarwal/markdown-lens/issues
-    about: Open an issue if you are unsure where your request fits.
+    url: https://github.com/ayushhagarwal/markdown-lens/discussions
+    about: Ask questions and discuss ideas with the project community.

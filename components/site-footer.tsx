@@ -15,6 +15,8 @@ export function SiteFooter() {
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-muted-foreground" aria-label="Footer navigation">
             <Link href="/supported-formats" className="transition hover:text-foreground">Formats</Link>
             <Link href="/markdown-cheatsheet" className="transition hover:text-foreground">Guide</Link>
+            <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} className="transition hover:text-foreground">Changelog</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} className="transition hover:text-foreground">Contribute</a>
             <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} className="transition hover:text-foreground">Security</a>
             <GithubStarLink variant="text" className="transition hover:text-foreground">Star</GithubStarLink>
           </nav>
@@ -31,6 +33,10 @@ export function SiteFooter() {
           <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" className="transition hover:text-foreground">
             If it helped, star the source.
           </a>
+          <span aria-hidden="true">{" "}·{" "}</span>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=bug_report.yml`} target="_blank" rel="noreferrer" className="transition hover:text-foreground">Report a bug</a>
+          <span aria-hidden="true">{" "}·{" "}</span>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=feature_request.yml`} target="_blank" rel="noreferrer" className="transition hover:text-foreground">Request a feature</a>
         </p>
       </div>
     </footer>
