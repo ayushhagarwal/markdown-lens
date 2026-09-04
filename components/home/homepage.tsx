@@ -15,7 +15,7 @@ export function Homepage() {
       <main id="main">
         <section className="mx-auto grid w-full max-w-[1500px] items-start gap-12 px-5 pb-16 pt-14 sm:px-8 lg:min-h-[860px] lg:grid-cols-[0.76fr_1.24fr] lg:gap-14 lg:px-12 lg:pb-20 lg:pt-16 xl:px-14">
           <div className="relative z-10 max-w-[560px] lg:pt-14">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/5 px-3 py-1.5 text-xs font-semibold tracking-wide text-accent">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/5 px-3 py-1.5 text-xs font-semibold tracking-wide text-[#086b61] dark:text-accent">
               <Sparkles className="h-3.5 w-3.5" aria-hidden /> Private document workspace
             </p>
             <h1 className="text-balance text-[clamp(2.75rem,4.2vw,4rem)] font-semibold leading-[1.04] tracking-[-0.055em]">
