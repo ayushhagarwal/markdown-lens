@@ -707,7 +707,7 @@ export function MarkdownLensApp() {
         aria-label="Open or convert local documents"
         multiple
         className="sr-only"
-        accept=".md,.markdown,.txt,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.html,.htm,.csv,.tsv,.json,.xml,.epub,.zip,.png,.jpg,.jpeg,.webp,.bmp"
+        accept=".md,.markdown,.txt,.pdf,.docx,.pptx,.xlsx,.html,.htm,.csv,.tsv,.json,.xml,.epub,.zip,.png,.jpg,.jpeg,.webp,.bmp"
         onChange={(event) => {
           const files = Array.from(event.target.files ?? []);
           event.target.value = "";
@@ -1102,7 +1102,7 @@ function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicat
 function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onClear: () => void }) {
   if (!jobs.length) return (
     <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
-      <FileUp className="mx-auto mb-2 h-4 w-4" />Drop files anywhere to import
+      <FileUp className="mx-auto mb-2 h-4 w-4" />Drop supported files anywhere to import
     </div>
   );
   const active = jobs.find((job) => job.state === "running" || job.state === "queued") ?? jobs.at(-1)!;
@@ -1111,9 +1111,9 @@ function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: 
     <div className="border-t border-border p-2">
       <div className="border border-border bg-surface p-2.5">
         <div className="flex items-center gap-2 text-xs"><FileText className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion"><X className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check className="h-3.5 w-3.5 text-accent" /> : null}</div>
-        {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted"><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
+        {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${active.fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
         <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")}>{active.error ?? active.progress?.message ?? active.state}</p>
-        <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><button type="button" onClick={onClear} className="hover:text-foreground">Clear finished</button></div>
+        <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><button type="button" onClick={onClear} className="min-h-11 px-2 hover:text-foreground">Clear finished</button></div>
       </div>
     </div>
   );
