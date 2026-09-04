@@ -33,7 +33,7 @@ Markdown Lens exists to provide a simple, polished, browser-first Markdown viewe
 - Mermaid diagram rendering with safe fallback for invalid diagrams
 - KaTeX math support for inline and block math
 - Light and dark mode with local preference persistence
-- Local draft autosave using `localStorage`
+- Local draft autosave using browser `IndexedDB`
 - Simple upload flow for Markdown, text-based PDFs, and Word `.docx` files
 - Local PDF-to-Markdown import for digitally generated PDFs
 - Local Word-to-Markdown import for `.docx` files
@@ -46,13 +46,12 @@ Markdown Lens exists to provide a simple, polished, browser-first Markdown viewe
 - Privacy-preserving compressed share links stored only in the URL fragment
 - Installable offline-capable PWA with safe update handling
 - Copy raw Markdown
-- Copy rendered HTML
 - Download current content as a `.md` file
 - Print or save the preview as PDF
 - Split, editor-only, and preview-only modes
 - Mobile-friendly editor and preview tabs
-- Word count, character count, and estimated reading time
-- Keyboard shortcuts for common editor actions
+- Word count and conversion statistics
+- Keyboard shortcuts for common workspace actions
 - A responsive [Markdown cheatsheet](https://markdownlens.ayushdev.com/markdown-cheatsheet)
 
 ## Keyboard Shortcuts
@@ -63,11 +62,10 @@ Markdown Lens supports the same shortcuts on macOS (`Cmd`) and Windows/Linux
 | Action | Shortcut |
 | --- | --- |
 | Download Markdown | `Cmd/Ctrl + S` |
-| Copy Markdown | `Cmd/Ctrl + Shift + C` |
-| Copy rendered HTML | `Cmd/Ctrl + Shift + H` |
-| Switch to Preview | `Cmd/Ctrl + Shift + P` |
-| Switch to Editor | `Cmd/Ctrl + Shift + E` |
-| Load sample Markdown | `Cmd/Ctrl + Shift + L` |
+| Open command palette | `Cmd/Ctrl + K` |
+| Open or convert | `Cmd/Ctrl + O` |
+| New document | `Cmd/Ctrl + N` |
+| Download Markdown | `Cmd/Ctrl + S` |
 
 ## Local-Only Privacy
 
@@ -75,9 +73,9 @@ Markdown Lens is designed to be privacy-first.
 
 - Markdown is parsed and rendered directly in your browser.
 - PDF and Word text extraction plus Markdown conversion also happen entirely in your browser.
-- Drafts are saved only to that browser profile using `localStorage`.
+- Drafts are saved only to that browser profile using `IndexedDB`.
 - The app does not upload document content to a backend.
-- There is no account, database, analytics, or tracking in v0.2.
+- There is no account, server-side document database, analytics, or tracking.
 
 Because drafts are stored by the browser, anyone with access to your device or browser profile may be able to view locally saved content. Clear the editor when you are done with sensitive notes.
 
@@ -149,7 +147,7 @@ public/
 
 ## Roadmap
 
-- Add scanned-PDF OCR using the local worker pipeline
+- Expand scanned-document OCR using the local worker pipeline
 - Improve conservative PDF table and multi-column reconstruction
 - Add more OCR language packs as optional same-origin assets
 - Extract the converter registry into a reusable package for future CLI and MCP surfaces

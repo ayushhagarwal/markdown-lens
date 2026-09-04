@@ -22,7 +22,7 @@ export const siteConfig = {
     "KaTeX math rendering",
     "Syntax-highlighted code blocks",
     "Tables, task lists, strikethrough, and autolinks",
-    "Copy Markdown and rendered HTML",
+    "Copy raw Markdown",
     "Download Markdown files",
     "Import local Markdown files",
     "Upload PDFs and Word .docx files",
@@ -38,7 +38,7 @@ export const siteConfig = {
     "Document outline, find and replace, command palette, and resizable preview",
     "Privacy-preserving URL-fragment share links",
     "Installable offline-capable Progressive Web App",
-    "Keyboard shortcuts for common actions",
+    "Keyboard shortcuts for common workspace actions",
     "Light and dark mode",
   ],
 };
