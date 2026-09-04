@@ -1046,6 +1046,42 @@ export function MarkdownLensApp() {
   );
 }
 
+function useDialogFocus(onClose: () => void) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const focusable = () => Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])"));
+    requestAnimationFrame(() => focusable()[0]?.focus());
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      requestAnimationFrame(() => previousFocus?.focus());
+    };
+  }, [onClose]);
+  return dialogRef;
+}
+
 function SharedLinkConsentDialog({
   preview,
   existingDocumentCount,
@@ -1057,9 +1093,10 @@ function SharedLinkConsentDialog({
   onInspect: () => void;
   onClose: () => void;
 }) {
+  const dialogRef = useDialogFocus(onClose);
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="shared-link-consent-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="shared-link-consent-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="shared-link-consent-title" className="text-lg font-semibold">Inspect shared document?</h2>
@@ -1132,6 +1169,7 @@ function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: 
 }
 
 function CommandPalette({ search, onSearch, commands, onClose }: { search: string; onSearch: (value: string) => void; commands: Array<{ label: string; hint?: string; action: () => void }>; onClose: () => void }) {
+  const dialogRef = useDialogFocus(onClose);
   const [activeIndex, setActiveIndex] = useState(0);
   const selectedIndex = Math.min(activeIndex, Math.max(commands.length - 1, 0));
   const runCommand = (index: number) => {
@@ -1142,7 +1180,7 @@ function CommandPalette({ search, onSearch, commands, onClose }: { search: strin
   };
   return (
     <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-label="Command palette" className="w-full max-w-xl overflow-hidden rounded-lg border border-border bg-panel shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Command palette" className="w-full max-w-xl overflow-hidden rounded-lg border border-border bg-panel shadow-2xl">
         <label className="flex h-12 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 text-accent" aria-hidden /><span className="sr-only">Search commands</span><input autoFocus value={search} onChange={(event) => { onSearch(event.target.value); setActiveIndex(0); }} aria-controls="command-palette-results" aria-activedescendant={commands[selectedIndex] ? `command-${selectedIndex}` : undefined} onKeyDown={(event) => { if (event.key === "Escape") onClose(); if (!commands.length) return; if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + commands.length) % commands.length); } if (event.key === "Home") { event.preventDefault(); setActiveIndex(0); } if (event.key === "End") { event.preventDefault(); setActiveIndex(commands.length - 1); } if (event.key === "Enter") { event.preventDefault(); runCommand(selectedIndex); } }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
         <div id="command-palette-results" className="max-h-[50vh] overflow-y-auto p-1.5" role="listbox" aria-label="Commands">{commands.length ? commands.map((command, index) => <button key={command.label} id={`command-${index}`} type="button" role="option" aria-selected={index === selectedIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => runCommand(index)} className={cn("flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", index === selectedIndex && "bg-muted")}><span>{command.label}</span>{command.hint ? <kbd className="text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground" role="status">No matching commands.</p>}</div>
       </div>
@@ -1151,9 +1189,10 @@ function CommandPalette({ search, onSearch, commands, onClose }: { search: strin
 }
 
 function FormatGuide({ onClose }: { onClose: () => void }) {
+  const dialogRef = useDialogFocus(onClose);
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="formats-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="formats-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4"><div><h2 id="formats-title" className="text-lg font-semibold">Local format support</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Files are processed in this browser. Nothing is uploaded.</p></div><IconButton icon={X} label="Close format guide" onClick={onClose} /></div>
         <div className="mt-5 divide-y divide-border border-y border-border">{converterCapabilities.map((capability) => <div key={capability.label} className="grid grid-cols-[120px_1fr] gap-4 py-3 text-sm"><strong>{capability.label}</strong><span className="text-muted-foreground">{capability.extensions}</span></div>)}</div>
         <p className="mt-4 text-xs leading-5 text-muted-foreground">Legacy DOC, PPT, and XLS files must be exported to their modern formats. PDF and Office layout is inferred and should be reviewed after conversion.</p>
@@ -1163,10 +1202,11 @@ function FormatGuide({ onClose }: { onClose: () => void }) {
 }
 
 function ConversionReportDialog({ document, onClose }: { document: DocumentRecord; onClose: () => void }) {
+  const dialogRef = useDialogFocus(onClose);
   const report = document.conversion!;
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="report-title" className="max-h-[80vh] w-full max-w-xl overflow-y-auto rounded-lg border border-border bg-panel p-5 shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="report-title" className="max-h-[80vh] w-full max-w-xl overflow-y-auto rounded-lg border border-border bg-panel p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4"><div><h2 id="report-title" className="text-lg font-semibold">Conversion report</h2><p className="mt-1 text-sm text-muted-foreground">{document.source?.name} · processed locally</p></div><IconButton icon={X} label="Close conversion report" onClick={onClose} /></div>
         <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden border border-border bg-border text-sm">
           <ReportFact label="Converter" value={report.converterId} />
@@ -1197,9 +1237,10 @@ function ShareLinkDialog({
   onCopy: () => void;
   onClose: () => void;
 }) {
+  const dialogRef = useDialogFocus(onClose);
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="share-link-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="share-link-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="share-link-title" className="text-lg font-semibold">Create share link</h2>
@@ -1237,9 +1278,10 @@ function SharedDocumentDialog({
   onOpen: () => void;
   onClose: () => void;
 }) {
+  const dialogRef = useDialogFocus(onClose);
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="shared-document-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="shared-document-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 id="shared-document-title" className="text-lg font-semibold">Open shared document?</h2>
