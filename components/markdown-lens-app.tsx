@@ -241,8 +241,9 @@ export function MarkdownLensApp() {
     setMarkdown(nextMarkdown);
     if (!activeDocument || activeDocument.title !== "Untitled document") return;
     const inferredTitle = getDocumentTitle(nextMarkdown);
+    if (inferredTitle === activeDocument.title) return;
     setDocuments((current) => current.map((document) => (
-      document.id === activeDocument.id ? { ...document, title: inferredTitle, markdown: nextMarkdown } : document
+      document.id === activeDocument.id ? { ...document, title: inferredTitle } : document
     )));
   }, [activeDocument]);
 
