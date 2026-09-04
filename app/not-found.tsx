@@ -3,6 +3,11 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { converterLinks } from "@/lib/site";
 
+export const metadata = {
+  title: "Page not found",
+  description: "The requested Markdown Lens page could not be found.",
+};
+
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-background text-foreground">
