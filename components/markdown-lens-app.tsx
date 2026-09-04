@@ -829,7 +829,7 @@ export function MarkdownLensApp() {
           <div className="border-b border-border p-2.5">
             <label className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs text-muted-foreground focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
               <Search className="h-3.5 w-3.5" />
-              <input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="Search documents" className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground" />
+              <input aria-label="Search documents" value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="Search documents" className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground" />
             </label>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
@@ -1113,7 +1113,7 @@ function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicat
 
 function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onClear: () => void }) {
   if (!jobs.length) return (
-    <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+    <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground" role="status">
       <FileUp className="mx-auto mb-2 h-4 w-4" />Drop supported files anywhere to import
     </div>
   );
@@ -1124,7 +1124,7 @@ function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: 
       <div className="border border-border bg-surface p-2.5">
         <div className="flex items-center gap-2 text-xs"><FileText className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion"><X className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check className="h-3.5 w-3.5 text-accent" /> : null}</div>
         {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${active.fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
-        <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")}>{active.error ?? active.progress?.message ?? active.state}</p>
+        <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")} role="status" aria-live="polite">{active.error ?? active.progress?.message ?? active.state}</p>
         <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><button type="button" onClick={onClear} className="min-h-11 px-2 hover:text-foreground">Clear finished</button></div>
       </div>
     </div>
@@ -1132,11 +1132,19 @@ function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: 
 }
 
 function CommandPalette({ search, onSearch, commands, onClose }: { search: string; onSearch: (value: string) => void; commands: Array<{ label: string; hint?: string; action: () => void }>; onClose: () => void }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const selectedIndex = Math.min(activeIndex, Math.max(commands.length - 1, 0));
+  const runCommand = (index: number) => {
+    const command = commands[index];
+    if (!command) return;
+    command.action();
+    onClose();
+  };
   return (
     <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <div role="dialog" aria-modal="true" aria-label="Command palette" className="w-full max-w-xl overflow-hidden rounded-lg border border-border bg-panel shadow-2xl">
-        <label className="flex h-12 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 text-accent" /><input autoFocus value={search} onChange={(event) => onSearch(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") onClose(); }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
-        <div className="max-h-[50vh] overflow-y-auto p-1.5">{commands.length ? commands.map((command) => <button key={command.label} type="button" onClick={() => { command.action(); onClose(); }} className="flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm hover:bg-muted"><span>{command.label}</span>{command.hint ? <kbd className="text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground">No matching commands.</p>}</div>
+        <label className="flex h-12 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 text-accent" aria-hidden /><span className="sr-only">Search commands</span><input autoFocus value={search} onChange={(event) => { onSearch(event.target.value); setActiveIndex(0); }} aria-controls="command-palette-results" aria-activedescendant={commands[selectedIndex] ? `command-${selectedIndex}` : undefined} onKeyDown={(event) => { if (event.key === "Escape") onClose(); if (!commands.length) return; if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + commands.length) % commands.length); } if (event.key === "Home") { event.preventDefault(); setActiveIndex(0); } if (event.key === "End") { event.preventDefault(); setActiveIndex(commands.length - 1); } if (event.key === "Enter") { event.preventDefault(); runCommand(selectedIndex); } }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
+        <div id="command-palette-results" className="max-h-[50vh] overflow-y-auto p-1.5" role="listbox" aria-label="Commands">{commands.length ? commands.map((command, index) => <button key={command.label} id={`command-${index}`} type="button" role="option" aria-selected={index === selectedIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => runCommand(index)} className={cn("flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", index === selectedIndex && "bg-muted")}><span>{command.label}</span>{command.hint ? <kbd className="text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground" role="status">No matching commands.</p>}</div>
       </div>
     </div>
   );
