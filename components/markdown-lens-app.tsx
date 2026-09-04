@@ -109,6 +109,7 @@ const MOBILE_PANES: { id: MobilePane; label: string; icon: typeof FileText }[] =
 type ImportJob = {
   id: string;
   fileName: string;
+  file: File;
   state: "queued" | "running" | "completed" | "failed" | "cancelled";
   progress?: ConverterProgress;
   error?: string;
@@ -448,7 +449,7 @@ export function MarkdownLensApp() {
       const id = createId();
       const controller = new AbortController();
       abortControllers.current.set(id, controller);
-      setJobs((current) => [...current, { id, fileName: file.name, state: "queued" }]);
+      setJobs((current) => [...current, { id, fileName: file.name, file, state: "queued" }]);
       try {
         const isImage = file.type.startsWith("image/");
         const useOcr = isImage && window.confirm(`Run local English OCR on “${file.name}”? The image never leaves this browser.`);
@@ -860,7 +861,7 @@ export function MarkdownLensApp() {
               {showTrash ? "Back to documents" : "Trash"}
             </button>
           </div>
-          <ImportJobs jobs={jobs} onCancel={(id) => abortControllers.current.get(id)?.abort()} onClear={() => setJobs((current) => current.filter((job) => job.state === "running" || job.state === "queued"))} />
+          <ImportJobs jobs={jobs} onCancel={(id) => abortControllers.current.get(id)?.abort()} onRetry={(file) => void importFiles([file])} onClear={() => setJobs((current) => current.filter((job) => job.state === "running" || job.state === "queued"))} />
         </aside>
 
         <main id="main" ref={centralRef} className={cn("min-w-0 flex-1", mobilePane === "documents" || mobilePane === "outline" ? "hidden lg:block" : "block")}>
@@ -1148,7 +1149,7 @@ function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicat
   );
 }
 
-function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onClear: () => void }) {
+function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onRetry: (file: File) => void; onClear: () => void }) {
   if (!jobs.length) return (
     <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground" role="status">
       <FileUp className="mx-auto mb-2 h-4 w-4" />Drop supported files anywhere to import
@@ -1162,7 +1163,7 @@ function ImportJobs({ jobs, onCancel, onClear }: { jobs: ImportJob[]; onCancel: 
         <div className="flex items-center gap-2 text-xs"><FileText className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion"><X className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check className="h-3.5 w-3.5 text-accent" /> : null}</div>
         {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${active.fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
         <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")} role="status" aria-live="polite">{active.error ?? active.progress?.message ?? active.state}</p>
-        <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><button type="button" onClick={onClear} className="min-h-11 px-2 hover:text-foreground">Clear finished</button></div>
+        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><div className="flex items-center"><button type="button" onClick={() => { if (active.state === "failed" || active.state === "cancelled") onRetry(active.file); }} disabled={active.state !== "failed" && active.state !== "cancelled"} className="min-h-11 px-2 hover:text-foreground disabled:cursor-default disabled:opacity-40">Retry</button><button type="button" onClick={onClear} className="min-h-11 px-2 hover:text-foreground">Clear finished</button></div></div>
       </div>
     </div>
   );
