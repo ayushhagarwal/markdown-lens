@@ -72,6 +72,7 @@ import {
   downloadBlob,
   getDocumentHeadings,
   getDocumentStats,
+  getUniqueAssetFileName,
   prepareStandaloneBodyHtml,
   getDocumentTitle,
   toFileName,
@@ -617,7 +618,11 @@ export function MarkdownLensApp() {
     const entries: Record<string, Uint8Array> = {
       [`${toFileName(activeDocument.title)}.md`]: strToU8(markdown),
     };
-    for (const asset of assets) entries[`assets/${asset.name}`] = new Uint8Array(await asset.blob.arrayBuffer());
+    const usedAssetNames = new Set<string>();
+    for (const asset of assets) {
+      const fileName = getUniqueAssetFileName(asset.name, usedAssetNames);
+      entries[`assets/${fileName}`] = new Uint8Array(await asset.blob.arrayBuffer());
+    }
     downloadBlob(
       new Blob([zipSync(entries)], { type: "application/zip" }),
       `${toFileName(activeDocument.title)}-bundle.zip`,

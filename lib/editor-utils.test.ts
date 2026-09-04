@@ -1,5 +1,11 @@
 import { describe, expect, test } from "vitest";
-import { getDocumentHeadings, getDocumentStats, getDocumentTitle, toFileName } from "@/lib/editor-utils";
+import {
+  getDocumentHeadings,
+  getDocumentStats,
+  getDocumentTitle,
+  getUniqueAssetFileName,
+  toFileName,
+} from "@/lib/editor-utils";
 
 describe("editor utilities", () => {
   test("derives titles, filenames, and reading statistics", () => {
@@ -7,6 +13,14 @@ describe("editor utilities", () => {
     expect(getDocumentTitle(markdown)).toBe("Release Notes");
     expect(toFileName(getDocumentTitle(markdown))).toBe("release-notes");
     expect(getDocumentStats(markdown)).toMatchObject({ words: 6, characters: markdown.length, minutes: 1 });
+  });
+
+  test("creates safe, deterministic, case-insensitive unique asset filenames", () => {
+    const usedNames = new Set<string>();
+    expect(getUniqueAssetFileName("uploads/photo.png", usedNames)).toBe("photo.png");
+    expect(getUniqueAssetFileName("photo.png", usedNames)).toBe("photo-2.png");
+    expect(getUniqueAssetFileName("PHOTO.PNG", usedNames)).toBe("PHOTO-3.PNG");
+    expect(getUniqueAssetFileName("../unsafe folder/report?.pdf", usedNames)).toBe("report-.pdf");
   });
 
   test("creates duplicate-safe GitHub-compatible heading anchors", () => {
