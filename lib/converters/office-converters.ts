@@ -53,7 +53,9 @@ export const spreadsheetConverter: LocalConverter = {
     const relationships = asArray(parseXml(archive, "xl/_rels/workbook.xml.rels")?.Relationships?.Relationship);
     const relationTargets = new Map(relationships.map((relation) => [relation.Id, relation.Target]));
     const sharedStrings = readSharedStrings(archive);
-    const sheets = asArray(workbook?.sheets?.sheet).filter(
+    const workbookSheets = asArray(workbook?.sheets?.sheet);
+    const hasHiddenSheets = workbookSheets.some((sheet) => sheet.state && sheet.state !== "visible");
+    const sheets = workbookSheets.filter(
       (sheet) => options.includeHiddenSheets || !sheet.state || sheet.state === "visible",
     );
     const sections: string[] = [];
@@ -103,7 +105,7 @@ export const spreadsheetConverter: LocalConverter = {
       detectedFormat: "xlsx",
       title,
       markdown,
-      warnings: options.includeHiddenSheets ? [] : ["Hidden worksheets were excluded."],
+      warnings: !options.includeHiddenSheets && hasHiddenSheets ? ["Hidden worksheets were excluded."] : [],
       statistics: { sheets: sheets.length, rows: totalRows },
     });
   },
@@ -178,7 +180,13 @@ export const presentationConverter: LocalConverter = {
         altText: "Image extracted from presentation",
       }));
     const title = titleFromFile(file);
-    const markdown = `${markdownHeading(1, title)}\n\n${sections.join("\n\n---\n\n")}\n`;
+    const markdownSections = sections.map((section, index) => {
+      const media = mediaEntries[index];
+      if (!media) return section;
+      const name = media[0].split("/").pop() ?? "slide-image";
+      return `${section}\n\n![Image from slide ${index + 1}](assets/${name})`;
+    });
+    const markdown = `${markdownHeading(1, title)}\n\n${markdownSections.join("\n\n---\n\n")}\n`;
     assertNonEmpty(sections.join(""), "PowerPoint presentation");
     assertGeneratedMarkdown(markdown, context, "PowerPoint presentation");
     return baseResult(file, {
