@@ -334,6 +334,21 @@ export function MarkdownLensApp() {
   }, [activeDocument, markdown, persistActiveDraft, ready]);
 
   useEffect(() => {
+    if (!ready) return;
+    const flushDraft = () => void persistActiveDraft();
+    const flushWhenHidden = () => {
+      if (document.visibilityState === "hidden") flushDraft();
+    };
+    window.addEventListener("pagehide", flushDraft);
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    return () => {
+      window.removeEventListener("pagehide", flushDraft);
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+      flushDraft();
+    };
+  }, [persistActiveDraft, ready]);
+
+  useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.style.colorScheme = theme;
     if (ready) writeLocalPreference(THEME_KEY, theme);
