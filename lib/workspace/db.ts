@@ -177,7 +177,15 @@ export async function duplicateDocument(document: DocumentRecord) {
     source: document.source,
     conversion: document.conversion,
   });
+  const assets = await getDocumentAssets(document.id, document.assetIds);
+  const copiedAssets = assets.map((asset) => ({
+    ...asset,
+    id: createId(),
+    documentId: copy.id,
+  }));
+  copy.assetIds = copiedAssets.map((asset) => asset.id);
   await addDocument(copy);
+  await putAssets(copiedAssets);
   return copy;
 }
 
