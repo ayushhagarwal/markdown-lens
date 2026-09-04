@@ -61,10 +61,10 @@ Markdown Lens supports the same shortcuts on macOS (`Cmd`) and Windows/Linux
 
 | Action | Shortcut |
 | --- | --- |
-| Download Markdown | `Cmd/Ctrl + S` |
 | Open command palette | `Cmd/Ctrl + K` |
 | Open or convert | `Cmd/Ctrl + O` |
 | New document | `Cmd/Ctrl + N` |
+| Find and replace | `Cmd/Ctrl + F` |
 | Download Markdown | `Cmd/Ctrl + S` |
 
 ## Local-Only Privacy
