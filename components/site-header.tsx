@@ -17,11 +17,26 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
   useEffect(() => {
     if (!open) return;
     menuRef.current?.querySelector<HTMLElement>("a")?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
         requestAnimationFrame(() => menuButtonRef.current?.focus());
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(menuRef.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     }
 
@@ -33,6 +48,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("pointerdown", handlePointerDown);
     return () => {
+      document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
@@ -87,7 +103,9 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
       </div>
 
       {open ? (
-        <div ref={menuRef} id="site-mobile-menu" className="absolute inset-x-0 top-16 border-b border-border bg-background p-5 shadow-2xl md:hidden">
+        <>
+          <button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="fixed inset-0 top-16 z-40 bg-black/40 md:hidden" />
+          <div ref={menuRef} id="site-mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile navigation" className="fixed inset-x-0 top-16 z-50 border-b border-border bg-background p-5 shadow-2xl md:hidden">
           <nav className="grid gap-1" aria-label="Mobile navigation">
             {primaryNav.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-base hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -99,7 +117,8 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
               Open workspace
             </Link>
           </nav>
-        </div>
+          </div>
+        </>
       ) : null}
     </header>
   );
