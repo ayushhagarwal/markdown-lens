@@ -237,6 +237,15 @@ export function MarkdownLensApp() {
     }
   }, [activeDocument, markdown, ready]);
 
+  const updateMarkdown = useCallback((nextMarkdown: string) => {
+    setMarkdown(nextMarkdown);
+    if (!activeDocument || activeDocument.title !== "Untitled document") return;
+    const inferredTitle = getDocumentTitle(nextMarkdown);
+    setDocuments((current) => current.map((document) => (
+      document.id === activeDocument.id ? { ...document, title: inferredTitle, markdown: nextMarkdown } : document
+    )));
+  }, [activeDocument]);
+
   useEffect(() => {
     persistActiveDraftRef.current = persistActiveDraft;
   }, [persistActiveDraft]);
@@ -880,7 +889,7 @@ export function MarkdownLensApp() {
             style={{ gridTemplateColumns: `${splitRatio}fr 7px ${100 - splitRatio}fr` }}
           >
             <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
-              <MarkdownEditor value={markdown} theme={theme} onChange={setMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
+              <MarkdownEditor value={markdown} theme={theme} onChange={updateMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
             </WorkspacePanel>
             <button
               type="button"
@@ -911,7 +920,7 @@ export function MarkdownLensApp() {
           <div className="h-full lg:hidden">
             {mobilePane === "editor" ? (
               <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
-                <MarkdownEditor value={markdown} theme={theme} onChange={setMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
+                <MarkdownEditor value={markdown} theme={theme} onChange={updateMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
               </WorkspacePanel>
             ) : (
               <WorkspacePanel label="Preview" icon={Eye} detail="GitHub-style output">
