@@ -780,15 +780,27 @@ export function MarkdownLensApp() {
         </div>
       </header>
 
-      <nav className="flex h-11 shrink-0 items-center border-b border-border px-2 lg:hidden" aria-label="Workspace panes">
+      <nav className="flex h-11 shrink-0 items-center border-b border-border px-2 lg:hidden" role="tablist" aria-label="Workspace panes">
         {MOBILE_PANES.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setMobilePane(id)}
-            aria-current={mobilePane === id ? "page" : undefined}
+            role="tab"
+            aria-selected={mobilePane === id}
+            tabIndex={mobilePane === id ? 0 : -1}
+            onKeyDown={(event) => {
+              if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+              event.preventDefault();
+              const currentIndex = MOBILE_PANES.findIndex((pane) => pane.id === id);
+              const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? MOBILE_PANES.length - 1 : (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + MOBILE_PANES.length) % MOBILE_PANES.length;
+              const nextPane = MOBILE_PANES[nextIndex].id;
+              setMobilePane(nextPane);
+              event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[role="tab"][data-pane="${nextPane}"]`)?.focus();
+            }}
+            data-pane={id}
             className={cn(
-              "flex min-h-11 flex-1 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs font-medium text-muted-foreground",
+              "flex min-h-11 flex-1 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
               mobilePane === id && "bg-accent/10 text-accent",
             )}
           >
