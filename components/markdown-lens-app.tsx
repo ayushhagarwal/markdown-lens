@@ -1390,7 +1390,7 @@ function TopButton({ icon: Icon, label, onClick, emphasis, active, className, co
 }
 
 function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: typeof FileText; label: string; onClick: () => void; compact?: boolean; className?: string }) {
-  return <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-7 w-7" : "h-9 w-9", className)}><Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} /></button>;
+  return <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
 }
 
 function MenuAction({ icon: Icon, label, onClick }: { icon: typeof FileText; label: string; onClick: () => void }) {
