@@ -104,8 +104,7 @@ export function sanitizePreviewHtml(preview: HTMLElement) {
       if (
         name.startsWith("on") ||
         name === "srcdoc" ||
-        (["href", "src", "xlink:href"].includes(name) &&
-          (value.startsWith("javascript:") || value.startsWith("data:text/html")))
+        (["href", "src", "xlink:href"].includes(name) && !isSafeExportUrl(value, name))
       ) {
         element.removeAttribute(attribute.name);
       }
@@ -113,6 +112,20 @@ export function sanitizePreviewHtml(preview: HTMLElement) {
   });
   clone.querySelectorAll("a").forEach((anchor) => anchor.setAttribute("rel", "noreferrer noopener"));
   return clone.innerHTML;
+}
+
+function isSafeExportUrl(value: string, attributeName: string) {
+  if (!value || value.startsWith("//")) return false;
+  if (value.startsWith("#") || value.startsWith("/") || value.startsWith("./") || value.startsWith("../")) {
+    return attributeName === "href" || attributeName === "xlink:href";
+  }
+  if (/^[a-z][a-z0-9+.-]*:/.test(value)) {
+    if (attributeName === "href" || attributeName === "xlink:href") {
+      return value.startsWith("http:") || value.startsWith("https:") || value.startsWith("mailto:");
+    }
+    return value.startsWith("http:") || value.startsWith("https:") || value.startsWith("blob:") || value.startsWith("data:image/");
+  }
+  return attributeName === "href" || attributeName === "xlink:href";
 }
 
 export async function prepareStandaloneBodyHtml(preview: HTMLElement) {
