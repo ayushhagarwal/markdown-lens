@@ -201,7 +201,7 @@ export function MarkdownLensApp() {
   const backupInputRef = useRef<HTMLInputElement>(null);
   const abortControllers = useRef(new Map<string, AbortController>());
   const editorActions = useRef<{ focus: () => void; openSearch: () => void } | null>(null);
-  const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null>) | null>(null);
+  const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null | undefined>) | null>(null);
   const deferredMarkdown = useDeferredValue(markdown);
   const modPrefix = useMemo(() => commandModPrefix(), []);
 
