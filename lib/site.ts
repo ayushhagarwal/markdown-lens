@@ -9,7 +9,7 @@ export const siteConfig = {
     "Markdown Lens is a free, privacy-first Markdown editor and document-to-Markdown workbench with local PDF, Word, PowerPoint, Excel, HTML, EPUB, data, archive, and image OCR conversion plus editable GitHub-style previews.",
   shortDescription:
     "Edit Markdown privately in your browser and convert PDF, Word, PowerPoint, Excel, HTML, and more into GitHub-style Markdown without an account or server upload.",
-  dateModified: "2026-08-13",
+  dateModified: "2026-09-04",
   softwareVersion: packageJson.version,
   author: {
     name: "Ayush Agarwal",

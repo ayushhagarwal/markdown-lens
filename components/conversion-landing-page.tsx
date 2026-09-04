@@ -110,6 +110,9 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
       />
       <SiteHeader />
       <main id="main">
+        <nav className="mx-auto w-full max-w-7xl px-4 pt-6 text-sm text-muted-foreground sm:px-6 lg:px-8" aria-label="Breadcrumb">
+          <Link href="/" className="hover:text-foreground">Home</Link><span className="mx-2" aria-hidden="true">/</span><span aria-current="page">{config.title}</span>
+        </nav>
         <section className="mx-auto grid w-full max-w-7xl gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:px-8 lg:py-24">
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">
