@@ -91,3 +91,30 @@ export function sanitizePreviewHtml(preview: HTMLElement) {
   clone.querySelectorAll("a").forEach((anchor) => anchor.setAttribute("rel", "noreferrer noopener"));
   return clone.innerHTML;
 }
+
+export async function prepareStandaloneBodyHtml(preview: HTMLElement) {
+  const clone = preview.cloneNode(true) as HTMLElement;
+  const images = Array.from(clone.querySelectorAll<HTMLImageElement>("img[src^='blob:']"));
+  await Promise.all(
+    images.map(async (image) => {
+      try {
+        const response = await fetch(image.src);
+        if (!response.ok) return;
+        const blob = await response.blob();
+        image.src = await blobToDataUrl(blob);
+      } catch {
+        image.removeAttribute("src");
+      }
+    }),
+  );
+  return sanitizePreviewHtml(clone);
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read image."));
+    reader.readAsDataURL(blob);
+  });
+}

@@ -72,8 +72,8 @@ import {
   downloadBlob,
   getDocumentHeadings,
   getDocumentStats,
+  prepareStandaloneBodyHtml,
   getDocumentTitle,
-  sanitizePreviewHtml,
   toFileName,
 } from "@/lib/editor-utils";
 import { convertLocalFile, converterCapabilities } from "@/lib/converters/registry";
@@ -517,11 +517,11 @@ export function MarkdownLensApp() {
     downloadBlob(new Blob([markdown], { type: "text/markdown;charset=utf-8" }), `${toFileName(activeDocument?.title ?? getDocumentTitle(markdown))}.md`);
   }
 
-  function exportHtml() {
+  async function exportHtml() {
     if (!previewRef.current) return;
     const html = buildStandaloneHtmlDocument({
       title: activeDocument?.title ?? getDocumentTitle(markdown),
-      bodyHtml: sanitizePreviewHtml(previewRef.current),
+      bodyHtml: await prepareStandaloneBodyHtml(previewRef.current),
     });
     downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${toFileName(activeDocument?.title ?? "document")}.html`);
   }
