@@ -22,6 +22,17 @@ const markdown = [
 
 export function ProductPreview() {
   const [activeTab, setActiveTab] = useState<PreviewTab>("markdown");
+  const tabs: PreviewTab[] = ["markdown", "preview"];
+  const selectTab = (tab: PreviewTab) => setActiveTab(tab);
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const current = tabs.indexOf(activeTab);
+    const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    const tab = tabs[next];
+    selectTab(tab);
+    event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-preview-tab="${tab}"]`)?.focus();
+  };
 
   return (
     <div className="relative min-w-0">
@@ -40,10 +51,10 @@ export function ProductPreview() {
 
         <div className="lg:hidden">
           <div className="grid grid-cols-2 border-b border-border p-2" role="tablist" aria-label="Product preview">
-            <button type="button" role="tab" id="preview-tab-markdown" aria-selected={activeTab === "markdown"} aria-controls="preview-panel-markdown" onClick={() => setActiveTab("markdown")} className={`flex h-11 items-center justify-center gap-2 rounded-md text-sm ${activeTab === "markdown" ? "bg-muted text-accent" : "text-muted-foreground"}`}>
+            <button type="button" role="tab" id="preview-tab-markdown" data-preview-tab="markdown" tabIndex={activeTab === "markdown" ? 0 : -1} aria-selected={activeTab === "markdown"} aria-controls="preview-panel-markdown" onClick={() => selectTab("markdown")} onKeyDown={handleTabKeyDown} className={`flex h-11 items-center justify-center gap-2 rounded-md text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeTab === "markdown" ? "bg-muted text-accent" : "text-muted-foreground"}`}>
               <PenLine className="h-4 w-4" aria-hidden /> Markdown
             </button>
-            <button type="button" role="tab" id="preview-tab-preview" aria-selected={activeTab === "preview"} aria-controls="preview-panel-preview" onClick={() => setActiveTab("preview")} className={`flex h-11 items-center justify-center gap-2 rounded-md text-sm ${activeTab === "preview" ? "bg-muted text-accent" : "text-muted-foreground"}`}>
+            <button type="button" role="tab" id="preview-tab-preview" data-preview-tab="preview" tabIndex={activeTab === "preview" ? 0 : -1} aria-selected={activeTab === "preview"} aria-controls="preview-panel-preview" onClick={() => selectTab("preview")} onKeyDown={handleTabKeyDown} className={`flex h-11 items-center justify-center gap-2 rounded-md text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeTab === "preview" ? "bg-muted text-accent" : "text-muted-foreground"}`}>
               <Eye className="h-4 w-4" aria-hidden /> Preview
             </button>
           </div>
