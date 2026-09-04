@@ -201,6 +201,7 @@ export function MarkdownLensApp() {
   const backupInputRef = useRef<HTMLInputElement>(null);
   const abortControllers = useRef(new Map<string, AbortController>());
   const editorActions = useRef<{ focus: () => void; openSearch: () => void } | null>(null);
+  const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null>) | null>(null);
   const deferredMarkdown = useDeferredValue(markdown);
   const modPrefix = useMemo(() => commandModPrefix(), []);
 
@@ -235,6 +236,10 @@ export function MarkdownLensApp() {
       return null;
     }
   }, [activeDocument, markdown, ready]);
+
+  useEffect(() => {
+    persistActiveDraftRef.current = persistActiveDraft;
+  }, [persistActiveDraft]);
 
   useEffect(() => {
     const unsubscribe = subscribeToWorkspaceStorage((status) => {
@@ -337,7 +342,7 @@ export function MarkdownLensApp() {
 
   useEffect(() => {
     if (!ready) return;
-    const flushDraft = () => void persistActiveDraft();
+    const flushDraft = () => void persistActiveDraftRef.current?.();
     const flushWhenHidden = () => {
       if (document.visibilityState === "hidden") flushDraft();
     };
@@ -348,7 +353,7 @@ export function MarkdownLensApp() {
       document.removeEventListener("visibilitychange", flushWhenHidden);
       flushDraft();
     };
-  }, [persistActiveDraft, ready]);
+  }, [ready]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
