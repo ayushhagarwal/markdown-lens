@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
 import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
-import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import { EditorView, type ViewUpdate } from "@codemirror/view";
 
 const MAX_COUNTED_MATCHES = 10_000;
 const BASIC_SETUP = {
@@ -16,49 +16,6 @@ const BASIC_SETUP = {
   autocompletion: false,
   searchKeymap: true,
 };
-
-class SearchMatchStatus {
-  private timer: number | null = null;
-
-  constructor(private view: EditorView) {
-    this.schedule();
-  }
-
-  update(update: ViewUpdate) {
-    if (update.docChanged || update.selectionSet || update.transactions.length) this.schedule();
-  }
-
-  destroy() {
-    if (this.timer !== null) window.clearTimeout(this.timer);
-  }
-
-  private schedule() {
-    if (this.timer !== null) window.clearTimeout(this.timer);
-    this.timer = window.setTimeout(() => {
-      this.timer = null;
-      this.render();
-    }, 0);
-  }
-
-  private render() {
-    if (!searchPanelOpen(this.view.state)) return;
-    const panel = this.view.dom.querySelector<HTMLElement>(".cm-search");
-    if (!panel) return;
-
-    let output = panel.querySelector<HTMLOutputElement>("[data-search-match-status]");
-    if (!output) {
-      output = document.createElement("output");
-      output.dataset.searchMatchStatus = "";
-      output.setAttribute("aria-live", "polite");
-      output.setAttribute("aria-atomic", "true");
-      panel.append(output);
-    }
-
-    output.textContent = describeSearchMatches(this.view);
-  }
-}
-
-const searchMatchStatus = ViewPlugin.fromClass(SearchMatchStatus);
 
 function describeSearchMatches(view: EditorView) {
   const query = getSearchQuery(view.state);
@@ -94,12 +51,17 @@ export function MarkdownEditor({
   onCursorChange: (position: { line: number; column: number }) => void;
   onReady: (actions: { focus: () => void; openSearch: () => void }) => void;
 }) {
+  const [searchStatus, setSearchStatus] = useState("Enter a search term.");
+  const [searchOpen, setSearchOpen] = useState(false);
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
-      if (!update.selectionSet && !update.docChanged) return;
+      if (!update.selectionSet && !update.docChanged && !update.transactions.length) return;
       const head = update.state.selection.main.head;
       const line = update.state.doc.lineAt(head);
       onCursorChange({ line: line.number, column: head - line.from + 1 });
+      const isSearchOpen = searchPanelOpen(update.state);
+      setSearchOpen(isSearchOpen);
+      if (isSearchOpen) setSearchStatus(describeSearchMatches(update.view));
     },
     [onCursorChange],
   );
@@ -107,7 +69,6 @@ export function MarkdownEditor({
     () => [
       markdownLanguage(),
       EditorView.lineWrapping,
-      searchMatchStatus,
       EditorView.theme({
         "&": { height: "100%", backgroundColor: "transparent", fontSize: "13.5px" },
         ".cm-scroller": {
@@ -136,13 +97,6 @@ export function MarkdownEditor({
           alignItems: "center",
           flexWrap: "wrap",
         },
-        ".cm-search [data-search-match-status]": {
-          flex: "1 1 100%",
-          minWidth: "0",
-          color: "hsl(var(--muted-foreground))",
-          fontSize: "11px",
-          textAlign: "center",
-        },
         ".cm-search input": {
           minWidth: "0",
           flex: "1 1 160px",
@@ -166,19 +120,33 @@ export function MarkdownEditor({
   );
 
   return (
-    <CodeMirror
-      value={value}
-      height="100%"
-      theme={theme === "dark" ? "dark" : "light"}
-      extensions={extensions}
-      basicSetup={BASIC_SETUP}
-      onChange={onChange}
-      onCreateEditor={(view) => {
-        onReady({ focus: () => view.focus(), openSearch: () => void openSearchPanel(view) });
-      }}
-      onUpdate={handleUpdate}
-      aria-label="Markdown editor"
-      className="h-full overflow-hidden"
-    />
+    <div className="relative h-full overflow-hidden">
+      <CodeMirror
+        value={value}
+        height="100%"
+        theme={theme === "dark" ? "dark" : "light"}
+        extensions={extensions}
+        basicSetup={BASIC_SETUP}
+        onChange={onChange}
+        onCreateEditor={(view) => {
+          setSearchStatus(describeSearchMatches(view));
+          onReady({
+            focus: () => view.focus(),
+            openSearch: () => {
+              setSearchOpen(true);
+              void openSearchPanel(view);
+            },
+          });
+        }}
+        onUpdate={handleUpdate}
+        aria-label="Markdown editor"
+        className="h-full overflow-hidden"
+      />
+      {searchOpen ? (
+        <output className="pointer-events-none absolute bottom-2 right-3 z-10 rounded border border-border bg-panel/95 px-2 py-1 text-[11px] text-muted-foreground" aria-live="polite" aria-atomic="true">
+          {searchStatus}
+        </output>
+      ) : null}
+    </div>
   );
 }
