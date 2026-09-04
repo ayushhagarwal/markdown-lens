@@ -48,6 +48,7 @@ import { BrandIcon } from "@/components/brand-icon";
 import { siteConfig } from "@/lib/site";
 import {
   addDocument,
+  addDocumentWithAssets,
   duplicateDocument,
   exportWorkspace,
   getDocumentAssets,
@@ -56,7 +57,6 @@ import {
   listDocuments,
   moveDocumentToTrash,
   permanentlyDeleteDocument,
-  putAssets,
   restoreDocument,
   saveDocument,
   subscribeToWorkspaceStorage,
@@ -508,7 +508,7 @@ export function MarkdownLensApp() {
     });
     const assets = result.assets.map((asset) => ({ ...asset, id: createId(), documentId: document.id }));
     document.assetIds = assets.map((asset) => asset.id);
-    await Promise.all([addDocument(document), putAssets(assets)]);
+    await addDocumentWithAssets(document, assets);
     return document;
   }
 
