@@ -955,7 +955,15 @@ export function MarkdownLensApp() {
           <span>Ln {cursor.line}, Col {cursor.column}</span>
           <span className="hidden sm:inline">UTF-8</span>
           <span className="hidden md:inline">Markdown</span>
-          <span className="hidden md:inline">{stats.words.toLocaleString()} words</span>
+          <span className="hidden md:inline" aria-label={`${stats.words.toLocaleString()} words`}>
+            {stats.words.toLocaleString()} words
+          </span>
+          <span className="hidden lg:inline" aria-label={`${stats.characters.toLocaleString()} characters`}>
+            {stats.characters.toLocaleString()} chars
+          </span>
+          <span className="hidden lg:inline" aria-label={`${stats.minutes} minute estimated reading time`}>
+            {stats.minutes} min read
+          </span>
           {splitRatio !== 50 ? (
             <button
               type="button"
