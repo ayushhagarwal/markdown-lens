@@ -70,7 +70,7 @@ export function MarkdownEditor({
       const view = viewRef.current;
       const output = searchStatusRef.current;
       if (!view || !output) return;
-      const open = searchPanelOpen(view.state);
+      const open = container.querySelector(".cm-search") !== null;
       if (output.hidden === open) output.hidden = !open;
       if (open) {
         const nextStatus = describeSearchMatches(view);
