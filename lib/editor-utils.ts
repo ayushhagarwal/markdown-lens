@@ -60,6 +60,29 @@ export function toFileName(title: string) {
   );
 }
 
+/** Returns a safe, deterministic filename that is unique within an export. */
+export function getUniqueAssetFileName(name: string, usedNames: Set<string>) {
+  const basename = name.replace(/\\/g, "/").split("/").pop() || "asset";
+  const safeName = basename.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "asset";
+  const key = safeName.toLowerCase();
+  if (!usedNames.has(key)) {
+    usedNames.add(key);
+    return safeName;
+  }
+
+  const extensionIndex = safeName.lastIndexOf(".");
+  const stem = extensionIndex > 0 ? safeName.slice(0, extensionIndex) : safeName;
+  const extension = extensionIndex > 0 ? safeName.slice(extensionIndex) : "";
+  let suffix = 2;
+  let candidate = `${stem}-${suffix}${extension}`;
+  while (usedNames.has(candidate.toLowerCase())) {
+    suffix += 1;
+    candidate = `${stem}-${suffix}${extension}`;
+  }
+  usedNames.add(candidate.toLowerCase());
+  return candidate;
+}
+
 export function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
