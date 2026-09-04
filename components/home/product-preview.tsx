@@ -24,14 +24,14 @@ export function ProductPreview() {
   const [activeTab, setActiveTab] = useState<PreviewTab>("markdown");
 
   return (
-    <div className="relative min-w-0 lg:-mr-20 xl:-mr-28">
+    <div className="relative min-w-0">
       <div className="home-product-frame overflow-hidden rounded-xl border border-border bg-panel shadow-[0_32px_100px_-58px_rgb(0_0_0_/_0.9)]">
         <div className="flex h-11 items-center justify-between border-b border-border px-4 text-[11px] text-muted-foreground">
           <span>Project: Product requirements</span>
           <span className="flex items-center gap-2 text-accent"><span className="h-1.5 w-1.5 rounded-full bg-accent" />Saved locally</span>
         </div>
 
-        <div className="hidden min-h-[610px] grid-cols-[150px_minmax(280px,1fr)_minmax(300px,1fr)_155px] lg:grid">
+        <div className="hidden min-h-[610px] min-w-0 grid-cols-[110px_minmax(0,1fr)_minmax(0,1.2fr)_110px] lg:grid">
           <DocumentRail />
           <MarkdownPane />
           <PreviewPane />

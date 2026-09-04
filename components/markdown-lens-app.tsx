@@ -671,7 +671,7 @@ export function MarkdownLensApp() {
 
   return (
     <div
-      className="workspace-shell flex h-dvh min-h-[620px] flex-col overflow-hidden bg-background text-foreground"
+      className="workspace-shell flex h-dvh min-h-0 flex-col overflow-hidden bg-background text-foreground"
       onDragOver={(event) => {
         if (event.dataTransfer.types.includes("Files")) {
           event.preventDefault();
@@ -724,7 +724,7 @@ export function MarkdownLensApp() {
           <TopButton icon={PanelLeft} label="Documents" onClick={() => setDocumentsOpen((open) => !open)} active={documentsOpen} className="hidden md:flex" />
           <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="sm:hidden" />
           <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="hidden sm:flex" />
-          <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} emphasis />
+          <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} emphasis className="max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
           <button
             type="button"
             onClick={() => setFormatGuideOpen(true)}
@@ -1308,8 +1308,8 @@ function RailHeader({ label, onClose }: { label: string; onClose: () => void }) 
   return <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3"><span className="text-xs font-semibold">{label}</span><IconButton icon={X} label={`Hide ${label}`} onClick={onClose} compact /></header>;
 }
 
-function TopButton({ icon: Icon, label, onClick, emphasis, active, className }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; className?: string }) {
-  return <button type="button" onClick={onClick} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" />{label}</button>;
+function TopButton({ icon: Icon, label, onClick, emphasis, active, className, compactAtNarrow }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; className?: string; compactAtNarrow?: boolean }) {
+  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
 function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: typeof FileText; label: string; onClick: () => void; compact?: boolean; className?: string }) {
