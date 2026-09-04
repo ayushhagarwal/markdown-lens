@@ -82,8 +82,8 @@ export function Homepage() {
               </p>
               <div className="mt-7 flex flex-wrap gap-x-8 gap-y-4 text-sm sm:text-base">
                 <Link href="/supported-formats" className="home-inline-link">Local processing</Link>
-                <a href={`${siteConfig.githubUrl}#local-only-privacy`} className="home-inline-link">No analytics &amp; local-only privacy</a>
-                <a href={siteConfig.githubUrl} className="home-inline-link">Open source</a>
+                <a href={`${siteConfig.githubUrl}#local-only-privacy`} target="_blank" rel="noreferrer" aria-label="Read about local-only privacy on GitHub" className="home-inline-link">No analytics &amp; local-only privacy</a>
+                <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" aria-label="Inspect the Markdown Lens source on GitHub" className="home-inline-link">Open source</a>
               </div>
             </div>
           </div>
