@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
 import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
-import { EditorView, type ViewUpdate } from "@codemirror/view";
+import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 
 const MAX_COUNTED_MATCHES = 10_000;
 const BASIC_SETUP = {
@@ -38,6 +38,36 @@ function describeSearchMatches(view: EditorView) {
   return current ? `${current.toLocaleString()} of ${totalLabel} matches` : `${totalLabel} matches`;
 }
 
+class SearchMatchStatus {
+  private timer: number | null = null;
+
+  constructor(
+    private readonly view: EditorView,
+    private readonly onStatus: (status: string) => void,
+    private readonly onOpenChange: (open: boolean) => void,
+  ) {
+    this.schedule();
+  }
+
+  update(update: ViewUpdate) {
+    if (update.transactions.length || update.docChanged || update.selectionSet) this.schedule();
+  }
+
+  destroy() {
+    if (this.timer !== null) window.clearTimeout(this.timer);
+  }
+
+  private schedule() {
+    if (this.timer !== null) window.clearTimeout(this.timer);
+    this.timer = window.setTimeout(() => {
+      this.timer = null;
+      const open = searchPanelOpen(this.view.state);
+      this.onOpenChange(open);
+      if (open) this.onStatus(describeSearchMatches(this.view));
+    }, 0);
+  }
+}
+
 export function MarkdownEditor({
   value,
   theme,
@@ -53,15 +83,16 @@ export function MarkdownEditor({
 }) {
   const [searchStatus, setSearchStatus] = useState("Enter a search term.");
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchStatusPlugin = useMemo(
+    () => ViewPlugin.define((view) => new SearchMatchStatus(view, setSearchStatus, setSearchOpen)),
+    [],
+  );
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
       if (!update.selectionSet && !update.docChanged && !update.transactions.length) return;
       const head = update.state.selection.main.head;
       const line = update.state.doc.lineAt(head);
       onCursorChange({ line: line.number, column: head - line.from + 1 });
-      const isSearchOpen = searchPanelOpen(update.state);
-      setSearchOpen(isSearchOpen);
-      if (isSearchOpen) setSearchStatus(describeSearchMatches(update.view));
     },
     [onCursorChange],
   );
@@ -69,6 +100,7 @@ export function MarkdownEditor({
     () => [
       markdownLanguage(),
       EditorView.lineWrapping,
+      searchStatusPlugin,
       EditorView.theme({
         "&": { height: "100%", backgroundColor: "transparent", fontSize: "13.5px" },
         ".cm-scroller": {
@@ -116,7 +148,7 @@ export function MarkdownEditor({
         },
       }),
     ],
-    [],
+    [searchStatusPlugin],
   );
 
   return (
