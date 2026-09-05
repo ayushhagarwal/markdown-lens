@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
 import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
@@ -51,9 +51,10 @@ export function MarkdownEditor({
   onCursorChange: (position: { line: number; column: number }) => void;
   onReady: (actions: { focus: () => void; openSearch: () => void }) => void;
 }) {
+  const [searchStatus, setSearchStatus] = useState("Enter a search term.");
+  const [searchOpen, setSearchOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
-  const searchStatusRef = useRef<HTMLOutputElement>(null);
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
       if (!update.selectionSet && !update.docChanged && !update.transactions.length) return;
@@ -68,11 +69,10 @@ export function MarkdownEditor({
     if (!container) return;
     const refreshSearchStatus = () => {
       const view = viewRef.current;
-      const output = searchStatusRef.current;
-      if (!view || !output) return;
+      if (!view) return;
       const open = searchPanelOpen(view.state);
-      output.hidden = !open;
-      if (open) output.textContent = describeSearchMatches(view);
+      setSearchOpen(open);
+      if (open) setSearchStatus(describeSearchMatches(view));
     };
     const observer = new MutationObserver(refreshSearchStatus);
     observer.observe(container, { childList: true, subtree: true, attributes: true, characterData: true });
@@ -150,9 +150,11 @@ export function MarkdownEditor({
         onChange={onChange}
         onCreateEditor={(view) => {
           viewRef.current = view;
+          setSearchStatus(describeSearchMatches(view));
           onReady({
             focus: () => view.focus(),
             openSearch: () => {
+              setSearchOpen(true);
               void openSearchPanel(view);
             },
           });
@@ -161,7 +163,11 @@ export function MarkdownEditor({
         aria-label="Markdown editor"
         className="h-full overflow-hidden"
       />
-      <output ref={searchStatusRef} hidden className="pointer-events-none absolute bottom-2 right-3 z-10 rounded border border-border bg-panel/95 px-2 py-1 text-[11px] text-muted-foreground" aria-live="polite" aria-atomic="true" />
+      {searchOpen ? (
+        <output className="pointer-events-none absolute bottom-2 right-3 z-10 rounded border border-border bg-panel/95 px-2 py-1 text-[11px] text-muted-foreground" aria-live="polite" aria-atomic="true">
+          {searchStatus}
+        </output>
+      ) : null}
     </div>
   );
 }
