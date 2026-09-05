@@ -18,6 +18,14 @@ test("editor header shows File types control on desktop", async ({ page }, testI
   await expect(page.getByRole("button", { name: "File types" })).toBeVisible();
 });
 
+test("editor toolbar actions expose a visible keyboard focus treatment", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop toolbar interaction");
+  await page.goto("/editor");
+  const openButton = page.getByRole("button", { name: "Open or convert", exact: true });
+  await openButton.focus();
+  await expect(openButton).toHaveClass(/focus-visible:ring-2/);
+});
+
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only workspace interaction");
   await page.goto("/editor");

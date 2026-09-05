@@ -789,7 +789,7 @@ export function MarkdownLensApp() {
               <span className="hidden sm:inline">Install</span>
             </button>
           ) : null}
-          <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted lg:flex">
+          <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex">
             <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>{modPrefix}K</kbd>
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
@@ -954,7 +954,7 @@ export function MarkdownLensApp() {
           <div className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
             <div className="flex items-center justify-between">
               <span>{headings.length} heading{headings.length === 1 ? "" : "s"}</span>
-              {activeDocument?.conversion ? <button type="button" onClick={() => setReportOpen(true)} className="font-medium text-accent hover:underline">Conversion report</button> : null}
+              {activeDocument?.conversion ? <button type="button" onClick={() => setReportOpen(true)} className="font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Conversion report</button> : null}
             </div>
           </div>
         </aside>
@@ -991,7 +991,7 @@ export function MarkdownLensApp() {
           </span>
         </div>
         <div className="relative flex items-center gap-1">
-          <button type="button" onClick={() => setExportOpen((open) => !open)} className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10">
+          <button type="button" onClick={() => setExportOpen((open) => !open)} className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Export <ChevronDown className="h-3.5 w-3.5" />
           </button>
           <div className="hidden h-8 overflow-hidden rounded-md border border-border xl:flex">
@@ -1412,7 +1412,7 @@ function RailHeader({ label, onClose }: { label: string; onClose: () => void }) 
 }
 
 function TopButton({ icon: Icon, label, onClick, emphasis, active, className, compactAtNarrow }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; className?: string; compactAtNarrow?: boolean }) {
-  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
+  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
 function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: typeof FileText; label: string; onClick: () => void; compact?: boolean; className?: string }) {
@@ -1420,11 +1420,11 @@ function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: 
 }
 
 function MenuAction({ icon: Icon, label, onClick }: { icon: typeof FileText; label: string; onClick: () => void }) {
-  return <button type="button" onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
+  return <button type="button" onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
-  return <button type="button" onClick={onClick} aria-label={ariaLabel} className="min-w-12 border-r border-border px-2.5 font-mono text-[10px] text-muted-foreground last:border-r-0 hover:bg-muted hover:text-foreground">{label}</button>;
+  return <button type="button" onClick={onClick} aria-label={ariaLabel} className="min-w-12 border-r border-border px-2.5 font-mono text-[10px] text-muted-foreground last:border-r-0 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">{label}</button>;
 }
 
 function PanelLoading({ label }: { label: string }) {
