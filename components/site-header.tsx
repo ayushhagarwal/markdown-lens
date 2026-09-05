@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandIcon } from "@/components/brand-icon";
 import { GithubStarLink } from "@/components/github-star-link";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils";
 
 export function SiteHeader({ wide = false }: { wide?: boolean }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -75,7 +77,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
         <div className="hidden items-center gap-1 md:flex">
           <nav className="flex items-center" aria-label="Main navigation">
             {primaryNav.map((link) => (
-              <Link key={link.href} href={link.href} className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined} className={cn("rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", pathname === link.href && "bg-muted text-foreground")}>
                 {link.label}
               </Link>
             ))}
@@ -112,7 +114,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
           <div ref={menuRef} id="site-mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile navigation" className="fixed inset-x-0 top-16 z-50 border-b border-border bg-background p-5 shadow-2xl md:hidden">
           <nav className="grid gap-1" aria-label="Mobile navigation">
             {primaryNav.map((link) => (
-              <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="rounded-md px-3 py-3 text-base hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined} onClick={() => setOpen(false)} className={cn("rounded-md px-3 py-3 text-base hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", pathname === link.href && "bg-muted text-foreground")}>
                 {link.label}
               </Link>
             ))}
