@@ -71,14 +71,11 @@ export function MarkdownEditor({
       const output = searchStatusRef.current;
       if (!view || !output) return;
       const open = searchPanelOpen(view.state);
-      if (output.hidden === open) output.hidden = !open;
-      if (open) {
-        const nextStatus = describeSearchMatches(view);
-        if (output.textContent !== nextStatus) output.textContent = nextStatus;
-      }
+      output.hidden = !open;
+      if (open) output.textContent = describeSearchMatches(view);
     };
     const observer = new MutationObserver(refreshSearchStatus);
-    observer.observe(container, { childList: true, subtree: true });
+    observer.observe(container, { childList: true, subtree: true, attributes: true, characterData: true });
     container.addEventListener("input", refreshSearchStatus, true);
     container.addEventListener("click", refreshSearchStatus, true);
     refreshSearchStatus();
