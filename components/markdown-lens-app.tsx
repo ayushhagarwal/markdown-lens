@@ -945,7 +945,7 @@ export function MarkdownLensApp() {
           />
           <nav className="min-h-0 flex-1 overflow-y-auto py-2" aria-label="Document outline">
             {headings.length ? headings.map((heading) => (
-              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} onClick={() => navigateToHeading(heading.id)} className="flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground" style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
+              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} onClick={() => navigateToHeading(heading.id)} className="flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
                 <span aria-hidden className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
                 <span className="line-clamp-2 leading-4">{heading.text}</span>
               </button>
@@ -1135,8 +1135,8 @@ function SharedLinkConsentDialog({
         </dl>
         <p className="mt-4 text-xs leading-5 text-muted-foreground">Inspection uses strict decompression output and work limits before showing any document details.</p>
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Cancel</button>
-          <button type="button" onClick={onInspect} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">Inspect safely</button>
+      <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
+      <button type="button" onClick={onInspect} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Inspect safely</button>
         </div>
       </div>
     </div>
@@ -1285,8 +1285,8 @@ function ShareLinkDialog({
         </dl>
         <p className="mt-4 text-xs leading-5 text-muted-foreground">The document stays after the <code>#</code> in the URL. Browsers do not include URL fragments in network requests.</p>
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Cancel</button>
-          <button type="button" onClick={onCopy} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">Copy share link</button>
+        <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
+        <button type="button" onClick={onCopy} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Copy share link</button>
         </div>
       </div>
     </div>
@@ -1321,8 +1321,8 @@ function SharedDocumentDialog({
         </dl>
         <p className="mt-4 text-xs leading-5 text-muted-foreground">Only open links from people you trust. The existing safe Markdown renderer will treat the content as untrusted input.</p>
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">Cancel</button>
-          <button type="button" onClick={onOpen} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">Open as new document</button>
+        <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
+        <button type="button" onClick={onOpen} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open as new document</button>
         </div>
       </div>
     </div>
