@@ -3,6 +3,8 @@ import { BrandIcon } from "@/components/brand-icon";
 import { GithubStarLink } from "@/components/github-star-link";
 import { converterLinks, siteConfig } from "@/lib/site";
 
+const footerLinkClassName = "transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+
 export function SiteFooter() {
   return (
     <footer className="border-t border-border/75 bg-surface">
@@ -13,30 +15,30 @@ export function SiteFooter() {
             Markdown Lens
           </Link>
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-muted-foreground" aria-label="Footer navigation">
-            <Link href="/supported-formats" className="transition hover:text-foreground">Formats</Link>
-            <Link href="/markdown-cheatsheet" className="transition hover:text-foreground">Guide</Link>
-            <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} className="transition hover:text-foreground">Changelog</a>
-            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} className="transition hover:text-foreground">Contribute</a>
-            <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} className="transition hover:text-foreground">Security</a>
-            <GithubStarLink variant="text" className="transition hover:text-foreground">Star</GithubStarLink>
+            <Link href="/supported-formats" className={footerLinkClassName}>Formats</Link>
+            <Link href="/markdown-cheatsheet" className={footerLinkClassName}>Guide</Link>
+            <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} className={footerLinkClassName}>Changelog</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} className={footerLinkClassName}>Contribute</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} className={footerLinkClassName}>Security</a>
+            <GithubStarLink variant="text" className={footerLinkClassName}>Star</GithubStarLink>
           </nav>
         </div>
         <nav className="flex flex-wrap gap-x-5 gap-y-2 text-muted-foreground" aria-label="Document converters">
           {converterLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+            <Link key={link.href} href={link.href} className={footerLinkClassName}>
               {link.label}
             </Link>
           ))}
         </nav>
         <p className="text-muted-foreground">
           Built locally. Shared openly.{" "}
-          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" className="transition hover:text-foreground">
+          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" className={footerLinkClassName}>
             If it helped, star the source.
           </a>
           <span aria-hidden="true">{" "}·{" "}</span>
-          <a href={`${siteConfig.githubUrl}/issues/new?template=bug_report.yml`} target="_blank" rel="noreferrer" className="transition hover:text-foreground">Report a bug</a>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=bug_report.yml`} target="_blank" rel="noreferrer" className={footerLinkClassName}>Report a bug</a>
           <span aria-hidden="true">{" "}·{" "}</span>
-          <a href={`${siteConfig.githubUrl}/issues/new?template=feature_request.yml`} target="_blank" rel="noreferrer" className="transition hover:text-foreground">Request a feature</a>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=feature_request.yml`} target="_blank" rel="noreferrer" className={footerLinkClassName}>Request a feature</a>
         </p>
       </div>
     </footer>
