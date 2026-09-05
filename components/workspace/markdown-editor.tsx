@@ -96,6 +96,7 @@ export function MarkdownEditor({
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
       if (!update.selectionSet && !update.docChanged) return;
+      if (update.view.dom.querySelector(".cm-search")) return;
       const head = update.state.selection.main.head;
       const line = update.state.doc.lineAt(head);
       onCursorChange({ line: line.number, column: head - line.from + 1 });
