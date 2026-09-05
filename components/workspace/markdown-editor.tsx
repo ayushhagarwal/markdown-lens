@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
-import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
+import { getSearchQuery, openSearchPanel } from "@codemirror/search";
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 
 const MAX_COUNTED_MATCHES = 10_000;
@@ -41,7 +41,6 @@ class SearchMatchStatus {
   }
 
   private render() {
-    if (!searchPanelOpen(this.view.state)) return;
     const panel = this.view.dom.querySelector<HTMLElement>(".cm-search");
     if (!panel) return;
 
