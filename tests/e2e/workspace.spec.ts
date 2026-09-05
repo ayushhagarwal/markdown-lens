@@ -278,7 +278,10 @@ test("outline follows rendered headings and focuses the selected target", async 
   await expect(page.getByRole("button", { name: "Not a heading, heading level 1" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Details, heading level 2" })).toHaveCount(2);
 
-  await page.getByRole("button", { name: "Document title, heading level 1" }).click();
+  const outlineHeading = page.getByRole("button", { name: "Document title, heading level 1" });
+  await outlineHeading.focus();
+  await expect(outlineHeading).toHaveClass(/focus-visible:ring-2/);
+  await outlineHeading.click();
   await expect(page.getByRole("heading", { level: 1, name: "Document title" })).toBeFocused();
   await expect(page.getByRole("heading", { level: 2, name: "Details" })).toHaveCount(2);
   await expect(page.locator("#details-1")).toHaveCount(1);
