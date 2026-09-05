@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
 import { getSearchQuery, openSearchPanel } from "@codemirror/search";
@@ -93,23 +93,14 @@ export function MarkdownEditor({
   onCursorChange: (position: { line: number; column: number }) => void;
   onReady: (actions: { focus: () => void; openSearch: () => void }) => void;
 }) {
-  const cursorFrameRef = useRef<number | null>(null);
-  useEffect(() => () => {
-    if (cursorFrameRef.current !== null) window.cancelAnimationFrame(cursorFrameRef.current);
-  }, []);
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
       if (!update.selectionSet && !update.docChanged) return;
-      if (update.transactions.length && !update.docChanged) return;
       if (getSearchQuery(update.startState).search || getSearchQuery(update.state).search) return;
-      if (update.view.dom.closest(".cm-editor")?.querySelector(".cm-search")) return;
+      if (!update.docChanged) return;
       const head = update.state.selection.main.head;
       const line = update.state.doc.lineAt(head);
-      if (cursorFrameRef.current !== null) window.cancelAnimationFrame(cursorFrameRef.current);
-      cursorFrameRef.current = window.requestAnimationFrame(() => {
-        cursorFrameRef.current = null;
-        onCursorChange({ line: line.number, column: head - line.from + 1 });
-      });
+      onCursorChange({ line: line.number, column: head - line.from + 1 });
     },
     [onCursorChange],
   );
