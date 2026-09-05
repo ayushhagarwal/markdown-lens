@@ -85,6 +85,11 @@ test("mobile navigation and preview tabs respond", async ({ page }, testInfo) =>
   await page.goto("/");
   await page.getByRole("button", { name: "Open navigation" }).click();
   await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
+  await page.locator('button[aria-label="Close navigation"]').last().click();
+  await expect(page.getByRole("button", { name: "Open navigation" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: "Open navigation" })).toBeFocused();
 
