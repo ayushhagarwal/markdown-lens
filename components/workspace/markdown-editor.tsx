@@ -168,7 +168,7 @@ export function MarkdownEditor({
         aria-label="Markdown editor"
         className="h-full overflow-hidden"
       />
-      <output ref={searchStatusRef} hidden className="pointer-events-none absolute bottom-2 right-3 z-10 rounded border border-border bg-panel/95 px-2 py-1 text-[11px] text-muted-foreground" aria-live="polite" aria-atomic="true" />
+      <output ref={searchStatusRef} className="pointer-events-none absolute bottom-2 right-3 z-10 rounded border border-border bg-panel/95 px-2 py-1 text-[11px] text-muted-foreground" aria-live="polite" aria-atomic="true" />
     </div>
   );
 }
