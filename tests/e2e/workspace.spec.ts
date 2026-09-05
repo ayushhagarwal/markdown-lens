@@ -26,6 +26,14 @@ test("editor toolbar actions expose a visible keyboard focus treatment", async (
   await expect(openButton).toHaveClass(/focus-visible:ring-2/);
 });
 
+test("workspace utility controls expose keyboard focus treatment", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop workspace utility control");
+  await page.goto("/editor");
+  const trashButton = page.getByRole("button", { name: "Trash", exact: true });
+  await trashButton.focus();
+  await expect(trashButton).toHaveClass(/focus-visible:ring-2/);
+});
+
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only workspace interaction");
   await page.goto("/editor");

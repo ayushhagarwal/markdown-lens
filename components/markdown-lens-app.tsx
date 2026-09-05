@@ -873,7 +873,7 @@ export function MarkdownLensApp() {
             )}
           </div>
           <div className="border-t border-border p-2">
-            <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+            <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               {showTrash ? <BookOpen className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
               {showTrash ? "Back to documents" : "Trash"}
             </button>
@@ -1185,10 +1185,10 @@ function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; o
   return (
     <div className="border-t border-border p-2">
       <div className="border border-border bg-surface p-2.5">
-        <div className="flex items-center gap-2 text-xs"><FileText className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion"><X className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check className="h-3.5 w-3.5 text-accent" /> : null}</div>
+        <div className="flex items-center gap-2 text-xs"><FileText className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check className="h-3.5 w-3.5 text-accent" /> : null}</div>
         {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${active.fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
         <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")} role="status" aria-live="polite">{active.error ?? active.progress?.message ?? active.state}</p>
-        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><div className="flex items-center"><button type="button" onClick={() => { if (active.state === "failed" || active.state === "cancelled") onRetry(active.file); }} disabled={active.state !== "failed" && active.state !== "cancelled"} className="min-h-11 px-2 hover:text-foreground disabled:cursor-default disabled:opacity-40">Retry</button><button type="button" onClick={onClear} className="min-h-11 px-2 hover:text-foreground">Clear finished</button></div></div>
+        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><div className="flex items-center"><button type="button" onClick={() => { if (active.state === "failed" || active.state === "cancelled") onRetry(active.file); }} disabled={active.state !== "failed" && active.state !== "cancelled"} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">Retry</button><button type="button" onClick={onClear} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Clear finished</button></div></div>
       </div>
     </div>
   );
