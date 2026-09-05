@@ -101,7 +101,7 @@ export function MarkdownEditor({
     (update: ViewUpdate) => {
       if (!update.selectionSet && !update.docChanged) return;
       if (update.transactions.length && !update.docChanged) return;
-      if (update.view.dom.querySelector(".cm-search")) return;
+      if (update.view.dom.closest(".cm-editor")?.querySelector(".cm-search")) return;
       const head = update.state.selection.main.head;
       const line = update.state.doc.lineAt(head);
       if (cursorFrameRef.current !== null) window.cancelAnimationFrame(cursorFrameRef.current);
