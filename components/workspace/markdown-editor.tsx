@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
 import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
@@ -80,7 +80,7 @@ function describeSearchMatches(view: EditorView) {
   return current ? `${current.toLocaleString()} of ${totalLabel} matches` : `${totalLabel} matches`;
 }
 
-export function MarkdownEditor({
+export const MarkdownEditor = memo(function MarkdownEditor({
   value,
   theme,
   onChange,
@@ -175,4 +175,4 @@ export function MarkdownEditor({
       className="h-full overflow-hidden"
     />
   );
-}
+}, (previous, next) => previous.value === next.value && previous.theme === next.theme);
