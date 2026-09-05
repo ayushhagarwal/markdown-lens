@@ -3,7 +3,7 @@
 import { useCallback, useMemo } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
-import { getSearchQuery, openSearchPanel } from "@codemirror/search";
+import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 
 const MAX_COUNTED_MATCHES = 10_000;
@@ -96,6 +96,7 @@ export function MarkdownEditor({
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
       if (!update.selectionSet && !update.docChanged) return;
+      if (searchPanelOpen(update.startState) || searchPanelOpen(update.state)) return;
       if (getSearchQuery(update.startState).search || getSearchQuery(update.state).search) return;
       if (!update.docChanged) return;
       const head = update.state.selection.main.head;
