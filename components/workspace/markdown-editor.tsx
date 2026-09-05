@@ -59,9 +59,7 @@ export function MarkdownEditor({
       if (!update.selectionSet && !update.docChanged && !update.transactions.length) return;
       const head = update.state.selection.main.head;
       const line = update.state.doc.lineAt(head);
-      if (!searchPanelOpen(update.startState) && !searchPanelOpen(update.state)) {
-        onCursorChange({ line: line.number, column: head - line.from + 1 });
-      }
+      if (!searchPanelOpen(update.state)) onCursorChange({ line: line.number, column: head - line.from + 1 });
     },
     [onCursorChange],
   );
