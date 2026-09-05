@@ -46,6 +46,7 @@ import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "@/components/brand-icon";
 import { siteConfig } from "@/lib/site";
+import { recordConversionAndShouldAsk } from "@/lib/star-prompt";
 import {
   addDocument,
   addDocumentWithAssets,
@@ -132,8 +133,6 @@ type BeforeInstallPromptEvent = Event & {
 
 const THEME_KEY = "markdown-lens:theme";
 const SPLIT_KEY = "markdown-lens:split-ratio";
-const STAR_ASK_KEY = "markdown-lens:star-ask";
-let starAskOfferedThisLoad = false;
 
 function isApplePlatform() {
   return (
@@ -147,16 +146,14 @@ function commandModPrefix(apple = isApplePlatform()) {
 }
 
 function offerStarAsk(setNotice: (notice: ToastNotice) => void) {
-  if (starAskOfferedThisLoad) return;
   try {
-    if (sessionStorage.getItem(STAR_ASK_KEY) === "1") return;
-    sessionStorage.setItem(STAR_ASK_KEY, "1");
+    if (!recordConversionAndShouldAsk(localStorage)) return;
   } catch {
-    // Private mode can block sessionStorage; the in-memory flag still gates this load.
+    // Private mode can block localStorage; do not interrupt the conversion flow.
+    return;
   }
-  starAskOfferedThisLoad = true;
   setNotice({
-    message: "Converted locally. Star the project if it helped.",
+    message: "You’ve converted two documents locally. Star the project if it helped.",
     actionLabel: "Star",
     actionHref: siteConfig.githubUrl,
   });
