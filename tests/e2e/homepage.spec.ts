@@ -17,6 +17,11 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   expect(schemas.join(" ")).toContain('"softwareVersion":"0.9.4"');
 });
 
+test("primary navigation identifies the current page", async ({ page }) => {
+  await page.goto("/pdf-to-markdown");
+  await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "PDF" })).toHaveAttribute("aria-current", "page");
+});
+
 test("homepage follows system color scheme and preserves a saved light preference", async ({ browser }) => {
   const darkContext = await browser.newContext({ colorScheme: "dark" });
   const darkPage = await darkContext.newPage();
