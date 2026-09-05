@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandIcon } from "@/components/brand-icon";
 import { GithubStarLink } from "@/components/github-star-link";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,6 +14,11 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const closeMenu = useCallback((restoreFocus = false) => {
+    setOpen(false);
+    if (restoreFocus) requestAnimationFrame(() => menuButtonRef.current?.focus());
+  }, []);
+
   useEffect(() => {
     if (!open) return;
     menuRef.current?.querySelector<HTMLElement>("a")?.focus();
@@ -22,8 +27,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
-        requestAnimationFrame(() => menuButtonRef.current?.focus());
+        closeMenu(true);
         return;
       }
       if (event.key !== "Tab") return;
@@ -42,7 +46,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
 
     function handlePointerDown(event: PointerEvent) {
       const target = event.target as Node;
-      if (!menuRef.current?.contains(target) && !menuButtonRef.current?.contains(target)) setOpen(false);
+      if (!menuRef.current?.contains(target) && !menuButtonRef.current?.contains(target)) closeMenu(true);
     }
 
     document.addEventListener("keydown", handleKeyDown);
@@ -52,7 +56,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, [open]);
+  }, [closeMenu, open]);
 
   return (
     <header className="relative z-40 border-b border-border bg-panel shadow-sm">
@@ -104,7 +108,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
 
       {open ? (
         <>
-          <button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="fixed inset-0 top-16 z-40 bg-black/40 md:hidden" />
+          <button type="button" aria-label="Close navigation" onClick={() => closeMenu(true)} className="fixed inset-0 top-16 z-40 bg-black/40 md:hidden" />
           <div ref={menuRef} id="site-mobile-menu" role="dialog" aria-modal="true" aria-label="Mobile navigation" className="fixed inset-x-0 top-16 z-50 border-b border-border bg-background p-5 shadow-2xl md:hidden">
           <nav className="grid gap-1" aria-label="Mobile navigation">
             {primaryNav.map((link) => (
