@@ -55,7 +55,7 @@
     "unified": "^11.0.5"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.2",
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.62.1",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.10.2",
