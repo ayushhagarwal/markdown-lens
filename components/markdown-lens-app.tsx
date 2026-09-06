@@ -166,6 +166,8 @@ export function MarkdownLensApp() {
   const [ready, setReady] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [documentSearch, setDocumentSearch] = useState("");
+  const [renameTarget, setRenameTarget] = useState<DocumentRecord | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const [showTrash, setShowTrash] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(true);
   const [outlineOpen, setOutlineOpen] = useState(true);
@@ -433,14 +435,24 @@ export function MarkdownLensApp() {
     setMobilePane("editor");
   }, [activeDocument, activeId, persistActiveDraft]);
 
-  const renameDocument = useCallback(async (document: DocumentRecord) => {
-    const title = window.prompt("Rename document", document.title)?.trim();
-    if (!title || title === document.title) return;
+  const renameDocument = useCallback((document: DocumentRecord) => {
+    setRenameTarget(document);
+    setRenameValue(document.title);
+  }, []);
+
+  const submitRename = useCallback(async () => {
+    const document = renameTarget;
+    const title = renameValue.trim();
+    if (!document || !title || title === document.title) {
+      setRenameTarget(null);
+      return;
+    }
     const current = document.id === activeId ? await persistActiveDraft() : document;
     if (!current) return;
     const saved = await saveDocument({ ...current, title });
     setDocuments((current) => current.map((item) => (item.id === document.id ? saved : item)));
-  }, [activeId, persistActiveDraft]);
+    setRenameTarget(null);
+  }, [activeId, persistActiveDraft, renameTarget, renameValue]);
 
   const removeDocument = useCallback(
     async (document: DocumentRecord) => {
@@ -1128,6 +1140,26 @@ export function MarkdownLensApp() {
           onClose={dismissSharedDocument}
         />
       ) : null}
+      {renameTarget ? <RenameDialog value={renameValue} onChange={setRenameValue} onSubmit={() => void submitRename()} onClose={() => setRenameTarget(null)} /> : null}
+    </div>
+  );
+}
+
+function RenameDialog({ value, onChange, onSubmit, onClose }: { value: string; onChange: (value: string) => void; onSubmit: () => void; onClose: () => void }) {
+  const dialogRef = useDialogFocus(onClose);
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="rename-document-title" className="w-full max-w-md rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <h2 id="rename-document-title" className="text-lg font-semibold">Rename document</h2>
+        <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+          <label htmlFor="rename-document-input" className="mt-4 block text-sm font-medium text-foreground">Document name</label>
+          <input id="rename-document-input" value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring" />
+          <div className="mt-5 flex justify-end gap-2">
+            <button type="button" onClick={onClose} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
+            <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Save name</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

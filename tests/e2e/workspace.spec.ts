@@ -109,10 +109,17 @@ test("mobile document row actions are visible without hover", async ({ page }, t
   await expect(row.getByRole("button", { name: "Rename document" })).toBeVisible();
   await expect(row.getByRole("button", { name: "Move to Trash" })).toBeVisible();
 
+  await row.getByRole("button", { name: "Rename document" }).click();
+  const renameDialog = page.getByRole("dialog", { name: "Rename document" });
+  await expect(renameDialog).toBeVisible();
+  await renameDialog.getByLabel("Document name").fill("Mobile draft");
+  await renameDialog.getByRole("button", { name: "Save name" }).click();
+  await expect(documents.getByRole("button", { name: /Mobile draft/ })).toBeVisible();
+
   await row.getByRole("button", { name: "Move to Trash" }).click();
   await expect(page.getByText("moved to Trash.")).toBeVisible();
   await page.getByRole("button", { name: "Trash", exact: true }).click();
-  const trashedRow = documents.getByRole("button", { name: /Untitled document/ }).first().locator("..");
+  const trashedRow = documents.getByRole("button", { name: /Mobile draft/ }).first().locator("..");
   await expect(trashedRow.getByRole("button", { name: "Restore document" })).toBeVisible();
 });
 
@@ -137,8 +144,10 @@ test("documents persist independently across immediate switches, rename, trash, 
 
   const firstRow = documents.getByRole("button", { name: /First independent draft/ }).locator("..");
   await firstRow.hover();
-  page.once("dialog", (dialog) => dialog.accept("Renamed first draft"));
   await firstRow.getByRole("button", { name: "Rename document" }).click();
+  const renameDialog = page.getByRole("dialog", { name: "Rename document" });
+  await renameDialog.getByLabel("Document name").fill("Renamed first draft");
+  await renameDialog.getByRole("button", { name: "Save name" }).click();
   await expect(documents.getByRole("button", { name: /Renamed first draft/ })).toBeVisible();
 
   const secondRow = documents.getByRole("button", { name: /Second independent draft/ }).locator("..");
