@@ -942,10 +942,12 @@ export function MarkdownLensApp() {
               type="button"
               className="group flex cursor-col-resize items-center justify-center border-x border-border bg-background hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
               role="separator"
+              aria-orientation="vertical"
               aria-label="Resize editor and preview"
               aria-valuemin={30}
               aria-valuemax={70}
               aria-valuenow={Math.round(splitRatio)}
+              aria-valuetext={`${Math.round(splitRatio)}% editor, ${Math.round(100 - splitRatio)}% preview`}
               onPointerDown={beginResize}
               onDoubleClick={resetSplitRatio}
               title="Drag or use arrow keys to resize. Double-click to reset."
