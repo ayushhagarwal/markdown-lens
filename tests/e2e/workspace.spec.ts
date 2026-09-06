@@ -66,6 +66,9 @@ test("workspace toggles expose their expanded state", async ({ page }, testInfo)
   await exportToggle.click();
   await exportMenu.getByRole("menuitem", { name: "Download .md" }).click();
   await expect(exportToggle).toBeFocused();
+  await exportToggle.click();
+  await page.locator("#main").click({ position: { x: 16, y: 16 } });
+  await expect(exportMenu).toBeHidden();
   await expect(page.getByRole("button", { name: "File types", exact: true })).toHaveAttribute("aria-haspopup", "dialog");
 });
 

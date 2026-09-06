@@ -211,6 +211,17 @@ export function MarkdownLensApp() {
     return () => window.cancelAnimationFrame(frame);
   }, [exportOpen]);
 
+  useEffect(() => {
+    if (!exportOpen) return;
+    const dismissOutside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (exportMenuRef.current?.contains(target) || exportToggleRef.current?.contains(target)) return;
+      setExportOpen(false);
+    };
+    document.addEventListener("pointerdown", dismissOutside, true);
+    return () => document.removeEventListener("pointerdown", dismissOutside, true);
+  }, [exportOpen]);
+
   const activeDocument = useMemo(
     () => documents.find((document) => document.id === activeId),
     [activeId, documents],
