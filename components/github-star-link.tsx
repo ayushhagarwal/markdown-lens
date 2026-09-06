@@ -29,7 +29,7 @@ export function GithubStarLink({
       href={siteConfig.githubUrl}
       target="_blank"
       rel="noreferrer"
-      aria-label="Star Markdown Lens on GitHub"
+      aria-label="Star Markdown Lens on GitHub (opens in a new tab)"
       onClick={onClick}
       className={cn(variantClassName[variant], className)}
     >
