@@ -37,6 +37,22 @@ test("workspace utility controls expose keyboard focus treatment", async ({ page
   await expect(trashButton).toHaveClass(/focus-visible:ring-2/);
 });
 
+test("workspace toggles expose their expanded state", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop workspace toggle semantics");
+  await page.goto("/editor");
+
+  const documentsToggle = page.getByRole("button", { name: "Documents", exact: true });
+  await expect(documentsToggle).toHaveAttribute("aria-expanded", "true");
+  await documentsToggle.click();
+  await expect(documentsToggle).toHaveAttribute("aria-expanded", "false");
+
+  const exportToggle = page.getByRole("button", { name: "Export", exact: true });
+  await expect(exportToggle).toHaveAttribute("aria-expanded", "false");
+  await exportToggle.click();
+  await expect(exportToggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("menu", { name: "Export options" })).toBeVisible();
+});
+
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only workspace interaction");
   await page.goto("/editor");
@@ -325,7 +341,7 @@ test("share links require explicit consent and preserve existing local drafts", 
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("# Shared payload\n\nVisible only in the fragment.");
   await page.getByRole("button", { name: "Export", exact: true }).click();
-  await page.getByRole("button", { name: "Create share link" }).click();
+  await page.getByRole("menuitem", { name: "Create share link" }).click();
 
   const createDialog = page.getByRole("dialog", { name: "Create share link" });
   await expect(createDialog).toContainText("Anyone with this URL can read and copy the document.");
