@@ -1030,7 +1030,10 @@ export function MarkdownLensApp() {
               role="menu"
               aria-label="Export options"
               onClick={(event) => {
-                if ((event.target as HTMLElement).closest('[role="menuitem"]')) setExportOpen(false);
+                if ((event.target as HTMLElement).closest('[role="menuitem"]')) {
+                  setExportOpen(false);
+                  window.requestAnimationFrame(() => exportToggleRef.current?.focus());
+                }
               }}
               onKeyDown={(event) => {
                 const items = Array.from(exportMenuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
