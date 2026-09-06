@@ -805,7 +805,9 @@ export function MarkdownLensApp() {
             type="button"
             onClick={() => setMobilePane(id)}
             role="tab"
+            id={`workspace-pane-tab-${id}`}
             aria-selected={mobilePane === id}
+            aria-controls={`workspace-pane-${id}`}
             tabIndex={mobilePane === id ? 0 : -1}
             onKeyDown={(event) => {
               if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
@@ -830,6 +832,9 @@ export function MarkdownLensApp() {
 
       <div className="relative flex min-h-0 flex-1">
         <aside
+          id="workspace-pane-documents"
+          role={mobilePane === "documents" ? "tabpanel" : "complementary"}
+          aria-labelledby={mobilePane === "documents" ? "workspace-pane-tab-documents" : undefined}
           className={cn(
             "workspace-rail z-30 w-[260px] shrink-0 flex-col border-r border-border bg-background 2xl:w-[300px]",
             railDisplay(documentsOpen, mobilePane === "documents"),
@@ -915,7 +920,12 @@ export function MarkdownLensApp() {
               </div>
             </WorkspacePanel>
           </div>
-          <div className="h-full lg:hidden">
+          <div
+            id={`workspace-pane-${mobilePane === "preview" ? "preview" : "editor"}`}
+            role="tabpanel"
+            aria-labelledby={`workspace-pane-tab-${mobilePane === "preview" ? "preview" : "editor"}`}
+            className="h-full lg:hidden"
+          >
             {mobilePane === "editor" ? (
               <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
                 <MarkdownEditor value={markdown} theme={theme} onChange={updateMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
@@ -929,6 +939,9 @@ export function MarkdownLensApp() {
         </main>
 
         <aside
+          id="workspace-pane-outline"
+          role={mobilePane === "outline" ? "tabpanel" : "complementary"}
+          aria-labelledby={mobilePane === "outline" ? "workspace-pane-tab-outline" : undefined}
           className={cn(
             "workspace-rail z-30 w-[220px] shrink-0 flex-col border-l border-border bg-background 2xl:w-[260px]",
             railDisplay(outlineOpen, mobilePane === "outline"),
