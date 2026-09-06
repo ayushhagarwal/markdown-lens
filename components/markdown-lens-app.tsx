@@ -1378,9 +1378,9 @@ function Notice({
           {actionLabel}
         </a>
       ) : actionLabel && onAction ? (
-        <button type="button" onClick={onAction} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">{actionLabel}</button>
+      <button type="button" onClick={onAction} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{actionLabel}</button>
       ) : null}
-      <button type="button" onClick={onClose} aria-label="Dismiss"><X className="h-3.5 w-3.5" /></button>
+      <button type="button" onClick={onClose} aria-label="Dismiss" className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="h-3.5 w-3.5" /></button>
     </div>
   );
 }
