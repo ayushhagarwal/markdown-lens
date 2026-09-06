@@ -50,7 +50,19 @@ test("workspace toggles expose their expanded state", async ({ page }, testInfo)
   await expect(exportToggle).toHaveAttribute("aria-expanded", "false");
   await exportToggle.click();
   await expect(exportToggle).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("menu", { name: "Export options" })).toBeVisible();
+  const exportMenu = page.getByRole("menu", { name: "Export options" });
+  await expect(exportMenu).toBeVisible();
+  const menuItems = exportMenu.getByRole("menuitem");
+  await expect(menuItems.first()).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(menuItems.nth(1)).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(menuItems.last()).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(menuItems.first()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(exportMenu).toBeHidden();
+  await expect(exportToggle).toBeFocused();
 });
 
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
