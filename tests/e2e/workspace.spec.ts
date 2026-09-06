@@ -63,6 +63,7 @@ test("workspace toggles expose their expanded state", async ({ page }, testInfo)
   await page.keyboard.press("Escape");
   await expect(exportMenu).toBeHidden();
   await expect(exportToggle).toBeFocused();
+  await expect(page.getByRole("button", { name: "File types", exact: true })).toHaveAttribute("aria-haspopup", "dialog");
 });
 
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
@@ -353,6 +354,7 @@ test("share links require explicit consent and preserve existing local drafts", 
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("# Shared payload\n\nVisible only in the fragment.");
   await page.getByRole("button", { name: "Export", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "Create share link" })).toHaveAttribute("aria-haspopup", "dialog");
   await page.getByRole("menuitem", { name: "Create share link" }).click();
 
   const createDialog = page.getByRole("dialog", { name: "Create share link" });
