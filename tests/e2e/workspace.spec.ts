@@ -259,16 +259,20 @@ test("desktop split persists keyboard resizing and can be reset", async ({ page 
   await page.goto("/editor");
 
   const separator = page.getByRole("separator", { name: "Resize editor and preview" });
+  await expect(separator).toHaveAttribute("aria-orientation", "vertical");
   await expect(separator).toHaveAttribute("aria-valuenow", "62");
+  await expect(separator).toHaveAttribute("aria-valuetext", "62% editor, 38% preview");
   await separator.focus();
   await page.keyboard.press("ArrowRight");
   await expect(separator).toHaveAttribute("aria-valuenow", "64");
+  await expect(separator).toHaveAttribute("aria-valuetext", "64% editor, 36% preview");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("markdown-lens:split-ratio"))).toBe("64");
 
   await page.reload();
   await expect(separator).toHaveAttribute("aria-valuenow", "64");
   await page.getByRole("button", { name: "Reset split" }).click();
   await expect(separator).toHaveAttribute("aria-valuenow", "50");
+  await expect(separator).toHaveAttribute("aria-valuetext", "50% editor, 50% preview");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("markdown-lens:split-ratio"))).toBeNull();
 });
 
