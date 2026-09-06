@@ -193,6 +193,8 @@ export function MarkdownLensApp() {
   const [online, setOnline] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
   const centralRef = useRef<HTMLDivElement>(null);
+  const exportToggleRef = useRef<HTMLButtonElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backupInputRef = useRef<HTMLInputElement>(null);
   const abortControllers = useRef(new Map<string, AbortController>());
@@ -200,6 +202,14 @@ export function MarkdownLensApp() {
   const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null | undefined>) | null>(null);
   const deferredMarkdown = useDeferredValue(markdown);
   const modPrefix = useMemo(() => commandModPrefix(), []);
+
+  useEffect(() => {
+    if (!exportOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      exportMenuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [exportOpen]);
 
   const activeDocument = useMemo(
     () => documents.find((document) => document.id === activeId),
@@ -1003,7 +1013,7 @@ export function MarkdownLensApp() {
           </span>
         </div>
         <div className="relative flex items-center gap-1">
-          <button type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button ref={exportToggleRef} type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} aria-controls="export-options-menu" className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Export <ChevronDown className="h-3.5 w-3.5" />
           </button>
           <div className="hidden h-8 overflow-hidden rounded-md border border-border xl:flex">
@@ -1013,7 +1023,30 @@ export function MarkdownLensApp() {
             <QuickExport label="…" onClick={() => setExportOpen(true)} ariaLabel="More export options" />
           </div>
           {exportOpen ? (
-            <div role="menu" aria-label="Export options" className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-64 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl">
+            <div
+              ref={exportMenuRef}
+              id="export-options-menu"
+              role="menu"
+              aria-label="Export options"
+              onClick={(event) => {
+                if ((event.target as HTMLElement).closest('[role="menuitem"]')) setExportOpen(false);
+              }}
+              onKeyDown={(event) => {
+                const items = Array.from(exportMenuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+                const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setExportOpen(false);
+                  exportToggleRef.current?.focus();
+                  return;
+                }
+                if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key) || !items.length) return;
+                event.preventDefault();
+                const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (currentIndex + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+                items[nextIndex]?.focus();
+              }}
+              className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-64 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl"
+            >
               <MenuAction icon={Clipboard} label="Copy Markdown" onClick={() => void copyMarkdown()} />
               <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
               <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
@@ -1432,7 +1465,7 @@ function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: 
 }
 
 function MenuAction({ icon: Icon, label, onClick }: { icon: typeof FileText; label: string; onClick: () => void }) {
-  return <button type="button" role="menuitem" onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
+  return <button type="button" role="menuitem" tabIndex={-1} onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
