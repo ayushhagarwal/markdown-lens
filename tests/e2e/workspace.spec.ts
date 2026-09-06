@@ -15,7 +15,10 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
 test("editor header shows File types control on desktop", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop lg viewport control");
   await page.goto("/editor");
-  await expect(page.getByRole("button", { name: "File types" })).toBeVisible();
+  const fileTypes = page.getByRole("button", { name: "File types" });
+  await expect(fileTypes).toBeVisible();
+  await fileTypes.focus();
+  await expect(fileTypes).toHaveClass(/focus-visible:ring-2/);
 });
 
 test("editor toolbar actions expose a visible keyboard focus treatment", async ({ page }, testInfo) => {
