@@ -29,7 +29,6 @@ import {
   FileUp,
   HardDrive,
   Loader2,
-  Menu,
   Moon,
   PanelLeft,
   Pencil,
@@ -794,7 +793,7 @@ export function MarkdownLensApp() {
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
           <GithubStarLink variant="nav" className="h-9 px-2.5 text-xs" />
-          <IconButton icon={Menu} label="Open commands" onClick={() => setCommandOpen(true)} className="lg:hidden" />
+          <IconButton icon={Command} label="Open commands" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
       </header>
 
