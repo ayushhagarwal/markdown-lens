@@ -17,8 +17,15 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   expect(schemas.join(" ")).toContain('"softwareVersion":"0.9.4"');
 });
 
-test("primary navigation identifies the current page", async ({ page }) => {
+test("primary navigation identifies the current page", async ({ page }, testInfo) => {
   await page.goto("/pdf-to-markdown");
+
+  if (testInfo.project.name === "mobile") {
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "PDF" })).toHaveAttribute("aria-current", "page");
+    return;
+  }
+
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "PDF" })).toHaveAttribute("aria-current", "page");
 });
 
