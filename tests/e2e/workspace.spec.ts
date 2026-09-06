@@ -121,6 +121,11 @@ test("mobile document row actions are visible without hover", async ({ page }, t
   await page.getByRole("button", { name: "Trash", exact: true }).click();
   const trashedRow = documents.getByRole("button", { name: /Mobile draft/ }).first().locator("..");
   await expect(trashedRow.getByRole("button", { name: "Restore document" })).toBeVisible();
+  await trashedRow.getByRole("button", { name: "Delete permanently" }).click();
+  const deleteDialog = page.getByRole("alertdialog", { name: "Delete document permanently?" });
+  await expect(deleteDialog).toBeVisible();
+  await deleteDialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(deleteDialog).toBeHidden();
 });
 
 test("documents persist independently across immediate switches, rename, trash, and reload", async ({ page }, testInfo) => {

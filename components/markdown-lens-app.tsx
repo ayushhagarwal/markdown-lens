@@ -168,6 +168,7 @@ export function MarkdownLensApp() {
   const [documentSearch, setDocumentSearch] = useState("");
   const [renameTarget, setRenameTarget] = useState<DocumentRecord | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<DocumentRecord | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(true);
   const [outlineOpen, setOutlineOpen] = useState(true);
@@ -475,11 +476,16 @@ export function MarkdownLensApp() {
     setNotice({ message: `“${document.title}” restored.` });
   }, [refreshDocuments]);
 
-  const deleteForever = useCallback(async (document: DocumentRecord) => {
-    if (!window.confirm(`Permanently delete “${document.title}”? This cannot be undone.`)) return;
-    await permanentlyDeleteDocument(document.id);
+  const deleteForever = useCallback((document: DocumentRecord) => {
+    setDeleteTarget(document);
+  }, []);
+
+  const confirmDeleteForever = useCallback(async () => {
+    if (!deleteTarget) return;
+    await permanentlyDeleteDocument(deleteTarget.id);
     await refreshDocuments();
-  }, [refreshDocuments]);
+    setDeleteTarget(null);
+  }, [deleteTarget, refreshDocuments]);
 
   const duplicate = useCallback(async (document: DocumentRecord) => {
     const current = document.id === activeId ? await persistActiveDraft() : document;
@@ -1141,6 +1147,7 @@ export function MarkdownLensApp() {
         />
       ) : null}
       {renameTarget ? <RenameDialog value={renameValue} onChange={setRenameValue} onSubmit={() => void submitRename()} onClose={() => setRenameTarget(null)} /> : null}
+      {deleteTarget ? <ConfirmDialog title="Delete document permanently?" message={`“${deleteTarget.title}” cannot be recovered after deletion.`} confirmLabel="Delete permanently" onConfirm={() => void confirmDeleteForever()} onClose={() => setDeleteTarget(null)} /> : null}
     </div>
   );
 }
@@ -1159,6 +1166,22 @@ function RenameDialog({ value, onChange, onSubmit, onClose }: { value: string; o
             <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Save name</button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmDialog({ title, message, confirmLabel, onConfirm, onClose }: { title: string; message: string; confirmLabel: string; onConfirm: () => void; onClose: () => void }) {
+  const dialogRef = useDialogFocus(onClose);
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+      <div ref={dialogRef} role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message" className="w-full max-w-md rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <h2 id="confirm-dialog-title" className="text-lg font-semibold">{title}</h2>
+        <p id="confirm-dialog-message" className="mt-2 text-sm leading-6 text-muted-foreground">{message}</p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
+          <button type="button" onClick={onConfirm} className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400">{confirmLabel}</button>
+        </div>
       </div>
     </div>
   );
