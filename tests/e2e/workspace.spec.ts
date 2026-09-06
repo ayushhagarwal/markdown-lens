@@ -42,7 +42,7 @@ test("mobile workspace can create a document from the header icon", async ({ pag
   await page.goto("/editor");
   await expect(page.getByRole("button", { name: "New document" }).first()).toBeVisible();
   await page.getByRole("button", { name: "New document" }).first().click();
-  await page.getByRole("navigation", { name: "Workspace panes" }).getByRole("button", { name: "Files", exact: true }).click();
+  await page.getByRole("tablist", { name: "Workspace panes" }).getByRole("tab", { name: "Files", exact: true }).click();
   await expect(page.getByText("Untitled document")).toBeVisible();
 });
 
@@ -52,8 +52,8 @@ test("mobile document row actions are visible without hover", async ({ page }, t
   await expect(page.getByRole("main")).toBeVisible();
   await page.getByRole("button", { name: "New document" }).first().click();
   await page
-    .getByRole("navigation", { name: "Workspace panes" })
-    .getByRole("button", { name: "Files", exact: true })
+    .getByRole("tablist", { name: "Workspace panes" })
+    .getByRole("tab", { name: "Files", exact: true })
     .click();
 
   const documents = page.getByRole("complementary", { name: "Documents" });
