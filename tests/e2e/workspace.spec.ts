@@ -235,7 +235,7 @@ test("@a11y editor has no serious accessibility violations", async ({ page }) =>
 test("mobile switches between editor and preview", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
   await page.goto("/editor");
-  await page.getByRole("button", { name: "Preview", exact: true }).click();
+  await page.getByRole("tab", { name: "Preview", exact: true }).click();
   await expect(page.getByRole("region", { name: "Preview" })).toBeVisible();
 });
 
@@ -243,18 +243,18 @@ test("mobile workspace panes use explicit labels and switch content", async ({ p
   test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
   await page.goto("/editor");
 
-  const paneNav = page.getByRole("navigation", { name: "Workspace panes" });
-  await expect(paneNav.getByRole("button", { name: "Files", exact: true })).toBeVisible();
-  await expect(paneNav.getByRole("button", { name: "Edit", exact: true })).toBeVisible();
-  await expect(paneNav.getByRole("button", { name: "Preview", exact: true })).toBeVisible();
-  await expect(paneNav.getByRole("button", { name: "Outline", exact: true })).toBeVisible();
+  const paneNav = page.getByRole("tablist", { name: "Workspace panes" });
+  await expect(paneNav.getByRole("tab", { name: "Files", exact: true })).toBeVisible();
+  await expect(paneNav.getByRole("tab", { name: "Edit", exact: true })).toBeVisible();
+  await expect(paneNav.getByRole("tab", { name: "Preview", exact: true })).toBeVisible();
+  await expect(paneNav.getByRole("tab", { name: "Outline", exact: true })).toBeVisible();
 
-  await paneNav.getByRole("button", { name: "Files", exact: true }).click();
+  await paneNav.getByRole("tab", { name: "Files", exact: true }).click();
   const documents = page.getByRole("complementary", { name: "Documents" });
   await expect(documents).toBeVisible();
   await expect(documents.getByPlaceholder("Search documents")).toBeVisible();
 
-  await paneNav.getByRole("button", { name: "Edit", exact: true }).click();
+  await paneNav.getByRole("tab", { name: "Edit", exact: true }).click();
   await expect(page.locator('.cm-content[contenteditable="true"]:visible').first()).toBeVisible();
 });
 
