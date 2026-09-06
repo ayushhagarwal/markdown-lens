@@ -761,7 +761,7 @@ export function MarkdownLensApp() {
           <button
             type="button"
             onClick={() => setFormatGuideOpen(true)}
-            className="hidden rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground lg:inline"
+            className="hidden rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline"
           >
             File types
           </button>
@@ -783,7 +783,7 @@ export function MarkdownLensApp() {
                 setInstallPrompt(null);
                 if (choice.outcome === "accepted") setNotice({ message: "Markdown Lens was installed." });
               }}
-              className="flex h-9 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground sm:px-3"
+              className="flex h-9 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
             >
               <Download className="h-3.5 w-3.5" aria-hidden />
               <span className="hidden sm:inline">Install</span>
