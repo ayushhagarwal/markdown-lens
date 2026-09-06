@@ -66,6 +66,19 @@ test("workspace toggles expose their expanded state", async ({ page }, testInfo)
   await expect(page.getByRole("button", { name: "File types", exact: true })).toHaveAttribute("aria-haspopup", "dialog");
 });
 
+test("command palette triggers identify their dialog", async ({ page }, testInfo) => {
+  await page.goto("/editor");
+  const trigger = testInfo.project.name === "mobile"
+    ? page.getByRole("button", { name: "Open commands", exact: true })
+    : page.getByRole("button", { name: /^Commands/ });
+  await expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Command palette" });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+});
+
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only workspace interaction");
   await page.goto("/editor");
