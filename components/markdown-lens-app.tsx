@@ -799,12 +799,12 @@ export function MarkdownLensApp() {
               <span className="hidden sm:inline">Install</span>
             </button>
           ) : null}
-          <button type="button" onClick={() => setCommandOpen(true)} className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex">
+          <button type="button" onClick={() => setCommandOpen(true)} aria-haspopup="dialog" className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex">
             <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>{modPrefix}K</kbd>
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
           <GithubStarLink variant="nav" className="h-9 px-2.5 text-xs" />
-          <IconButton icon={Command} label="Open commands" onClick={() => setCommandOpen(true)} className="lg:hidden" />
+          <IconButton icon={Command} label="Open commands" hasPopup="dialog" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
       </header>
 
@@ -1461,8 +1461,8 @@ function TopButton({ icon: Icon, label, onClick, emphasis, active, expanded, con
   return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
-function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: typeof FileText; label: string; onClick: () => void; compact?: boolean; className?: string }) {
-  return <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
+function IconButton({ icon: Icon, label, hasPopup, onClick, compact, className }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void; compact?: boolean; className?: string }) {
+  return <button type="button" onClick={onClick} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
 }
 
 function MenuAction({ icon: Icon, label, hasPopup, onClick }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void }) {
