@@ -31,7 +31,7 @@ test("major Markdown syntax renders with semantic output", async ({ page }, test
   await expect(extendableTask.getByRole("checkbox")).not.toBeChecked();
   await expect(extendableTask.getByRole("checkbox")).toBeDisabled();
 
-  const externalLink = preview.getByRole("link", { name: "Safe external link" });
+  const externalLink = preview.getByRole("link", { name: "Safe external link (opens in a new tab)" });
   await expect(externalLink).toHaveAttribute("href", "https://example.com/docs");
   await expect(externalLink).toHaveAttribute("target", "_blank");
   await expect(externalLink).toHaveAttribute("rel", "noreferrer");

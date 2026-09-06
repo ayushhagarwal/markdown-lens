@@ -123,7 +123,12 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
         return <CopyableCodeBlock>{children}</CopyableCodeBlock>;
       },
       a(props) {
-        return <a {...props} target="_blank" rel="noreferrer" />;
+        return (
+          <a {...props} target="_blank" rel="noreferrer">
+            {props.children}
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        );
       },
       img({ src, alt, node, ...props }) {
         void node;
