@@ -7,7 +7,7 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   await expect(page.getByRole("link", { name: "Markdown Lens home" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open or convert", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "New document" }).click();
+  await page.getByRole("button", { name: "New document" }).first().click();
   await expect(page.getByText("Untitled document")).toBeVisible();
   await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
 });
@@ -40,8 +40,8 @@ test("workspace utility controls expose keyboard focus treatment", async ({ page
 test("mobile workspace can create a document from the header icon", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "mobile-only workspace interaction");
   await page.goto("/editor");
-  await expect(page.getByRole("button", { name: "New document" })).toBeVisible();
-  await page.getByRole("button", { name: "New document" }).click();
+  await expect(page.getByRole("button", { name: "New document" }).first()).toBeVisible();
+  await page.getByRole("button", { name: "New document" }).first().click();
   await page.getByRole("navigation", { name: "Workspace panes" }).getByRole("button", { name: "Files", exact: true }).click();
   await expect(page.getByText("Untitled document")).toBeVisible();
 });
@@ -50,7 +50,7 @@ test("mobile document row actions are visible without hover", async ({ page }, t
   test.skip(testInfo.project.name !== "mobile", "mobile-only interaction");
   await page.goto("/editor");
   await expect(page.getByRole("main")).toBeVisible();
-  await page.getByRole("button", { name: "New document" }).click();
+  await page.getByRole("button", { name: "New document" }).first().click();
   await page
     .getByRole("navigation", { name: "Workspace panes" })
     .getByRole("button", { name: "Files", exact: true })
@@ -71,14 +71,14 @@ test("mobile document row actions are visible without hover", async ({ page }, t
 test("documents persist independently across immediate switches, rename, trash, and reload", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop document rail interaction");
   await page.goto("/editor");
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   const documents = page.getByRole("complementary", { name: "Documents" });
 
-  await page.getByRole("button", { name: "New document" }).click();
+  await page.getByRole("button", { name: "New document" }).first().click();
   await editor.fill("# First independent draft");
   await expect(page.locator(".markdown-body").getByRole("heading", { name: "First independent draft" })).toBeVisible();
   await expect(documents.getByRole("button", { name: /First independent draft/ })).toBeVisible();
-  await page.getByRole("button", { name: "New document" }).click();
+  await page.getByRole("button", { name: "New document" }).first().click();
   await expect(documents.getByRole("button", { name: /Untitled document/ })).toBeVisible();
 
   await editor.fill("# Second independent draft");
@@ -126,14 +126,14 @@ test("blocked IndexedDB falls back to an actionable session workspace", async ({
   await expect(page.getByRole("main")).toBeVisible();
   await expect(page.getByText("Persistent browser storage is unavailable.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Export backup" })).toBeVisible();
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("# Session-only draft");
   await expect(editor).toContainText("Session-only draft");
 });
 
 test("malformed workspace backups are rejected without replacing local content", async ({ page }) => {
   await page.goto("/editor");
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("# Keep this local draft");
   const malformedDocument = {
     id: "malformed-document",
@@ -190,7 +190,7 @@ test("desktop split persists keyboard resizing and can be reset", async ({ page 
 test("fenced code blocks copy their source and announce success", async ({ page }, testInfo) => {
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/editor");
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("Inline `code` stays inline.\n\n```js\nconst answer = 42;\n```");
   if (testInfo.project.name === "mobile") {
     await page.getByRole("button", { name: "Preview", exact: true }).click();
@@ -214,7 +214,7 @@ test("fenced code blocks announce clipboard failures", async ({ page }, testInfo
     });
   });
   await page.goto("/editor");
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("```text\nCopy me\n```");
   if (testInfo.project.name === "mobile") {
     await page.getByRole("button", { name: "Preview", exact: true }).click();
@@ -255,13 +255,13 @@ test("mobile workspace panes use explicit labels and switch content", async ({ p
   await expect(documents.getByPlaceholder("Search documents")).toBeVisible();
 
   await paneNav.getByRole("button", { name: "Edit", exact: true }).click();
-  await expect(page.locator('.cm-content[contenteditable="true"]:visible')).toBeVisible();
+  await expect(page.locator('.cm-content[contenteditable="true"]:visible').first()).toBeVisible();
 });
 
 test("outline follows rendered headings and focuses the selected target", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop outline interaction");
   await page.goto("/editor");
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill(
     [
       "Document title",
@@ -293,7 +293,7 @@ test("outline follows rendered headings and focuses the selected target", async 
 test("find and replace reports match position and honors search options", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop editor interaction");
   await page.goto("/editor");
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("Alpha alpha alphabet");
   await editor.press(process.platform === "darwin" ? "Meta+f" : "Control+f");
 
@@ -322,7 +322,7 @@ test("share links require explicit consent and preserve existing local drafts", 
   page.on("request", (request) => requestedUrls.push(request.url()));
 
   await page.goto("/editor");
-  const editor = page.locator('.cm-content[contenteditable="true"]:visible');
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("# Shared payload\n\nVisible only in the fragment.");
   await page.getByRole("button", { name: "Export", exact: true }).click();
   await page.getByRole("button", { name: "Create share link" }).click();
