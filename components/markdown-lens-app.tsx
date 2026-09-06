@@ -169,6 +169,7 @@ export function MarkdownLensApp() {
   const [renameTarget, setRenameTarget] = useState<DocumentRecord | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DocumentRecord | null>(null);
+  const [ocrTarget, setOcrTarget] = useState<File | null>(null);
   const [showTrash, setShowTrash] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(true);
   const [outlineOpen, setOutlineOpen] = useState(true);
@@ -201,6 +202,7 @@ export function MarkdownLensApp() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const backupInputRef = useRef<HTMLInputElement>(null);
   const abortControllers = useRef(new Map<string, AbortController>());
+  const ocrResolution = useRef<((useOcr: boolean) => void) | null>(null);
   const editorActions = useRef<{ focus: () => void; openSearch: () => void } | null>(null);
   const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null | undefined>) | null>(null);
   const deferredMarkdown = useDeferredValue(markdown);
@@ -503,7 +505,10 @@ export function MarkdownLensApp() {
       setJobs((current) => [...current, { id, fileName: file.name, file, state: "queued" }]);
       try {
         const isImage = file.type.startsWith("image/");
-        const useOcr = isImage && window.confirm(`Run local English OCR on “${file.name}”? The image never leaves this browser.`);
+        const useOcr = isImage ? await new Promise<boolean>((resolve) => {
+          ocrResolution.current = resolve;
+          setOcrTarget(file);
+        }) : false;
         setJobs((current) => current.map((job) => (job.id === id ? { ...job, state: "running" } : job)));
         const result = await convertLocalFile(
           file,
@@ -1148,6 +1153,7 @@ export function MarkdownLensApp() {
       ) : null}
       {renameTarget ? <RenameDialog value={renameValue} onChange={setRenameValue} onSubmit={() => void submitRename()} onClose={() => setRenameTarget(null)} /> : null}
       {deleteTarget ? <ConfirmDialog title="Delete document permanently?" message={`“${deleteTarget.title}” cannot be recovered after deletion.`} confirmLabel="Delete permanently" onConfirm={() => void confirmDeleteForever()} onClose={() => setDeleteTarget(null)} /> : null}
+      {ocrTarget ? <ConfirmDialog title="Run local OCR?" message={`Run English OCR on “${ocrTarget.name}”? The image stays in this browser and is not uploaded.`} confirmLabel="Run OCR" onConfirm={() => { ocrResolution.current?.(true); ocrResolution.current = null; setOcrTarget(null); }} onClose={() => { ocrResolution.current?.(false); ocrResolution.current = null; setOcrTarget(null); }} /> : null}
     </div>
   );
 }

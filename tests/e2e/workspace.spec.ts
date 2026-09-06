@@ -29,6 +29,29 @@ test("editor toolbar actions expose a visible keyboard focus treatment", async (
   await expect(openButton).toHaveClass(/focus-visible:ring-2/);
 });
 
+test("image imports use an accessible OCR confirmation dialog", async ({ page }) => {
+  await page.goto("/editor");
+  const fileInput = page.getByLabel("Open or convert local documents");
+  const image = {
+    name: "scan.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  };
+
+  await fileInput.setInputFiles(image);
+  const dialog = page.getByRole("alertdialog", { name: "Run local OCR?" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("scan.png");
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+
+  await fileInput.setInputFiles(image);
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Run OCR" }).click();
+  await expect(dialog).toBeHidden();
+});
+
 test("workspace utility controls expose keyboard focus treatment", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop workspace utility control");
   await page.goto("/editor");
