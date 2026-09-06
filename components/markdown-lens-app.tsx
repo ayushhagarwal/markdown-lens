@@ -1484,7 +1484,7 @@ function Notice({
     <div role="status" aria-live="polite" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl">
       <span>{message}</span>
       {actionLabel && actionHref ? (
-        <a href={actionHref} target="_blank" rel="noreferrer" onClick={onClose} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">
+        <a href={actionHref} target="_blank" rel="noreferrer" aria-label={`${actionLabel} (opens in a new tab)`} onClick={onClose} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">
           {actionLabel}
         </a>
       ) : actionLabel && onAction ? (
