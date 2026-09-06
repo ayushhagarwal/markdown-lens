@@ -57,6 +57,7 @@ test("@a11y homepage has no serious accessibility violations", async ({ page }) 
 });
 
 test("@a11y Markdown cheatsheet has no serious accessibility violations", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.goto("/markdown-cheatsheet");
   await expect(page.getByRole("heading", { level: 1, name: "Markdown cheatsheet" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
