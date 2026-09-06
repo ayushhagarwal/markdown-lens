@@ -56,7 +56,7 @@ test("mobile document row actions are visible without hover", async ({ page }, t
     .getByRole("tab", { name: "Files", exact: true })
     .click();
 
-  const documents = page.getByRole("complementary", { name: "Documents" });
+  const documents = page.locator("#workspace-pane-documents");
   const row = documents.getByRole("button", { name: /Untitled document/ }).first().locator("..");
   await expect(row.getByRole("button", { name: "Rename document" })).toBeVisible();
   await expect(row.getByRole("button", { name: "Move to Trash" })).toBeVisible();
@@ -250,7 +250,7 @@ test("mobile workspace panes use explicit labels and switch content", async ({ p
   await expect(paneNav.getByRole("tab", { name: "Outline", exact: true })).toBeVisible();
 
   await paneNav.getByRole("tab", { name: "Files", exact: true }).click();
-  const documents = page.getByRole("complementary", { name: "Documents" });
+  const documents = page.locator("#workspace-pane-documents");
   await expect(documents).toBeVisible();
   await expect(documents.getByPlaceholder("Search documents")).toBeVisible();
 
