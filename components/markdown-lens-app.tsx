@@ -753,7 +753,7 @@ export function MarkdownLensApp() {
             <BrandIcon className="h-6 w-6" priority />
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
-          <TopButton icon={PanelLeft} label="Documents" onClick={() => setDocumentsOpen((open) => !open)} active={documentsOpen} className="hidden md:flex" />
+          <TopButton icon={PanelLeft} label="Documents" onClick={() => setDocumentsOpen((open) => !open)} active={documentsOpen} expanded={documentsOpen} controls="workspace-pane-documents" className="hidden md:flex" />
           <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="sm:hidden" />
           <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="hidden sm:flex" />
           <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} emphasis className="max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
@@ -1003,7 +1003,7 @@ export function MarkdownLensApp() {
           </span>
         </div>
         <div className="relative flex items-center gap-1">
-          <button type="button" onClick={() => setExportOpen((open) => !open)} className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Export <ChevronDown className="h-3.5 w-3.5" />
           </button>
           <div className="hidden h-8 overflow-hidden rounded-md border border-border xl:flex">
@@ -1013,7 +1013,7 @@ export function MarkdownLensApp() {
             <QuickExport label="…" onClick={() => setExportOpen(true)} ariaLabel="More export options" />
           </div>
           {exportOpen ? (
-            <div className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-64 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl">
+            <div role="menu" aria-label="Export options" className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-64 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl">
               <MenuAction icon={Clipboard} label="Copy Markdown" onClick={() => void copyMarkdown()} />
               <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
               <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
@@ -1423,8 +1423,8 @@ function RailHeader({ label, onClose }: { label: string; onClose: () => void }) 
   return <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3"><span className="text-xs font-semibold">{label}</span><IconButton icon={X} label={`Hide ${label}`} onClick={onClose} compact /></header>;
 }
 
-function TopButton({ icon: Icon, label, onClick, emphasis, active, className, compactAtNarrow }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; className?: string; compactAtNarrow?: boolean }) {
-  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
+function TopButton({ icon: Icon, label, onClick, emphasis, active, expanded, controls, className, compactAtNarrow }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; expanded?: boolean; controls?: string; className?: string; compactAtNarrow?: boolean }) {
+  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
 function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: typeof FileText; label: string; onClick: () => void; compact?: boolean; className?: string }) {
@@ -1432,7 +1432,7 @@ function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: 
 }
 
 function MenuAction({ icon: Icon, label, onClick }: { icon: typeof FileText; label: string; onClick: () => void }) {
-  return <button type="button" onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
+  return <button type="button" role="menuitem" onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
