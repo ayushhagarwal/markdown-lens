@@ -770,6 +770,7 @@ export function MarkdownLensApp() {
           <button
             type="button"
             onClick={() => setFormatGuideOpen(true)}
+            aria-haspopup="dialog"
             className="hidden rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline"
           >
             File types
@@ -976,7 +977,7 @@ export function MarkdownLensApp() {
           <div className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
             <div className="flex items-center justify-between">
               <span>{headings.length} heading{headings.length === 1 ? "" : "s"}</span>
-              {activeDocument?.conversion ? <button type="button" onClick={() => setReportOpen(true)} className="font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Conversion report</button> : null}
+              {activeDocument?.conversion ? <button type="button" aria-haspopup="dialog" onClick={() => setReportOpen(true)} className="font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Conversion report</button> : null}
             </div>
           </div>
         </aside>
@@ -1051,7 +1052,7 @@ export function MarkdownLensApp() {
               <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
               <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
               {activeDocument?.assetIds.length ? <MenuAction icon={FileArchive} label="Export Markdown + assets" onClick={() => void exportDocumentBundle()} /> : null}
-              <MenuAction icon={Share2} label="Create share link" onClick={prepareShareLink} />
+              <MenuAction icon={Share2} label="Create share link" hasPopup="dialog" onClick={prepareShareLink} />
               <MenuAction icon={FileArchive} label="Export workspace backup" onClick={() => void downloadWorkspaceBackup()} />
               <MenuAction icon={ArchiveRestore} label="Restore workspace backup" onClick={() => backupInputRef.current?.click()} />
               <MenuAction icon={FileText} label="Print / save PDF" onClick={() => window.print()} />
@@ -1464,8 +1465,8 @@ function IconButton({ icon: Icon, label, onClick, compact, className }: { icon: 
   return <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
 }
 
-function MenuAction({ icon: Icon, label, onClick }: { icon: typeof FileText; label: string; onClick: () => void }) {
-  return <button type="button" role="menuitem" tabIndex={-1} onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
+function MenuAction({ icon: Icon, label, hasPopup, onClick }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void }) {
+  return <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
