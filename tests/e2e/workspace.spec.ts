@@ -193,7 +193,7 @@ test("fenced code blocks copy their source and announce success", async ({ page 
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("Inline `code` stays inline.\n\n```js\nconst answer = 42;\n```");
   if (testInfo.project.name === "mobile") {
-    await page.getByRole("button", { name: "Preview", exact: true }).click();
+    await page.getByRole("tab", { name: "Preview", exact: true }).click();
   }
 
   const copyButton = page.getByRole("button", { name: "Copy code block" });
@@ -217,7 +217,7 @@ test("fenced code blocks announce clipboard failures", async ({ page }, testInfo
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("```text\nCopy me\n```");
   if (testInfo.project.name === "mobile") {
-    await page.getByRole("button", { name: "Preview", exact: true }).click();
+    await page.getByRole("tab", { name: "Preview", exact: true }).click();
   }
   await page.getByRole("button", { name: "Copy code block" }).click();
 
