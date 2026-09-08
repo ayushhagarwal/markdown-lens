@@ -8,6 +8,9 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Open workspace" }).first()).toHaveAttribute("href", "/editor");
   await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" }).first()).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveClass(/focus-visible:ring-2/);
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "If it helped, star the source (opens in a new tab)" })).toBeVisible();
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Report a bug (opens in a new tab)" })).toBeVisible();
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "Request a feature (opens in a new tab)" })).toBeVisible();
   const pdfLink = page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "PDF" });
   await expect(pdfLink).toHaveAttribute("href", "/pdf-to-markdown");
   await pdfLink.focus();

@@ -32,13 +32,13 @@ export function SiteFooter() {
         </nav>
         <p className="text-muted-foreground">
           Built locally. Shared openly.{" "}
-          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" className={footerLinkClassName}>
+          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" aria-label="If it helped, star the source (opens in a new tab)" className={footerLinkClassName}>
             If it helped, star the source.
           </a>
           <span aria-hidden="true">{" "}·{" "}</span>
-          <a href={`${siteConfig.githubUrl}/issues/new?template=bug_report.yml`} target="_blank" rel="noreferrer" className={footerLinkClassName}>Report a bug</a>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=bug_report.yml`} target="_blank" rel="noreferrer" aria-label="Report a bug (opens in a new tab)" className={footerLinkClassName}>Report a bug</a>
           <span aria-hidden="true">{" "}·{" "}</span>
-          <a href={`${siteConfig.githubUrl}/issues/new?template=feature_request.yml`} target="_blank" rel="noreferrer" className={footerLinkClassName}>Request a feature</a>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=feature_request.yml`} target="_blank" rel="noreferrer" aria-label="Request a feature (opens in a new tab)" className={footerLinkClassName}>Request a feature</a>
         </p>
       </div>
     </footer>
