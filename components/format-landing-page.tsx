@@ -66,7 +66,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link href="/editor" className="btn-primary">
                 Open or convert {config.extensions}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </Link>
               <Link href="/supported-formats" className="btn-secondary">Compare formats</Link>
             </div>
@@ -80,7 +80,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
 
         <section className="border-y border-border bg-surface">
           <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
-            <div><h2 className="text-3xl font-semibold tracking-tight">What the converter preserves</h2><ul className="mt-7 space-y-4">{config.preserves.map((item) => <li key={item} className="flex items-start gap-3 text-sm leading-6"><Check className="mt-1 h-4 w-4 shrink-0 text-accent" />{item}</li>)}</ul></div>
+            <div><h2 className="text-3xl font-semibold tracking-tight">What the converter preserves</h2><ul className="mt-7 space-y-4">{config.preserves.map((item) => <li key={item} className="flex items-start gap-3 text-sm leading-6"><Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-accent" />{item}</li>)}</ul></div>
             <div><h2 className="text-3xl font-semibold tracking-tight">Limitations to review</h2><p className="mt-4 text-sm leading-6 text-muted-foreground">Markdown represents document structure, not every visual layout detail.</p><ul className="mt-6 divide-y divide-border border-y border-border">{config.limitations.map((item) => <li key={item} className="py-4 text-sm leading-6 text-muted-foreground">{item}</li>)}</ul></div>
           </div>
         </section>
@@ -125,7 +125,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
                 <Link key={item.href} href={item.href} className="group rounded-xl border border-background/15 bg-background/5 p-5 transition hover:border-background/30 hover:bg-background/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   <span className="flex items-center justify-between gap-3 font-semibold">
                     {item.title}
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                    <ArrowRight aria-hidden="true" className="h-4 w-4 transition group-hover:translate-x-1" />
                   </span>
                   <span className="mt-2 block text-sm leading-6 text-background/65">{item.description}</span>
                 </Link>

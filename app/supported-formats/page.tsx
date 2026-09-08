@@ -56,7 +56,7 @@ export default function SupportedFormatsPage() {
                       <Link href={href} className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{format}</Link>
                     </td>
                     <td className="px-4 py-4 font-mono text-xs text-accent">{extensions}</td>
-                    <td className="px-4 py-4"><span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-accent" />{workflow}</span></td>
+                    <td className="px-4 py-4"><span className="inline-flex items-center gap-2"><Check aria-hidden="true" className="h-4 w-4 text-accent" />{workflow}</span></td>
                     <td className="px-4 py-4 text-muted-foreground">{limitation}</td>
                   </tr>
                 ))}
@@ -65,9 +65,9 @@ export default function SupportedFormatsPage() {
           </div>
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             <div className="border border-border bg-panel p-6"><h2 className="text-xl font-semibold">Designed for review</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">Every conversion opens in the editable workspace with a rendered preview, document outline, warnings, statistics, and asset-aware export.</p></div>
-            <div className="border border-border bg-panel p-6"><h2 className="flex items-center gap-2 text-xl font-semibold"><CircleAlert className="h-5 w-5 text-accent" />Legacy formats</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">Binary DOC, PPT, and XLS files require export to DOCX, PPTX, or XLSX. This avoids unsafe or abandoned parsing dependencies.</p></div>
+            <div className="border border-border bg-panel p-6"><h2 className="flex items-center gap-2 text-xl font-semibold"><CircleAlert aria-hidden="true" className="h-5 w-5 text-accent" />Legacy formats</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">Binary DOC, PPT, and XLS files require export to DOCX, PPTX, or XLSX. This avoids unsafe or abandoned parsing dependencies.</p></div>
           </div>
-          <Link href="/editor" className="btn-primary mt-10">Open the workspace <ArrowRight className="h-4 w-4" /></Link>
+          <Link href="/editor" className="btn-primary mt-10">Open the workspace <ArrowRight aria-hidden="true" className="h-4 w-4" /></Link>
         </section>
       </main>
       <SiteFooter />
