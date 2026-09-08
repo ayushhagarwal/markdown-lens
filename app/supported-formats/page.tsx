@@ -35,7 +35,7 @@ export default function SupportedFormatsPage() {
         <section className="mx-auto w-full max-w-5xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <h1 className="text-balance text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">Supported Markdown and document formats</h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-muted-foreground">Markdown Lens opens, converts, edits, and exports common technical-document formats entirely in your browser. This matrix distinguishes direct support from structural conversion and clearly identifies content that needs review.</p>
-          <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole className="h-4 w-4 text-accent" />No account, analytics, or document upload.</p>
+          <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole aria-hidden="true" className="h-4 w-4 text-accent" />No account, analytics, or document upload.</p>
           <ul className="mt-10 grid gap-4 md:hidden" role="list" aria-label="Supported formats">
             {formats.map(([format, extensions, workflow, limitation, href]) => (
               <li key={format} className="border border-border bg-panel p-5">
