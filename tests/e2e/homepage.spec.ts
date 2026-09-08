@@ -36,7 +36,9 @@ test("primary navigation identifies the current page", async ({ page }, testInfo
 });
 
 test("not-found recovery links expose keyboard focus", async ({ page }) => {
-  await page.goto("/this-page-does-not-exist");
+  const response = await page.goto("/this-page-does-not-exist");
+  expect(response?.status()).toBe(404);
+  await expect(page.locator('meta[name="robots"][content="noindex, follow"]')).toHaveCount(1);
   const converter = page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "PDF" });
   await converter.focus();
   await expect(converter).toHaveClass(/focus-visible:ring-2/);
