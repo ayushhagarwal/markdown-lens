@@ -35,6 +35,13 @@ test("primary navigation identifies the current page", async ({ page }, testInfo
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "PDF" })).toHaveAttribute("aria-current", "page");
 });
 
+test("format-page breadcrumbs expose keyboard focus", async ({ page }) => {
+  await page.goto("/pdf-to-markdown");
+  const home = page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Home" });
+  await home.focus();
+  await expect(home).toHaveClass(/focus-visible:ring-2/);
+});
+
 test("not-found recovery links expose keyboard focus", async ({ page }) => {
   const response = await page.goto("/this-page-does-not-exist");
   expect(response?.status()).toBe(404);
