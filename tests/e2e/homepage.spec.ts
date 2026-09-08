@@ -42,6 +42,13 @@ test("format-page breadcrumbs expose keyboard focus", async ({ page }) => {
   await expect(home).toHaveClass(/focus-visible:ring-2/);
 });
 
+test("supported formats links expose keyboard focus", async ({ page }) => {
+  await page.goto("/supported-formats");
+  const format = page.getByRole("link", { name: "PDF" }).first();
+  await format.focus();
+  await expect(format).toHaveClass(/focus-visible:ring-2/);
+});
+
 test("not-found recovery links expose keyboard focus", async ({ page }) => {
   const response = await page.goto("/this-page-does-not-exist");
   expect(response?.status()).toBe(404);
