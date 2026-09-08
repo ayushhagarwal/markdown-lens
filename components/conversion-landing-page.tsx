@@ -111,7 +111,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
       <SiteHeader />
       <main id="main">
         <nav className="mx-auto w-full max-w-7xl px-4 pt-6 text-sm text-muted-foreground sm:px-6 lg:px-8" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-foreground">Home</Link><span className="mx-2" aria-hidden="true">/</span><span aria-current="page">{config.title}</span>
+          <Link href="/" className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">Home</Link><span className="mx-2" aria-hidden="true">/</span><span aria-current="page">{config.title}</span>
         </nav>
         <section className="mx-auto grid w-full max-w-7xl gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:px-8 lg:py-24">
           <div className="max-w-2xl">
@@ -319,7 +319,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="group rounded-xl border border-background/15 bg-background/5 p-5 transition hover:border-background/30 hover:bg-background/10"
+                  className="group rounded-xl border border-background/15 bg-background/5 p-5 transition hover:border-background/30 hover:bg-background/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <span className="flex items-center justify-between gap-3 font-semibold">
                     {item.title}
