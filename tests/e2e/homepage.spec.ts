@@ -8,7 +8,10 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Open workspace" }).first()).toHaveAttribute("href", "/editor");
   await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" }).first()).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveClass(/focus-visible:ring-2/);
-  await expect(page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "PDF" })).toHaveAttribute("href", "/pdf-to-markdown");
+  const pdfLink = page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "PDF" });
+  await expect(pdfLink).toHaveAttribute("href", "/pdf-to-markdown");
+  await pdfLink.focus();
+  await expect(pdfLink).toHaveClass(/focus-visible:ring-2/);
   await expect(page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "Word" })).toHaveAttribute("href", "/word-to-markdown");
   await expect(page.getByText("Quick answers")).toHaveCount(0);
 

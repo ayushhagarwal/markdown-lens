@@ -40,11 +40,11 @@ export function Homepage() {
             </div>
             <nav className="mt-8 flex max-w-[520px] flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground" aria-label="Popular converters">
               {converterLinks.slice(0, 6).map((link) => (
-                <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+                <Link key={link.href} href={link.href} className="rounded-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                   {link.label}
                 </Link>
               ))}
-              <Link href="/supported-formats" className="transition hover:text-foreground">More formats</Link>
+              <Link href="/supported-formats" className="rounded-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">More formats</Link>
             </nav>
             <p className="mt-9 text-sm tracking-[-0.01em] text-muted-foreground">
               Local processing <span aria-hidden>·</span> No account <span aria-hidden>·</span> Open source

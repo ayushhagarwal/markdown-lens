@@ -30,7 +30,7 @@ export function ConversionWorkflow() {
           <p className="mt-6 text-base text-muted-foreground sm:text-lg">Open a file, review what changed, then export clean Markdown.</p>
           <div className="mt-7 flex flex-wrap justify-center gap-x-3 gap-y-2 text-sm tracking-wide text-muted-foreground">
             {converterLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+              <Link key={link.href} href={link.href} className="rounded-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 {link.label}
               </Link>
             ))}
