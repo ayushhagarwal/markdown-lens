@@ -39,7 +39,7 @@ export default function SupportedFormatsPage() {
           <ul className="mt-10 grid gap-4 md:hidden" role="list" aria-label="Supported formats">
             {formats.map(([format, extensions, workflow, limitation, href]) => (
               <li key={format} className="border border-border bg-panel p-5">
-                <Link href={href} className="font-medium underline-offset-4 hover:underline">{format}</Link>
+                <Link href={href} className="rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{format}</Link>
                 <p className="mt-2 font-mono text-xs text-accent">{extensions}</p>
                 <p className="mt-3 flex items-center gap-2 text-sm"><Check className="h-4 w-4 shrink-0 text-accent" aria-hidden />{workflow}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{limitation}</p>
@@ -53,7 +53,7 @@ export default function SupportedFormatsPage() {
                 {formats.map(([format, extensions, workflow, limitation, href]) => (
                   <tr key={format} className="border-b border-border last:border-0">
                     <td className="px-4 py-4 font-medium">
-                      <Link href={href} className="underline-offset-4 hover:underline">{format}</Link>
+                      <Link href={href} className="rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{format}</Link>
                     </td>
                     <td className="px-4 py-4 font-mono text-xs text-accent">{extensions}</td>
                     <td className="px-4 py-4"><span className="inline-flex items-center gap-2"><Check className="h-4 w-4 text-accent" />{workflow}</span></td>
