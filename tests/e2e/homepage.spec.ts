@@ -44,7 +44,7 @@ test("format-page breadcrumbs expose keyboard focus", async ({ page }) => {
 
 test("supported formats links expose keyboard focus", async ({ page }) => {
   await page.goto("/supported-formats");
-  const format = page.getByRole("link", { name: "PDF" }).first();
+  const format = page.getByRole("link", { name: "PDF", exact: true }).first();
   await format.focus();
   await expect(format).toHaveClass(/focus-visible:ring-2/);
 });
