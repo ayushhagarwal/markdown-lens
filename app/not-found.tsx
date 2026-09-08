@@ -1,11 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { converterLinks } from "@/lib/site";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Page not found",
   description: "The requested Markdown Lens page could not be found.",
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default function NotFound() {
