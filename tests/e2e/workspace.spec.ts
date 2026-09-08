@@ -153,6 +153,10 @@ test("mobile document row actions are visible without hover", async ({ page }, t
 
 test("documents persist independently across immediate switches, rename, trash, and reload", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop document rail interaction");
+  await page.addInitScript(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
   await page.goto("/editor");
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   const documents = page.getByRole("complementary", { name: "Documents" });
