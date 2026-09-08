@@ -27,7 +27,7 @@ export default function NotFound() {
         </div>
         <nav className="mt-10 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground" aria-label="Popular converters">
           {converterLinks.slice(0, 6).map((link) => (
-            <Link key={link.href} href={link.href} className="transition hover:text-foreground">
+            <Link key={link.href} href={link.href} className="rounded-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
               {link.label}
             </Link>
           ))}

@@ -35,6 +35,13 @@ test("primary navigation identifies the current page", async ({ page }, testInfo
   await expect(page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: "PDF" })).toHaveAttribute("aria-current", "page");
 });
 
+test("not-found recovery links expose keyboard focus", async ({ page }) => {
+  await page.goto("/this-page-does-not-exist");
+  const converter = page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "PDF" });
+  await converter.focus();
+  await expect(converter).toHaveClass(/focus-visible:ring-2/);
+});
+
 test("homepage follows system color scheme and preserves a saved light preference", async ({ browser }) => {
   const darkContext = await browser.newContext({ colorScheme: "dark" });
   const darkPage = await darkContext.newPage();
