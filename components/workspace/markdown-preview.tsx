@@ -328,7 +328,7 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
       </div>
     );
   }
-  return <div className="not-prose my-5 overflow-auto border border-border bg-white p-4 dark:bg-slate-950" dangerouslySetInnerHTML={{ __html: state.svg ?? "" }} />;
+  return <div role="img" aria-label="Mermaid diagram" className="not-prose my-5 overflow-auto border border-border bg-white p-4 dark:bg-slate-950" dangerouslySetInnerHTML={{ __html: state.svg ?? "" }} />;
 }
 
 function enqueueMermaidRender<T>(task: () => Promise<T>) {

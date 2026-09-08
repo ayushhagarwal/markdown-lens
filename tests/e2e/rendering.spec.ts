@@ -39,6 +39,7 @@ test("major Markdown syntax renders with semantic output", async ({ page }, test
   await expect(preview.locator("code").filter({ hasText: "const answer = 42" })).toBeVisible();
   await expect(preview.locator("pre .hljs")).toContainText("const answer: number = 42;");
   await expect(preview.locator(".katex")).toBeVisible();
+  await expect(preview.getByRole("img", { name: "Mermaid diagram" })).toBeVisible();
   await expect(preview.locator("svg").last()).toBeVisible();
   expect(consoleErrors).toEqual([]);
 });
