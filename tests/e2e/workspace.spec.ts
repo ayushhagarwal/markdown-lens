@@ -28,6 +28,9 @@ test("preview keeps internal links in context and external links safe", async ({
   await page.getByRole("button", { name: "New document" }).first().click();
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await editor.fill("[Jump to section](#section)\n\n[External docs](https://example.com/docs)\n\n## Section");
+  if (testInfo.project.name === "mobile") {
+    await page.getByRole("tab", { name: "Preview", exact: true }).click();
+  }
   const preview = page.locator(".markdown-body");
   const internal = preview.getByRole("link", { name: "Jump to section" });
   const external = preview.getByRole("link", { name: /External docs/ });
