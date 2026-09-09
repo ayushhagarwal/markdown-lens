@@ -70,10 +70,10 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
               </Link>
               <Link href="/supported-formats" className="btn-secondary">Compare formats</Link>
             </div>
-            <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole className="h-4 w-4 text-accent" />Local browser processing. No document upload.</p>
+            <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole aria-hidden="true" className="h-4 w-4 text-accent" />Local browser processing. No document upload.</p>
           </div>
           <div className="border border-border bg-panel p-6 sm:p-8">
-            <div className="flex items-center gap-3 border-b border-border pb-5"><FileUp className="h-5 w-5 text-accent" /><div><p className="font-semibold">Open or convert</p><p className="text-sm text-muted-foreground">{config.extensions}</p></div></div>
+            <div className="flex items-center gap-3 border-b border-border pb-5"><FileUp aria-hidden="true" className="h-5 w-5 text-accent" /><div><p className="font-semibold">Open or convert</p><p className="text-sm text-muted-foreground">{config.extensions}</p></div></div>
             <ol className="mt-6 space-y-5">{config.steps.map((step, index) => <li key={step} className="flex gap-4 text-sm leading-6"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">{index + 1}</span><span>{step}</span></li>)}</ol>
           </div>
         </section>
