@@ -23,7 +23,7 @@ test("preview blocks executable link and image URLs", async ({ page }) => {
   await expect(preview.locator('img[src^="javascript:"]')).toHaveCount(0);
 });
 
-test("preview labels blocked remote images and offers explicit loading", async ({ page }) => {
+test("preview labels blocked remote images and offers explicit loading", async ({ page }, testInfo) => {
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
