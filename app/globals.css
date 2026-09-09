@@ -42,7 +42,7 @@ html {
 
 body {
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   background: hsl(var(--background));
   font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
   text-rendering: optimizeLegibility;
