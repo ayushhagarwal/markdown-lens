@@ -93,6 +93,29 @@ test("@a11y Markdown cheatsheet has no accessibility violations", async ({ page 
   expect(results.violations).toEqual([]);
 });
 
+test("@a11y public converter pages have no accessibility violations", async ({ page }) => {
+  test.setTimeout(120_000);
+  for (const path of [
+    "/supported-formats",
+    "/pdf-to-markdown",
+    "/word-to-markdown",
+    "/pptx-to-markdown",
+    "/excel-to-markdown",
+    "/html-to-markdown",
+    "/csv-to-markdown",
+    "/json-to-markdown",
+    "/xml-to-markdown",
+    "/epub-to-markdown",
+    "/image-to-markdown",
+    "/zip-to-markdown",
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations, path).toEqual([]);
+  }
+});
+
 test("supported formats uses cards on small screens and a table from md up", async ({ page }, testInfo) => {
   await page.goto("/supported-formats");
   await expect(page.getByRole("heading", { level: 1, name: "Supported Markdown and document formats" })).toBeVisible();
