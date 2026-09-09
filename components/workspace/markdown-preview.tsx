@@ -155,6 +155,7 @@ function SafeMarkdownImage({
   ...props
 }: ComponentPropsWithoutRef<"img"> & { assetUrls: Record<string, string> }) {
   const [loadedRemote, setLoadedRemote] = useState<string | null>(null);
+  const [failedRemote, setFailedRemote] = useState<string | null>(null);
   const localAsset =
     typeof src === "string" && src.startsWith("assets/")
       ? assetUrls[src.slice("assets/".length)]
@@ -173,25 +174,34 @@ function SafeMarkdownImage({
         alt={alt}
         loading="lazy"
         referrerPolicy="no-referrer"
+        onError={() => {
+          setLoadedRemote(null);
+          setFailedRemote(remoteUrl);
+        }}
       />
     );
   }
 
   if (remoteUrl) {
+    const hostname = new URL(remoteUrl).hostname;
+    const failed = failedRemote === remoteUrl;
     return (
-      <span role="group" aria-label={`Remote image blocked from ${new URL(remoteUrl).hostname}`} className="not-prose my-3 inline-flex max-w-full items-center gap-3 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+      <span role={failed ? "status" : "group"} aria-live={failed ? "polite" : undefined} aria-label={failed ? `Remote image could not be loaded from ${hostname}` : `Remote image blocked from ${hostname}`} className="not-prose my-3 inline-flex max-w-full items-center gap-3 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
         <ImageOff className="h-4 w-4 shrink-0" aria-hidden />
         <span className="min-w-0">
-          Remote image blocked from{" "}
-          <span className="font-medium text-foreground">{new URL(remoteUrl).hostname}</span>
+          {failed ? "Remote image could not be loaded from " : "Remote image blocked from "}
+          <span className="font-medium text-foreground">{hostname}</span>
           {alt ? ` (${alt})` : ""}
         </span>
         <button
           type="button"
-          onClick={() => setLoadedRemote(remoteUrl)}
+          onClick={() => {
+            setFailedRemote(null);
+            setLoadedRemote(remoteUrl);
+          }}
           className="shrink-0 rounded-md border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          Load image
+          {failed ? "Retry image" : "Load image"}
         </button>
       </span>
     );

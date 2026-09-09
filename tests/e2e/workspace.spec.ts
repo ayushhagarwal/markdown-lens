@@ -36,6 +36,20 @@ test("preview labels blocked remote images and offers explicit loading", async (
   await expect(imageGroup.getByRole("button", { name: "Load image" })).toBeVisible();
 });
 
+test("preview reports failed remote-image loads with retry", async ({ page }, testInfo) => {
+  await page.route("https://images.example.com/failed.png", (route) => route.fulfill({ status: 503, contentType: "image/png", body: "" }));
+  await page.goto("/editor");
+  await page.getByRole("button", { name: "New document" }).first().click();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await editor.fill("![Unavailable image](https://images.example.com/failed.png)");
+  if (testInfo.project.name === "mobile") await page.getByRole("tab", { name: "Preview", exact: true }).click();
+  const imageGroup = page.getByRole("group", { name: "Remote image blocked from images.example.com" });
+  await imageGroup.getByRole("button", { name: "Load image" }).click();
+  const failure = page.getByRole("status", { name: "Remote image could not be loaded from images.example.com" });
+  await expect(failure).toBeVisible();
+  await expect(failure.getByRole("button", { name: "Retry image" })).toBeVisible();
+});
+
 test("preview keeps internal links in context and external links safe", async ({ page }, testInfo) => {
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
