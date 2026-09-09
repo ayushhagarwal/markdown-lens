@@ -193,6 +193,7 @@ test("documents persist independently across immediate switches, rename, trash, 
   await expect(documents.getByRole("button", { name: /Untitled document/ })).toBeVisible();
   await editor.fill("# First independent draft");
   await expect(page.locator(".markdown-body").getByRole("heading", { name: "First independent draft" })).toBeVisible();
+  await expect(page.getByText("Saved locally", { exact: true })).toBeVisible({ timeout: 15_000 });
   await expect(documents.getByRole("button", { name: /First independent draft/ })).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "New document" }).first().click();
   await expect(documents.getByRole("button", { name: /Untitled document/ })).toBeVisible();
