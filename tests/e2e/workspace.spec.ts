@@ -12,6 +12,17 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   await expect(page.getByLabel("Markdown editor").first()).toBeVisible();
 });
 
+test("preview blocks executable link and image URLs", async ({ page }) => {
+  await page.goto("/editor");
+  await page.getByRole("button", { name: "New document" }).first().click();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await editor.fill("[unsafe link](javascript:alert(1))\n\n![unsafe image](javascript:alert(2))");
+  const preview = page.locator(".markdown-body");
+  await expect(preview).toContainText("unsafe link");
+  await expect(preview.locator('a[href^="javascript:"]')).toHaveCount(0);
+  await expect(preview.locator('img[src^="javascript:"]')).toHaveCount(0);
+});
+
 test("editor header shows File types control on desktop", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop lg viewport control");
   await page.goto("/editor");
