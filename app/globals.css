@@ -249,6 +249,11 @@ kbd {
   .home-workflow-stage { opacity: 1; transform: none; }
 }
 
+textarea,
+section {
+  scrollbar-color: hsl(var(--muted-foreground) / 0.32) transparent;
+}
+
 textarea::-webkit-scrollbar,
 .markdown-body::-webkit-scrollbar,
 section ::-webkit-scrollbar {
