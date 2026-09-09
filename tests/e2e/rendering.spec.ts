@@ -34,7 +34,7 @@ test("major Markdown syntax renders with semantic output", async ({ page }, test
   const externalLink = preview.getByRole("link", { name: "Safe external link (opens in a new tab)" });
   await expect(externalLink).toHaveAttribute("href", "https://example.com/docs");
   await expect(externalLink).toHaveAttribute("target", "_blank");
-  await expect(externalLink).toHaveAttribute("rel", "noreferrer");
+  await expect(externalLink).toHaveAttribute("rel", "noopener noreferrer");
 
   await expect(preview.locator("code").filter({ hasText: "const answer = 42" })).toBeVisible();
   await expect(preview.locator("pre .hljs")).toContainText("const answer: number = 42;");
