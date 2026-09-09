@@ -812,7 +812,7 @@ export function MarkdownLensApp() {
         </div>
         <div className="flex items-center gap-1">
           <span className={cn("hidden items-center gap-1.5 px-2 text-xs md:flex", saveState === "error" || workspaceStorage.mode === "memory" ? "text-amber-400" : "text-muted-foreground")}>
-            {saveState === "saving" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saveState === "error" || workspaceStorage.mode === "memory" ? <HardDrive className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5 text-accent" />}
+            {saveState === "saving" ? <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> : saveState === "error" || workspaceStorage.mode === "memory" ? <HardDrive aria-hidden="true" className="h-3.5 w-3.5" /> : <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-accent" />}
             {saveState === "saving" ? "Saving…" : saveState === "error" ? "Save failed" : workspaceStorage.mode === "memory" ? "Session only" : "Saved locally"}
           </span>
           {!online ? <span role="status" aria-live="polite" aria-label="Offline. Changes remain on this device." className="px-1.5 text-[11px] text-amber-400 sm:px-2 sm:text-xs">Offline</span> : null}
@@ -1022,7 +1022,7 @@ export function MarkdownLensApp() {
       <footer className="flex h-11 shrink-0 items-center justify-between gap-2 border-t border-border bg-background px-3 text-[11px] text-muted-foreground">
         <div className="flex min-w-0 items-center gap-3">
           {!documentsOpen ? <IconButton icon={ChevronRight} label="Show Documents" onClick={() => setDocumentsOpen(true)} compact /> : null}
-          <span className="hidden items-center gap-1.5 2xl:flex"><ShieldCheck className="h-3.5 w-3.5 text-accent" />All documents stay on this device.</span>
+          <span className="hidden items-center gap-1.5 2xl:flex"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-accent" />All documents stay on this device.</span>
           <span>Ln {cursor.line}, Col {cursor.column}</span>
           <span className="hidden sm:inline">UTF-8</span>
           <span className="hidden md:inline">Markdown</span>
@@ -1551,7 +1551,7 @@ function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: ()
 }
 
 function PanelLoading({ label }: { label: string }) {
-  return <div className="flex h-full items-center justify-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />{label}</div>;
+  return <div className="flex h-full items-center justify-center gap-2 text-xs text-muted-foreground"><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />{label}</div>;
 }
 
 function relativeTime(timestamp: number) {

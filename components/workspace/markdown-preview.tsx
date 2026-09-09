@@ -316,7 +316,7 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
   if (state.status === "loading") {
     return (
       <div className="not-prose my-5 flex items-center gap-2 border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-        <Loader2 className="h-4 w-4 animate-spin" /> Rendering Mermaid diagram
+        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> Rendering Mermaid diagram
       </div>
     );
   }
