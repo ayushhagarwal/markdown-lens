@@ -179,7 +179,7 @@ function SafeMarkdownImage({
 
   if (remoteUrl) {
     return (
-      <span className="not-prose my-3 inline-flex max-w-full items-center gap-3 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+      <span role="group" aria-label={`Remote image blocked from ${new URL(remoteUrl).hostname}`} className="not-prose my-3 inline-flex max-w-full items-center gap-3 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
         <ImageOff className="h-4 w-4 shrink-0" aria-hidden />
         <span className="min-w-0">
           Remote image blocked from{" "}
@@ -198,7 +198,7 @@ function SafeMarkdownImage({
   }
 
   return (
-    <span className="not-prose my-3 inline-flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
+    <span role="status" aria-live="polite" className="not-prose my-3 inline-flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
       <ImageOff className="h-4 w-4" aria-hidden />
       Image source blocked{alt ? ` (${alt})` : ""}
     </span>

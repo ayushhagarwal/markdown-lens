@@ -23,6 +23,19 @@ test("preview blocks executable link and image URLs", async ({ page }) => {
   await expect(preview.locator('img[src^="javascript:"]')).toHaveCount(0);
 });
 
+test("preview labels blocked remote images and offers explicit loading", async ({ page }) => {
+  await page.goto("/editor");
+  await page.getByRole("button", { name: "New document" }).first().click();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await editor.fill("![Remote diagram](https://images.example.com/diagram.png)");
+  if (testInfo.project.name === "mobile") {
+    await page.getByRole("tab", { name: "Preview", exact: true }).click();
+  }
+  const imageGroup = page.getByRole("group", { name: "Remote image blocked from images.example.com" });
+  await expect(imageGroup).toBeVisible();
+  await expect(imageGroup.getByRole("button", { name: "Load image" })).toBeVisible();
+});
+
 test("preview keeps internal links in context and external links safe", async ({ page }, testInfo) => {
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
