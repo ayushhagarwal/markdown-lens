@@ -124,7 +124,7 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
       },
       a(props) {
         const href = typeof props.href === "string" ? props.href : "";
-        const opensExternally = /^https?:\/\//i.test(href);
+        const opensExternally = /^(?:https?:)?\/\//i.test(href);
         return (
           <a {...props} target={opensExternally ? "_blank" : undefined} rel={opensExternally ? "noopener noreferrer" : undefined}>
             {props.children}
