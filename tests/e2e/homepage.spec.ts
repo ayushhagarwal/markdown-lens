@@ -79,18 +79,18 @@ test("homepage follows system color scheme and preserves a saved light preferenc
   await savedContext.close();
 });
 
-test("@a11y homepage has no serious accessibility violations", async ({ page }) => {
+test("@a11y homepage has no accessibility violations", async ({ page }) => {
   await page.goto("/");
   const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+  expect(results.violations).toEqual([]);
 });
 
-test("@a11y Markdown cheatsheet has no serious accessibility violations", async ({ page }) => {
+test("@a11y Markdown cheatsheet has no accessibility violations", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/markdown-cheatsheet");
   await expect(page.getByRole("heading", { level: 1, name: "Markdown cheatsheet" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
-  expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+  expect(results.violations).toEqual([]);
 });
 
 test("supported formats uses cards on small screens and a table from md up", async ({ page }, testInfo) => {

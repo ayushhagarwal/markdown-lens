@@ -319,11 +319,11 @@ test("fenced code blocks announce clipboard failures", async ({ page }, testInfo
   await expect(page.getByRole("button", { name: "Copy code block" })).toContainText("Copy failed");
 });
 
-test("@a11y editor has no serious accessibility violations", async ({ page }) => {
+test("@a11y editor has no accessibility violations", async ({ page }) => {
   await page.goto("/editor");
   await expect(page.getByRole("main")).toBeVisible();
   const results = await new AxeBuilder({ page }).exclude(".cm-content").analyze();
-  expect(results.violations.filter((violation) => ["serious", "critical"].includes(violation.impact ?? ""))).toEqual([]);
+  expect(results.violations).toEqual([]);
 });
 
 test("mobile switches between editor and preview", async ({ page }, testInfo) => {
