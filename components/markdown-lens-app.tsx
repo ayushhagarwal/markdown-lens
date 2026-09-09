@@ -762,6 +762,7 @@ export function MarkdownLensApp() {
       }}
     >
       <ServiceWorkerRegister onUpdate={(applyUpdate) => setApplyServiceWorkerUpdate(() => applyUpdate)} />
+      <section aria-label="File import controls" className="sr-only">
       <input
         ref={fileInputRef}
         type="file"
@@ -787,6 +788,7 @@ export function MarkdownLensApp() {
           if (file) void restoreWorkspace(file);
         }}
       />
+      </section>
 
       <header className="flex h-[54px] shrink-0 items-center justify-between overflow-hidden border-b border-border bg-panel px-3 shadow-sm">
         <a href="#main" className="sr-only left-4 top-4 z-[100] rounded-md bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus-visible:not-sr-only focus-visible:fixed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
