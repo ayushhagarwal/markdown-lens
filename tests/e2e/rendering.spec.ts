@@ -57,6 +57,11 @@ test("malformed Mermaid keeps the preview usable with an explicit fallback", asy
 
 test("remote Markdown images require explicit per-image consent", async ({ page }, testInfo) => {
   const requestedUrls: string[] = [];
+  await page.route("https://attacker.invalid/pixel.png", (route) => route.fulfill({
+    status: 200,
+    contentType: "image/png",
+    body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=", "base64"),
+  }));
   page.on("request", (request) => {
     if (request.url().includes("attacker.invalid")) requestedUrls.push(request.url());
   });
