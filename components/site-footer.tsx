@@ -17,9 +17,9 @@ export function SiteFooter() {
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-muted-foreground" aria-label="Footer navigation">
             <Link href="/supported-formats" className={footerLinkClassName}>Formats</Link>
             <Link href="/markdown-cheatsheet" className={footerLinkClassName}>Guide</Link>
-            <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} className={footerLinkClassName}>Changelog</a>
-            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} className={footerLinkClassName}>Contribute</a>
-            <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} className={footerLinkClassName}>Security</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} target="_blank" rel="noreferrer" aria-label="Read the changelog on GitHub (opens in a new tab)" className={footerLinkClassName}>Changelog</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer" aria-label="Read contributing guidelines on GitHub (opens in a new tab)" className={footerLinkClassName}>Contribute</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} target="_blank" rel="noreferrer" aria-label="Read security policy on GitHub (opens in a new tab)" className={footerLinkClassName}>Security</a>
             <GithubStarLink variant="text" className={footerLinkClassName}>Star</GithubStarLink>
           </nav>
         </div>
