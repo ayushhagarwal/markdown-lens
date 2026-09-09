@@ -933,6 +933,7 @@ export function MarkdownLensApp() {
         </aside>
 
         <main id="main" ref={centralRef} className={cn("min-w-0 flex-1", mobilePane === "documents" || mobilePane === "outline" ? "hidden lg:block" : "block")}>
+          <h1 className="sr-only">Markdown editor workspace</h1>
           <div
             className="hidden h-full min-h-0 lg:grid"
             style={{ gridTemplateColumns: `${splitRatio}fr 7px ${100 - splitRatio}fr` }}
