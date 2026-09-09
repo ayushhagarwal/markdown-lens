@@ -1367,7 +1367,7 @@ function ConversionReportDialog({ document, onClose }: { document: DocumentRecor
         <p className="mt-5 text-xs leading-5 text-muted-foreground">Document conversion is structural rather than visually lossless. Review complex tables, columns, diagrams, and embedded media before publishing.</p>
         <p className="mt-3 text-xs leading-5 text-muted-foreground">
           Source is public if you want to{" "}
-          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" aria-label="Inspect or star Markdown Lens on GitHub (opens in a new tab)" className="rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Inspect or star Markdown Lens on GitHub (opens in a new tab)" className="rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             inspect or star it
           </a>
           .
@@ -1484,7 +1484,7 @@ function Notice({
     <div role="status" aria-live="polite" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl">
       <span>{message}</span>
       {actionLabel && actionHref ? (
-        <a href={actionHref} target="_blank" rel="noreferrer" aria-label={`${actionLabel} (opens in a new tab)`} onClick={onClose} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">
+        <a href={actionHref} target="_blank" rel="noopener noreferrer" aria-label={`${actionLabel} (opens in a new tab)`} onClick={onClose} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">
           {actionLabel}
         </a>
       ) : actionLabel && onAction ? (

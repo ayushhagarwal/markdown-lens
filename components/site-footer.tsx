@@ -17,9 +17,9 @@ export function SiteFooter() {
           <nav className="flex flex-wrap items-center gap-x-6 gap-y-3 text-muted-foreground" aria-label="Footer navigation">
             <Link href="/supported-formats" className={footerLinkClassName}>Formats</Link>
             <Link href="/markdown-cheatsheet" className={footerLinkClassName}>Guide</Link>
-            <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} target="_blank" rel="noreferrer" aria-label="Read the changelog on GitHub (opens in a new tab)" className={footerLinkClassName}>Changelog</a>
-            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noreferrer" aria-label="Read contributing guidelines on GitHub (opens in a new tab)" className={footerLinkClassName}>Contribute</a>
-            <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} target="_blank" rel="noreferrer" aria-label="Read security policy on GitHub (opens in a new tab)" className={footerLinkClassName}>Security</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} target="_blank" rel="noopener noreferrer" aria-label="Read the changelog on GitHub (opens in a new tab)" className={footerLinkClassName}>Changelog</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noopener noreferrer" aria-label="Read contributing guidelines on GitHub (opens in a new tab)" className={footerLinkClassName}>Contribute</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} target="_blank" rel="noopener noreferrer" aria-label="Read security policy on GitHub (opens in a new tab)" className={footerLinkClassName}>Security</a>
             <GithubStarLink variant="text" className={footerLinkClassName}>Star</GithubStarLink>
           </nav>
         </div>
@@ -32,13 +32,13 @@ export function SiteFooter() {
         </nav>
         <p className="text-muted-foreground">
           Built locally. Shared openly.{" "}
-          <a href={siteConfig.githubUrl} target="_blank" rel="noreferrer" aria-label="If it helped, star the source (opens in a new tab)" className={footerLinkClassName}>
+          <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="If it helped, star the source (opens in a new tab)" className={footerLinkClassName}>
             If it helped, star the source.
           </a>
           <span aria-hidden="true">{" "}·{" "}</span>
-          <a href={`${siteConfig.githubUrl}/issues/new?template=bug_report.yml`} target="_blank" rel="noreferrer" aria-label="Report a bug (opens in a new tab)" className={footerLinkClassName}>Report a bug</a>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=bug_report.yml`} target="_blank" rel="noopener noreferrer" aria-label="Report a bug (opens in a new tab)" className={footerLinkClassName}>Report a bug</a>
           <span aria-hidden="true">{" "}·{" "}</span>
-          <a href={`${siteConfig.githubUrl}/issues/new?template=feature_request.yml`} target="_blank" rel="noreferrer" aria-label="Request a feature (opens in a new tab)" className={footerLinkClassName}>Request a feature</a>
+          <a href={`${siteConfig.githubUrl}/issues/new?template=feature_request.yml`} target="_blank" rel="noopener noreferrer" aria-label="Request a feature (opens in a new tab)" className={footerLinkClassName}>Request a feature</a>
         </p>
       </div>
     </footer>

@@ -124,7 +124,7 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
       },
       a(props) {
         return (
-          <a {...props} target="_blank" rel="noreferrer">
+          <a {...props} target="_blank" rel="noopener noreferrer">
             {props.children}
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
