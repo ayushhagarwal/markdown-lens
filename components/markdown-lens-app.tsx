@@ -1051,7 +1051,7 @@ export function MarkdownLensApp() {
         </div>
         <div className="relative flex items-center gap-1">
           <button ref={exportToggleRef} type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} aria-controls="export-options-menu" className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            Export <ChevronDown className="h-3.5 w-3.5" />
+            Export <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
           </button>
           <div className="hidden h-8 overflow-hidden rounded-md border border-border xl:flex">
             <QuickExport label=".md" onClick={downloadMarkdown} />
@@ -1300,7 +1300,7 @@ function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicat
 function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onRetry: (file: File) => void; onClear: () => void }) {
   if (!jobs.length) return (
     <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground" role="status">
-      <FileUp className="mx-auto mb-2 h-4 w-4" />Drop supported files anywhere to import
+      <FileUp aria-hidden="true" className="mx-auto mb-2 h-4 w-4" />Drop supported files anywhere to import
     </div>
   );
   const active = jobs.find((job) => job.state === "running" || job.state === "queued") ?? jobs.at(-1)!;
@@ -1308,7 +1308,7 @@ function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; o
   return (
     <div className="border-t border-border p-2">
       <div className="border border-border bg-surface p-2.5">
-        <div className="flex items-center gap-2 text-xs"><FileText className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check className="h-3.5 w-3.5 text-accent" /> : null}</div>
+        <div className="flex items-center gap-2 text-xs"><FileText aria-hidden="true" className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X aria-hidden="true" className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check aria-hidden="true" className="h-3.5 w-3.5 text-accent" /> : null}</div>
         {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${active.fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
         <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")} role="status" aria-live="polite">{active.error ?? active.progress?.message ?? active.state}</p>
         <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><div className="flex items-center"><button type="button" onClick={() => { if (active.state === "failed" || active.state === "cancelled") onRetry(active.file); }} disabled={active.state !== "failed" && active.state !== "cancelled"} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">Retry</button><button type="button" onClick={onClear} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Clear finished</button></div></div>
@@ -1535,15 +1535,15 @@ function RailHeader({ label, onClose }: { label: string; onClose: () => void }) 
 }
 
 function TopButton({ icon: Icon, label, onClick, emphasis, active, expanded, controls, className, compactAtNarrow }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; expanded?: boolean; controls?: string; className?: string; compactAtNarrow?: boolean }) {
-  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
+  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon aria-hidden="true" className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
 function IconButton({ icon: Icon, label, hasPopup, onClick, compact, className }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void; compact?: boolean; className?: string }) {
-  return <button type="button" onClick={onClick} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
+  return <button type="button" onClick={onClick} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
 }
 
 function MenuAction({ icon: Icon, label, hasPopup, onClick }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void }) {
-  return <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
+  return <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {

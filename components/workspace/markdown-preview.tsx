@@ -239,7 +239,7 @@ function CopyableCodeBlock({ children }: { children: React.ReactNode }) {
         className="absolute right-2 top-2 inline-flex h-8 items-center gap-1.5 rounded-md border border-white/15 bg-black/60 px-2 text-[11px] font-medium text-slate-200 opacity-100 backdrop-blur transition hover:bg-black/80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:opacity-0 sm:group-hover/code:opacity-100"
         aria-label="Copy code block"
       >
-        {copyStatus === "copied" ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}
+        {copyStatus === "copied" ? <Check aria-hidden="true" className="h-3.5 w-3.5" /> : <Clipboard aria-hidden="true" className="h-3.5 w-3.5" />}
         {copyStatus === "copied" ? "Copied" : copyStatus === "error" ? "Copy failed" : "Copy"}
       </button>
       <span className="sr-only" role="status" aria-live="polite">
