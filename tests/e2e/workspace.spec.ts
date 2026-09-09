@@ -27,7 +27,7 @@ test("preview keeps internal links in context and external links safe", async ({
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
-  await editor.fill("[Jump to section](#section)\n\n[External docs](https://example.com/docs)\n\n## Section");
+  await editor.fill("[Jump to section](#section)\n\n[External docs](https://example.com/docs)\n\n[Protocol-relative](//example.com/docs)\n\n## Section");
   if (testInfo.project.name === "mobile") {
     await page.getByRole("tab", { name: "Preview", exact: true }).click();
   }
@@ -38,6 +38,7 @@ test("preview keeps internal links in context and external links safe", async ({
   await expect(internal).not.toHaveAttribute("rel", /noopener/);
   await expect(external).toHaveAttribute("target", "_blank");
   await expect(external).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(preview.getByRole("link", { name: /Protocol-relative/ })).toHaveAttribute("target", "_blank");
 });
 
 test("editor header shows File types control on desktop", async ({ page }, testInfo) => {
