@@ -146,6 +146,14 @@ test("public converter pages fit the mobile viewport", async ({ page }, testInfo
   }
 });
 
+test("homepage fits the mobile viewport", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "mobile-only responsive smoke test");
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1, name: "A local Markdown editor that converts documents privately." })).toBeVisible();
+  const viewport = await page.evaluate(() => ({ innerWidth: window.innerWidth, scrollWidth: document.documentElement.scrollWidth }));
+  expect(viewport.scrollWidth, "homepage overflows the mobile viewport").toBeLessThanOrEqual(viewport.innerWidth);
+});
+
 test("supported formats uses cards on small screens and a table from md up", async ({ page }, testInfo) => {
   await page.goto("/supported-formats");
   await expect(page.getByRole("heading", { level: 1, name: "Supported Markdown and document formats" })).toBeVisible();
