@@ -123,10 +123,12 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
         return <CopyableCodeBlock>{children}</CopyableCodeBlock>;
       },
       a(props) {
+        const href = typeof props.href === "string" ? props.href : "";
+        const opensExternally = /^https?:\/\//i.test(href);
         return (
-          <a {...props} target="_blank" rel="noopener noreferrer">
+          <a {...props} target={opensExternally ? "_blank" : undefined} rel={opensExternally ? "noopener noreferrer" : undefined}>
             {props.children}
-            <span className="sr-only"> (opens in a new tab)</span>
+            {opensExternally ? <span className="sr-only"> (opens in a new tab)</span> : null}
           </a>
         );
       },

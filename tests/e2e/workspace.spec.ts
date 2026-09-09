@@ -23,6 +23,20 @@ test("preview blocks executable link and image URLs", async ({ page }) => {
   await expect(preview.locator('img[src^="javascript:"]')).toHaveCount(0);
 });
 
+test("preview keeps internal links in context and external links safe", async ({ page }) => {
+  await page.goto("/editor");
+  await page.getByRole("button", { name: "New document" }).first().click();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await editor.fill("[Jump to section](#section)\n\n[External docs](https://example.com/docs)\n\n## Section");
+  const preview = page.locator(".markdown-body");
+  const internal = preview.getByRole("link", { name: "Jump to section" });
+  const external = preview.getByRole("link", { name: /External docs/ });
+  await expect(internal).not.toHaveAttribute("target", "_blank");
+  await expect(internal).not.toHaveAttribute("rel", /noopener/);
+  await expect(external).toHaveAttribute("target", "_blank");
+  await expect(external).toHaveAttribute("rel", "noopener noreferrer");
+});
+
 test("editor header shows File types control on desktop", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop lg viewport control");
   await page.goto("/editor");
