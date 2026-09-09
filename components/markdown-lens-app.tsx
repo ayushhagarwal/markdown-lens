@@ -844,7 +844,8 @@ export function MarkdownLensApp() {
         </div>
       </header>
 
-      <nav className="flex h-11 shrink-0 items-center border-b border-border px-2 lg:hidden" role="tablist" aria-label="Workspace panes">
+      <div role="region" aria-label="Workspace pane navigation" className="lg:hidden">
+      <nav className="flex h-11 shrink-0 items-center border-b border-border px-2" role="tablist" aria-label="Workspace panes">
         {MOBILE_PANES.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -875,6 +876,7 @@ export function MarkdownLensApp() {
           </button>
         ))}
       </nav>
+      </div>
 
       <div className="relative flex min-h-0 flex-1">
         <aside
