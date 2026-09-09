@@ -124,6 +124,28 @@ test("@a11y not-found recovery page has no accessibility violations", async ({ p
   expect(results.violations).toEqual([]);
 });
 
+test("public converter pages fit the mobile viewport", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "mobile-only responsive smoke test");
+  for (const path of [
+    "/pdf-to-markdown",
+    "/word-to-markdown",
+    "/pptx-to-markdown",
+    "/excel-to-markdown",
+    "/html-to-markdown",
+    "/csv-to-markdown",
+    "/json-to-markdown",
+    "/xml-to-markdown",
+    "/epub-to-markdown",
+    "/image-to-markdown",
+    "/zip-to-markdown",
+  ]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    const viewport = await page.evaluate(() => ({ innerWidth: window.innerWidth, scrollWidth: document.documentElement.scrollWidth }));
+    expect(viewport.scrollWidth, `${path} overflows the mobile viewport`).toBeLessThanOrEqual(viewport.innerWidth);
+  }
+});
+
 test("supported formats uses cards on small screens and a table from md up", async ({ page }, testInfo) => {
   await page.goto("/supported-formats");
   await expect(page.getByRole("heading", { level: 1, name: "Supported Markdown and document formats" })).toBeVisible();
