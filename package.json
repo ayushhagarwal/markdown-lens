@@ -17,7 +17,8 @@
     "test:e2e": "playwright test",
     "test:rendering": "playwright test tests/e2e/rendering.spec.ts",
     "test:pwa": "playwright test --config playwright.pwa.config.ts",
-    "test:a11y": "playwright test --grep @a11y"
+    "test:a11y": "playwright test --grep @a11y",
+    "test:a11y:mobile": "playwright test --grep @a11y --project=mobile"
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
