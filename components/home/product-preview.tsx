@@ -76,7 +76,7 @@ function MarkdownPane({ mobile = false }: { mobile?: boolean }) {
 }
 
 function PreviewPane({ mobile = false }: { mobile?: boolean }) {
-  return <div className={`${mobile ? "h-full" : "border-r border-border"} overflow-hidden p-5 sm:p-6`}><div className="mb-6 flex items-center gap-2 text-xs font-semibold"><Eye className="h-3.5 w-3.5 text-accent" aria-hidden />Preview</div><h3 className="text-2xl font-semibold tracking-tight sm:text-3xl">Product Requirements</h3><h4 className="mt-7 border-b border-border pb-2 text-lg font-semibold">Overview</h4><p className="mt-3 text-sm leading-6 text-muted-foreground">A private workspace for document work.</p><h4 className="mt-7 border-b border-border pb-2 text-lg font-semibold">Goals</h4><ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted-foreground"><li>Keep document structure</li><li>Surface conversion warnings</li><li>Export clean Markdown</li></ul></div>;
+  return <div className={`${mobile ? "h-full" : "border-r border-border"} overflow-hidden p-5 sm:p-6`}><div className="mb-6 flex items-center gap-2 text-xs font-semibold"><Eye className="h-3.5 w-3.5 text-accent" aria-hidden />Preview</div><h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Product Requirements</h2><h3 className="mt-7 border-b border-border pb-2 text-lg font-semibold">Overview</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">A private workspace for document work.</p><h3 className="mt-7 border-b border-border pb-2 text-lg font-semibold">Goals</h3><ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted-foreground"><li>Keep document structure</li><li>Surface conversion warnings</li><li>Export clean Markdown</li></ul></div>;
 }
 
 function OutlinePane() {
