@@ -116,6 +116,14 @@ test("@a11y public converter pages have no accessibility violations", async ({ p
   }
 });
 
+test("@a11y not-found recovery page has no accessibility violations", async ({ page }) => {
+  const response = await page.goto("/this-page-does-not-exist");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
+});
+
 test("supported formats uses cards on small screens and a table from md up", async ({ page }, testInfo) => {
   await page.goto("/supported-formats");
   await expect(page.getByRole("heading", { level: 1, name: "Supported Markdown and document formats" })).toBeVisible();
