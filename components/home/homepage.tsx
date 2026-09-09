@@ -10,7 +10,7 @@ import { converterLinks, siteConfig } from "@/lib/site";
 
 export function Homepage() {
   return (
-    <div className="home-shell min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="home-shell min-h-screen overflow-x-clip bg-background text-foreground">
       <SiteHeader wide />
       <main id="main">
         <section className="mx-auto grid w-full max-w-[1500px] items-start gap-12 px-5 pb-16 pt-14 sm:px-8 lg:min-h-[860px] lg:grid-cols-[0.76fr_1.24fr] lg:gap-14 lg:px-12 lg:pb-20 lg:pt-16 xl:px-14">
