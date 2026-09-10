@@ -213,6 +213,11 @@ test("documents persist independently across immediate switches, rename, trash, 
     window.localStorage.clear();
     window.sessionStorage.clear();
   });
+  await page.goto("/");
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    const request = indexedDB.deleteDatabase("markdown-lens-workspace");
+    request.onsuccess = request.onerror = request.onblocked = () => resolve();
+  }));
   await page.goto("/editor");
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   const documents = page.getByRole("complementary", { name: "Documents" });
