@@ -2,6 +2,8 @@
 
 A privacy-first, local document-to-Markdown workbench for PDF, Word, PowerPoint, Excel, HTML, EPUB, structured data, images, archives, READMEs, and developer writing.
 
+[![Markdown Lens on StartupScores](https://startupscores.com/badge/markdown-lens.svg?style=shield&v=combo&theme=dark)](https://startupscores.com/open-source/markdown-lens)
+
 [Live Demo](https://markdownlens.ayushdev.com) · [Report Bug](../../issues) · [Request Feature](../../issues)
 
 If this is useful, a star helps others find it.
