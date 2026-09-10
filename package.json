@@ -2,6 +2,9 @@
   "name": "markdown-lens",
   "version": "0.9.4",
   "private": true,
+  "engines": {
+    "node": ">=22.22.2"
+  },
   "description": "A privacy-first local Markdown editor and document converter for PDF, Word, Office, HTML, EPUB, and images in the browser.",
   "scripts": {
     "predev": "node scripts/copy-ocr-data.mjs",
