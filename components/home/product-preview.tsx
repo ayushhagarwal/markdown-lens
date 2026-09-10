@@ -50,7 +50,7 @@ export function ProductPreview() {
         </div>
 
         <div className="lg:hidden">
-          <div className="grid grid-cols-2 border-b border-border p-2" role="tablist" aria-label="Product preview">
+          <div className="grid grid-cols-2 border-b border-border p-2" role="tablist" aria-label="Product preview" aria-orientation="horizontal">
             <button type="button" role="tab" id="preview-tab-markdown" data-preview-tab="markdown" tabIndex={activeTab === "markdown" ? 0 : -1} aria-selected={activeTab === "markdown"} aria-controls="preview-panel-markdown" onClick={() => selectTab("markdown")} onKeyDown={handleTabKeyDown} className={`flex h-11 items-center justify-center gap-2 rounded-md text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeTab === "markdown" ? "bg-muted text-accent" : "text-muted-foreground"}`}>
               <PenLine className="h-4 w-4" aria-hidden /> Markdown
             </button>
