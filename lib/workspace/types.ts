@@ -26,6 +26,13 @@ export type ConversionReport = {
   usedOcr: boolean;
 };
 
+export type DocumentVersion = {
+  id: string;
+  documentId: string;
+  markdown: string;
+  savedAt: number;
+};
+
 export type DocumentRecord = {
   id: string;
   title: string;

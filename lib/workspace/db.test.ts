@@ -13,10 +13,12 @@ import {
   importWorkspace,
   initializeWorkspace,
   listDocuments,
+  listDocumentVersions,
   listQuarantinedRecords,
   moveDocumentToTrash,
   permanentlyDeleteDocument,
   putAssets,
+  recordDocumentVersion,
   restoreDocument,
   saveDocument,
 } from "@/lib/workspace/db";
@@ -249,7 +251,7 @@ describe.sequential("IndexedDB workspace", () => {
     const valid = createDocumentRecord({ title: "Still readable", markdown: "valid" });
     await addDocument(valid);
     await closeWorkspaceDatabase();
-    const rawDb = await openDB(DATABASE_NAME, 2);
+    const rawDb = await openDB(DATABASE_NAME, 3);
     await rawDb.put("documents", {
       ...createDocumentRecord({ title: "Corrupt", markdown: "invalid" }),
       id: "corrupt-document",
@@ -261,6 +263,14 @@ describe.sequential("IndexedDB workspace", () => {
     expect(documents.some((document) => document.id === valid.id)).toBe(true);
     expect(documents.some((document) => document.id === "corrupt-document")).toBe(false);
     expect(await getDocument("corrupt-document")).toBeUndefined();
+    const versioned = createDocumentRecord({ title: "Versioned", markdown: "original note" });
+    await addDocument(versioned);
+    await recordDocumentVersion(versioned.id, "original note", versioned.updatedAt);
+    await recordDocumentVersion(versioned.id, "edited note", versioned.updatedAt + 3 * 60 * 1000);
+    expect((await listDocumentVersions(versioned.id)).map((version) => version.markdown)).toEqual(["edited note", "original note"]);
+    await permanentlyDeleteDocument(versioned.id);
+    expect(await listDocumentVersions(versioned.id)).toEqual([]);
+
     expect(await listQuarantinedRecords()).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
