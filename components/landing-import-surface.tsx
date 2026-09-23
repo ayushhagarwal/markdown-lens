@@ -68,6 +68,10 @@ export function LandingImportSurface({ path, children }: { path: string; childre
   );
 }
 
+export function useLandingFilePicker() {
+  return useContext(LandingImportContext);
+}
+
 export function ConvertFileButton({ className, children }: { className?: string; children: ReactNode }) {
   const openPicker = useContext(LandingImportContext);
   return (

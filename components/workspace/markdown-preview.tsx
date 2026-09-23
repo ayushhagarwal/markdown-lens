@@ -44,11 +44,13 @@ export function MarkdownPreview({
   theme,
   previewRef,
   assetUrls,
+  compact = false,
 }: {
   markdown: string;
   theme: "light" | "dark";
   previewRef: RefObject<HTMLDivElement | null>;
   assetUrls: Record<string, string>;
+  compact?: boolean;
 }) {
   const components = useMarkdownComponents(theme, assetUrls);
   const budget = useMemo(() => analyzeMarkdownBudget(markdown), [markdown]);
@@ -85,7 +87,7 @@ export function MarkdownPreview({
     );
   }
   return (
-    <div ref={previewRef} className="print-area markdown-body mx-auto w-full max-w-[860px] px-7 pb-24 pt-6 lg:px-9">
+    <div ref={previewRef} className={compact ? "print-area markdown-body w-full" : "print-area markdown-body mx-auto w-full max-w-[860px] px-7 pb-24 pt-6 lg:px-9"}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[
@@ -112,7 +114,7 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
           return <MermaidDiagram key={`${theme}:${code}`} code={code} theme={theme} />;
         }
         return (
-          <code className={className} {...rest}>
+          <code className={className} {...rest} style={{ overflow: "visible" }}>
             {children}
           </code>
         );
@@ -121,6 +123,10 @@ function useMarkdownComponents(theme: "light" | "dark", assetUrls: Record<string
         const child = children as ReactElement<{ children?: unknown; className?: string }>;
         if (child?.props?.className?.includes("language-mermaid")) return <>{children}</>;
         return <CopyableCodeBlock>{children}</CopyableCodeBlock>;
+      },
+      input(props) {
+        if (props.type !== "checkbox") return <input {...props} />;
+        return <input {...props} aria-label={props.checked ? "Completed task" : "Incomplete task"} />;
       },
       a(props) {
         const href = typeof props.href === "string" ? props.href : "";
@@ -237,7 +243,7 @@ function CopyableCodeBlock({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="group/code relative">
-      <pre>{children}</pre>
+      <pre tabIndex={0} className="overflow-x-auto">{children}</pre>
       <button
         type="button"
         onClick={async () => {

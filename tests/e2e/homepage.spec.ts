@@ -6,7 +6,10 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   await expect(page).toHaveTitle("Free Local Markdown Editor and Document Converter | Markdown Lens");
   await expect(page.getByRole("heading", { level: 1, name: "A local Markdown editor that converts documents privately." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open workspace" }).first()).toHaveAttribute("href", "/editor");
-  await expect(page.getByRole("button", { name: "Convert a file" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Sample conversion" })).toContainText("Sample handbook");
+  await expect(page.getByRole("region", { name: "Sample conversion" })).toContainText("<!-- Page 1 -->");
+  await expect(page.locator("main").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Convert a file" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Try a sample PDF" })).toBeVisible();
   await expect(page.getByText("Or drop a PDF, Word file, or other supported document anywhere on this page.")).toBeVisible();
   await expect(page.getByLabel("Choose a file to convert")).toHaveAttribute("accept", expect.stringContaining(".pdf"));
@@ -122,6 +125,19 @@ test("@a11y homepage has no accessibility violations", async ({ page }) => {
   await page.goto("/");
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+});
+
+test("cheatsheet preview matches the editor and opens an example", async ({ page }, testInfo) => {
+  await page.goto("/markdown-cheatsheet");
+  await expect(page.getByRole("heading", { level: 1, name: "Heading 1" })).toBeVisible();
+  await expect(page.getByRole("group", { name: /Remote image blocked from example.com/ })).toBeVisible();
+  await page.getByRole("button", { name: "Open the Headings example" }).click();
+  await expect(page).toHaveURL(/\/editor$/);
+  await expect(page.locator('.cm-content[contenteditable="true"]:visible').first()).toContainText("Heading 1");
+  if (testInfo.project.name !== "mobile") {
+    await expect(page.getByRole("region", { name: "Preview" })).toContainText("Heading 1");
+    await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Headings/ })).toBeVisible();
+  }
 });
 
 test("@a11y Markdown cheatsheet has no accessibility violations", async ({ page }) => {
@@ -243,6 +259,6 @@ test("mobile navigation and preview tabs respond", async ({ page }, testInfo) =>
     await page.goto(path);
     await page.getByRole("button", { name: "Open navigation" }).click();
     await expect(page.getByRole("navigation", { name: "Mobile navigation" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Open workspace" })).toHaveAttribute("href", "/editor");
+    await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Convert a file" })).toHaveAttribute("href", "/");
   }
 });

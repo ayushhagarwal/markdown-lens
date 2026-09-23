@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BookOpen, Check, Eye } from "lucide-react";
-import { GithubStarLink } from "@/components/github-star-link";
+import { BookOpen, Eye } from "lucide-react";
+import { ExampleCard } from "@/components/guide/example-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { pageMetadata } from "@/lib/seo";
@@ -17,53 +17,15 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const inlineExamples = [
-  {
-    title: "Headings",
-    syntax: "# Heading 1\n## Heading 2\n### Heading 3",
-    output: (
-      <div className="space-y-2">
-        <p className="text-2xl font-bold">Heading 1</p>
-        <p className="text-xl font-bold">Heading 2</p>
-        <p className="text-lg font-bold">Heading 3</p>
-      </div>
-    ),
-  },
-  {
-    title: "Emphasis",
-    syntax: "**Bold text**\n*Italic text*\n~~Strikethrough~~",
-    output: (
-      <div className="space-y-1">
-        <p className="font-bold">Bold text</p>
-        <p className="italic">Italic text</p>
-        <p className="line-through">Strikethrough</p>
-      </div>
-    ),
-  },
+  { title: "Headings", syntax: "# Heading 1\n## Heading 2\n### Heading 3" },
+  { title: "Emphasis", syntax: "**Bold text**\n*Italic text*\n~~Strikethrough~~" },
   {
     title: "Links and images",
-    syntax:
-      "[Markdown Lens](https://markdownlens.ayushdev.com)\n\n![Alt text](https://example.com/image.png)",
-    output: (
-      <div className="space-y-3">
-        <a className="font-semibold text-accent underline underline-offset-4" href={siteConfig.url}>
-          Markdown Lens
-        </a>
-        <div className="rounded-md border border-dashed border-border bg-muted/50 px-3 py-4 text-sm text-muted-foreground">
-          Image renders here, with “Alt text” as its accessible description.
-        </div>
-      </div>
-    ),
+    syntax: "[Markdown Lens](https://markdownlens.ayushdev.com)\n\n![Alt text](https://example.com/image.png)",
   },
   {
     title: "Blockquotes",
     syntax: "> Markdown keeps plain text readable.\n>\n> Add another line with the same marker.",
-    output: (
-      <blockquote className="rounded-r-md border-l-4 border-accent bg-accent-soft/60 px-4 py-3">
-        Markdown keeps plain text readable.
-        <br />
-        Add another line with the same marker.
-      </blockquote>
-    ),
   },
 ];
 
@@ -127,8 +89,7 @@ export default function MarkdownCheatsheetPage() {
             Markdown cheatsheet
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-            The syntax you will use most often, paired with clear rendered examples. Copy a
-            snippet, adapt it, and preview it in Markdown Lens.
+            The syntax you will use most often. Each preview uses the same renderer as the editor.
           </p>
         </section>
 
@@ -155,49 +116,10 @@ export default function MarkdownCheatsheetPage() {
             <ExampleCard
               title="Ordered and unordered lists"
               syntax={"- First item\n- Second item\n  - Nested item\n\n1. Plan\n2. Write\n3. Review"}
-              output={
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <ul className="list-disc space-y-1 pl-5">
-                    <li>First item</li>
-                    <li>
-                      Second item
-                      <ul className="list-disc pl-5 text-muted-foreground">
-                        <li>Nested item</li>
-                      </ul>
-                    </li>
-                  </ul>
-                  <ol className="list-decimal space-y-1 pl-5">
-                    <li>Plan</li>
-                    <li>Write</li>
-                    <li>Review</li>
-                  </ol>
-                </div>
-              }
             />
             <ExampleCard
               title="Task lists"
               syntax={"- [x] Draft the README\n- [ ] Add examples\n- [ ] Request review"}
-              output={
-                <ul className="space-y-2">
-                  {[
-                    [true, "Draft the README"],
-                    [false, "Add examples"],
-                    [false, "Request review"],
-                  ].map(([done, label]) => (
-                    <li key={String(label)} className="flex items-center gap-2">
-                      <span
-                        className={`flex h-4 w-4 items-center justify-center rounded border ${
-                          done ? "border-accent bg-accent text-accent-foreground" : "border-border"
-                        }`}
-                        aria-hidden
-                      >
-                        {done ? <Check className="h-3 w-3" /> : null}
-                      </span>
-                      <span>{label}</span>
-                    </li>
-                  ))}
-                </ul>
-              }
             />
           </div>
         </section>
@@ -211,29 +133,7 @@ export default function MarkdownCheatsheetPage() {
           <ExampleCard
             className="mt-6"
             title="Feature table"
-            syntax={
-              "| Feature | Status |\n| --- | ---: |\n| Tables | Ready |\n| Mermaid | Ready |\n| Math | Ready |"
-            }
-            output={
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-80 border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="bg-muted/70">
-                      <th className="border border-border px-3 py-2">Feature</th>
-                      <th className="border border-border px-3 py-2 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {["Tables", "Mermaid", "Math"].map((feature) => (
-                      <tr key={feature}>
-                        <td className="border border-border px-3 py-2">{feature}</td>
-                        <td className="border border-border px-3 py-2 text-right">Ready</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            }
+            syntax={"| Feature | Status |\n| --- | ---: |\n| Tables | Ready |\n| Mermaid | Ready |\n| Math | Ready |"}
           />
         </section>
 
@@ -244,30 +144,10 @@ export default function MarkdownCheatsheetPage() {
             description="Use backticks for inline code and triple backticks for fenced blocks."
           />
           <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard
-              title="Inline code"
-              syntax={"Run `npm run dev` to start the app."}
-              output={
-                <p>
-                  Run{" "}
-                  <code className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-sm">
-                    npm run dev
-                  </code>{" "}
-                  to start the app.
-                </p>
-              }
-            />
+            <ExampleCard title="Inline code" syntax={"Run `npm run dev` to start the app."} />
             <ExampleCard
               title="Fenced code block"
               syntax={'```ts\nconst greeting = "Hello, Markdown!";\nconsole.log(greeting);\n```'}
-              output={
-                <pre
-                  tabIndex={0}
-                  className="overflow-x-auto rounded-md border border-slate-700 bg-[#0d1117] p-4 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
-                  <code>{'const greeting = "Hello, Markdown!";\nconsole.log(greeting);'}</code>
-                </pre>
-              }
             />
           </div>
         </section>
@@ -282,30 +162,10 @@ export default function MarkdownCheatsheetPage() {
             <ExampleCard
               title="Mermaid diagram"
               syntax={"```mermaid\nflowchart LR\n  A[Write] --> B[Preview]\n  B --> C[Publish]\n```"}
-              output={
-                <div className="flex flex-wrap items-center justify-center gap-2 py-3 text-sm font-semibold">
-                  {["Write", "Preview", "Publish"].map((step, index) => (
-                    <div key={step} className="flex items-center gap-2">
-                      <span className="rounded-md border border-accent/30 bg-accent-soft px-3 py-2">
-                        {step}
-                      </span>
-                      {index < 2 ? <span className="text-accent">→</span> : null}
-                    </div>
-                  ))}
-                </div>
-              }
             />
             <ExampleCard
               title="Inline and block math"
               syntax={"Inline: $E = mc^2$\n\nBlock:\n$$\n\\int_0^1 x^2\\,dx = \\frac{1}{3}\n$$"}
-              output={
-                <div className="space-y-5 text-center">
-                  <p>
-                    Inline: <span className="font-serif italic">E = mc²</span>
-                  </p>
-                  <p className="text-xl font-serif">∫₀¹ x² dx = ⅓</p>
-                </div>
-              }
             />
           </div>
         </section>
@@ -314,8 +174,7 @@ export default function MarkdownCheatsheetPage() {
           <Eye className="mx-auto h-6 w-6 text-accent" aria-hidden />
           <h2 className="mt-3 text-2xl font-bold">Ready to try it?</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Paste any example into the editor to see GitHub-flavored Markdown, Mermaid, code
-            highlighting, and math render together.
+            Open an example above to edit it, or start from a file.
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -336,7 +195,6 @@ export default function MarkdownCheatsheetPage() {
             >
               Word to Markdown
             </Link>
-            <GithubStarLink variant="button" className="h-10 rounded-md" />
           </div>
         </section>
         </div>
@@ -365,43 +223,3 @@ function SectionHeading({
   );
 }
 
-function ExampleCard({
-  title,
-  syntax,
-  output,
-  className = "",
-}: {
-  title: string;
-  syntax: string;
-  output: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <article
-      className={`overflow-hidden rounded-xl border border-border/80 bg-panel shadow-panel ${className}`}
-    >
-      <h3 className="border-b border-border/80 bg-surface px-5 py-3 text-sm font-semibold">
-        {title}
-      </h3>
-      <div className="grid lg:grid-cols-2">
-        <div className="min-w-0 border-b border-border/80 p-5 lg:border-b-0 lg:border-r">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Markdown
-          </p>
-          <pre
-            tabIndex={0}
-            className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-sm leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          >
-            <code>{syntax}</code>
-          </pre>
-        </div>
-        <div className="min-w-0 p-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Rendered
-          </p>
-          <div className="text-sm leading-7">{output}</div>
-        </div>
-      </div>
-    </article>
-  );
-}
