@@ -9,6 +9,7 @@ import {
   PencilLine,
 } from "lucide-react";
 import { GithubStarLink } from "@/components/github-star-link";
+import { ConvertFileButton, LandingImportSurface } from "@/components/landing-import-surface";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
@@ -101,6 +102,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
   ];
 
   return (
+    <LandingImportSurface path={config.path}>
     <div className="min-h-screen bg-background text-foreground">
       <script
         type="application/ld+json"
@@ -137,13 +139,10 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
               ))}
             </ul>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/editor"
-                className="btn-primary"
-              >
+              <ConvertFileButton className="btn-primary">
                 {config.cta}
                 <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
+              </ConvertFileButton>
               <a
                 href="#how-it-works"
                 className="btn-secondary"
@@ -151,6 +150,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
                 See how it works
               </a>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">Or drop a file on this page. It stays in this browser.</p>
           </div>
 
           <ConversionPreview config={config} />
@@ -336,6 +336,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
       </main>
       <SiteFooter />
     </div>
+    </LandingImportSurface>
   );
 }
 

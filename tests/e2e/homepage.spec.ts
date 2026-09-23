@@ -6,6 +6,10 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   await expect(page).toHaveTitle("Free Local Markdown Editor and Document Converter | Markdown Lens");
   await expect(page.getByRole("heading", { level: 1, name: "A local Markdown editor that converts documents privately." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open workspace" }).first()).toHaveAttribute("href", "/editor");
+  await expect(page.getByRole("button", { name: "Convert a file" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try a sample PDF" })).toBeVisible();
+  await expect(page.getByText("Or drop a PDF, Word file, or other supported document anywhere on this page.")).toBeVisible();
+  await expect(page.getByLabel("Choose a file to convert")).toHaveAttribute("accept", expect.stringContaining(".pdf"));
   await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" }).first()).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveClass(/focus-visible:ring-2/);
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "If it helped, star the source (opens in a new tab)" })).toBeVisible();
@@ -21,6 +25,32 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   const schemas = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(schemas.join(" ")).not.toContain("FAQPage");
   expect(schemas.join(" ")).toContain('"softwareVersion":"0.9.4"');
+});
+
+test("trying the sample PDF opens it in the editor", async ({ page }, testInfo) => {
+  test.setTimeout(30_000);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try a sample PDF" }).click();
+  await expect(page).toHaveURL(/\/editor$/);
+  if (testInfo.project.name !== "mobile") {
+    await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Sample handbook/ })).toBeVisible();
+  }
+  await expect(page.getByRole("region", { name: "Preview" })).toContainText("Keep decisions documented.");
+});
+
+test("converter pages choose a file instead of only opening the editor", async ({ page }) => {
+  await page.goto("/pdf-to-markdown");
+  await expect(page.getByRole("button", { name: "Convert a PDF" })).toBeVisible();
+  await expect(page.getByLabel("Choose a PDF to convert")).toHaveAttribute("accept", ".pdf");
+  await expect(page.getByText("Or drop a file on this page. It stays in this browser.")).toBeVisible();
+
+  await page.goto("/word-to-markdown");
+  await expect(page.getByRole("button", { name: "Convert a Word document" })).toBeVisible();
+  await expect(page.getByLabel("Choose a Word document to convert")).toHaveAttribute("accept", ".docx");
+
+  await page.goto("/html-to-markdown");
+  await expect(page.getByRole("button", { name: "Open or convert HTML" })).toBeVisible();
+  await expect(page.getByLabel("Choose an HTML file to convert")).toHaveAttribute("accept", ".html,.htm");
 });
 
 test("primary navigation identifies the current page", async ({ page }, testInfo) => {

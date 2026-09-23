@@ -40,7 +40,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { DropToConvertOverlay, useFileDrag } from "@/components/file-drop-overlay";
 import { GithubStarLink } from "@/components/github-star-link";
+import { documentListEmptyState } from "@/lib/document-list";
+import { addPendingImports, consumePendingImports } from "@/lib/pending-import";
+import { createSamplePdfFile } from "@/lib/sample-pdf";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "@/components/brand-icon";
@@ -205,6 +209,9 @@ export function MarkdownLensApp() {
   const ocrResolution = useRef<((useOcr: boolean) => void) | null>(null);
   const editorActions = useRef<{ focus: () => void; openSearch: () => void } | null>(null);
   const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null | undefined>) | null>(null);
+  const importFilesRef = useRef<(files: File[]) => Promise<void>>(async () => undefined);
+  const readyRef = useRef(false);
+  const { active: fileDragActive, reset: resetFileDrag, dragProps } = useFileDrag();
   const deferredMarkdown = useDeferredValue(markdown);
   const modPrefix = useMemo(() => commandModPrefix(), []);
 
@@ -285,9 +292,12 @@ export function MarkdownLensApp() {
     const storedRatio = Number(readLocalPreference(SPLIT_KEY));
     if (storedRatio >= 30 && storedRatio <= 70) setSplitRatio(storedRatio);
 
+    let cancelled = false;
     async function load() {
       await initializeWorkspace();
+      if (cancelled) return;
       const records = await listDocuments({ includeDeleted: true });
+      if (cancelled) return;
       try {
         const sharedFragment = inspectShareFragment(window.location.hash);
         setPendingShareFragment(sharedFragment);
@@ -295,14 +305,21 @@ export function MarkdownLensApp() {
         setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened." });
         clearShareFragment();
       }
+      if (cancelled) return;
       setDocuments(records);
       const first = records.find((record) => record.deletedAt === undefined);
       setActiveId(first?.id ?? null);
       setMarkdown(first?.markdown ?? "");
+      readyRef.current = true;
+      const files = consumePendingImports();
       setReady(true);
+      if (files.length) void importFilesRef.current(files);
     }
     void load();
-    return unsubscribe;
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -420,6 +437,7 @@ export function MarkdownLensApp() {
   }, []);
 
   const createNewDocument = useCallback(async () => {
+    if (!readyRef.current) return;
     if (!(await persistActiveDraft()) && activeDocument) return;
     const document = createDocumentRecord();
     await addDocument(document);
@@ -498,6 +516,10 @@ export function MarkdownLensApp() {
   }, [activeId, persistActiveDraft]);
 
   const importFiles = useCallback(async (files: File[]) => {
+    if (!readyRef.current) {
+      addPendingImports(files);
+      return;
+    }
     for (const file of files) {
       const id = createId();
       const controller = new AbortController();
@@ -545,6 +567,8 @@ export function MarkdownLensApp() {
       }
     }
   }, [refreshDocuments]);
+
+  importFilesRef.current = importFiles;
 
   async function persistConversion(result: ConversionResult) {
     const duration = Number(result.statistics.durationMs ?? 0);
@@ -733,6 +757,7 @@ export function MarkdownLensApp() {
   const commands = [
       { label: "New document", hint: `${modPrefix}N`, action: () => void createNewDocument() },
       { label: "Open or convert", hint: `${modPrefix}O`, action: () => fileInputRef.current?.click() },
+      { label: "Try a sample PDF", action: () => void importFiles([createSamplePdfFile()]) },
       { label: "Find and replace", hint: `${modPrefix}F`, action: () => editorActions.current?.openSearch() },
       { label: "Show Documents", action: () => setDocumentsOpen(true) },
       { label: "Show Outline", action: () => setOutlineOpen(true) },
@@ -748,19 +773,20 @@ export function MarkdownLensApp() {
   return (
     <div
       className="workspace-shell flex h-dvh min-h-0 flex-col overflow-hidden bg-background text-foreground"
-      onDragOver={(event) => {
-        if (event.dataTransfer.types.includes("Files")) {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
-        }
-      }}
+      {...dragProps}
       onDrop={(event) => {
         const files = Array.from(event.dataTransfer.files);
         if (!files.length) return;
         event.preventDefault();
+        resetFileDrag();
+        if (!readyRef.current) {
+          addPendingImports(files);
+          return;
+        }
         void importFiles(files);
       }}
     >
+      <DropToConvertOverlay active={fileDragActive} />
       <ServiceWorkerRegister onUpdate={(applyUpdate) => setApplyServiceWorkerUpdate(() => applyUpdate)} />
       <section aria-label="File import controls" className="sr-only">
       <input
@@ -800,9 +826,9 @@ export function MarkdownLensApp() {
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
           <TopButton icon={PanelLeft} label="Documents" onClick={() => setDocumentsOpen((open) => !open)} active={documentsOpen} expanded={documentsOpen} controls="workspace-pane-documents" className="hidden md:flex" />
-          <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="sm:hidden" />
-          <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} className="hidden sm:flex" />
-          <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} emphasis className="max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
+          <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="sm:hidden" />
+          <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="hidden sm:flex" />
+          <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} disabled={!ready} emphasis className="max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
           <button
             type="button"
             onClick={() => setFormatGuideOpen(true)}
@@ -844,6 +870,8 @@ export function MarkdownLensApp() {
         </div>
       </header>
 
+      {ready ? (
+      <>
       <div role="region" aria-label="Workspace pane navigation" className="lg:hidden">
       <nav className="flex h-11 shrink-0 items-center border-b border-border px-2" role="tablist" aria-label="Workspace panes">
         {MOBILE_PANES.map(({ id, label, icon: Icon }) => (
@@ -920,15 +948,23 @@ export function MarkdownLensApp() {
                 />
               ))
             ) : (
-              <div className="px-3 py-10 text-center text-xs leading-5 text-muted-foreground">
-                {showTrash ? "Trash is empty." : "No documents match this search."}
-              </div>
+              <DocumentListEmpty
+                showTrash={showTrash}
+                query={documentSearch}
+                onCreate={() => void createNewDocument()}
+                onOpen={() => fileInputRef.current?.click()}
+              />
             )}
           </div>
           <div className="border-t border-border p-2">
             <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               {showTrash ? <BookOpen className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
               {showTrash ? "Back to documents" : "Trash"}
+            </button>
+          </div>
+          <div className="border-t border-border p-2">
+            <button type="button" onClick={() => void importFiles([createSamplePdfFile()])} className="flex min-h-11 w-full items-center justify-center rounded-md border border-border px-2.5 text-xs font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Try a sample PDF
             </button>
           </div>
           <ImportJobs jobs={jobs} onCancel={(id) => abortControllers.current.get(id)?.abort()} onRetry={(file) => void importFiles([file])} onClear={() => setJobs((current) => current.filter((job) => job.state === "running" || job.state === "queued"))} />
@@ -1105,6 +1141,10 @@ export function MarkdownLensApp() {
           {!outlineOpen ? <IconButton icon={ChevronLeft} label="Show Outline" onClick={() => setOutlineOpen(true)} compact /> : null}
         </div>
       </footer>
+      </>
+      ) : (
+        <WorkspaceSkeleton />
+      )}
 
       {notice ? (
         <Notice
@@ -1161,6 +1201,56 @@ export function MarkdownLensApp() {
       {renameTarget ? <RenameDialog value={renameValue} onChange={setRenameValue} onSubmit={() => void submitRename()} onClose={() => setRenameTarget(null)} /> : null}
       {deleteTarget ? <ConfirmDialog title="Delete document permanently?" message={`“${deleteTarget.title}” cannot be recovered after deletion.`} confirmLabel="Delete permanently" onConfirm={() => void confirmDeleteForever()} onClose={() => setDeleteTarget(null)} /> : null}
       {ocrTarget ? <ConfirmDialog title="Run local OCR?" message={`Run English OCR on “${ocrTarget.name}”? The image stays in this browser and is not uploaded.`} confirmLabel="Run OCR" onConfirm={() => { ocrResolution.current?.(true); ocrResolution.current = null; setOcrTarget(null); }} onClose={() => { ocrResolution.current?.(false); ocrResolution.current = null; setOcrTarget(null); }} /> : null}
+    </div>
+  );
+}
+
+function WorkspaceSkeleton() {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col" aria-busy="true">
+      <p role="status" className="sr-only">Loading workspace</p>
+      <div aria-hidden="true" className="flex min-h-0 flex-1">
+        <div className="hidden w-[260px] shrink-0 border-r border-border p-3 lg:block">
+          <div className="h-9 animate-pulse rounded-md bg-muted" />
+          <div className="mt-3 space-y-2">
+            <div className="h-10 animate-pulse rounded-md bg-muted" />
+            <div className="h-10 animate-pulse rounded-md bg-muted" />
+            <div className="h-10 animate-pulse rounded-md bg-muted" />
+          </div>
+        </div>
+        <div className="grid min-w-0 flex-1 lg:grid-cols-2">
+          <div className="border-border p-6 lg:border-r">
+            <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+            <div className="mt-6 space-y-3">
+              <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-full animate-pulse rounded bg-muted" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+          <div className="hidden p-6 lg:block">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+            <div className="mt-6 h-8 w-1/2 animate-pulse rounded bg-muted" />
+            <div className="mt-4 h-3 w-full animate-pulse rounded bg-muted" />
+            <div className="mt-3 h-3 w-4/5 animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DocumentListEmpty({ showTrash, query, onCreate, onOpen }: { showTrash: boolean; query: string; onCreate: () => void; onOpen: () => void }) {
+  const state = documentListEmptyState(showTrash, query);
+  if (state === "trash") return <p className="px-3 py-10 text-center text-xs leading-5 text-muted-foreground">Trash is empty.</p>;
+  if (state === "search") return <p className="px-3 py-10 text-center text-xs leading-5 text-muted-foreground">No documents match this search.</p>;
+  return (
+    <div className="px-3 py-8 text-center">
+      <p className="text-xs leading-5 text-muted-foreground">No documents yet.</p>
+      <div className="mt-4 flex flex-col gap-2">
+        <button type="button" onClick={onCreate} className="flex min-h-11 items-center justify-center rounded-md bg-accent px-3 text-xs font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">New document</button>
+        <button type="button" onClick={onOpen} className="flex min-h-11 items-center justify-center rounded-md border border-border px-3 text-xs font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open or convert</button>
+      </div>
     </div>
   );
 }
@@ -1539,12 +1629,12 @@ function RailHeader({ label, onClose }: { label: string; onClose: () => void }) 
   return <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3"><span className="text-xs font-semibold">{label}</span><IconButton icon={X} label={`Hide ${label}`} onClick={onClose} compact /></header>;
 }
 
-function TopButton({ icon: Icon, label, onClick, emphasis, active, expanded, controls, className, compactAtNarrow }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; expanded?: boolean; controls?: string; className?: string; compactAtNarrow?: boolean }) {
-  return <button type="button" onClick={onClick} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon aria-hidden="true" className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
+function TopButton({ icon: Icon, label, onClick, emphasis, active, expanded, controls, className, compactAtNarrow, disabled }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; expanded?: boolean; controls?: string; className?: string; compactAtNarrow?: boolean; disabled?: boolean }) {
+  return <button type="button" onClick={onClick} disabled={disabled} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon aria-hidden="true" className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
-function IconButton({ icon: Icon, label, hasPopup, onClick, compact, className }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void; compact?: boolean; className?: string }) {
-  return <button type="button" onClick={onClick} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
+function IconButton({ icon: Icon, label, hasPopup, onClick, compact, className, disabled }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void; compact?: boolean; className?: string; disabled?: boolean }) {
+  return <button type="button" onClick={onClick} disabled={disabled} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
 }
 
 function MenuAction({ icon: Icon, label, hasPopup, onClick }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void }) {

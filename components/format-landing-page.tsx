@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Check, FileUp, LockKeyhole } from "lucide-react";
 import { GithubStarLink } from "@/components/github-star-link";
+import { ConvertFileButton, LandingImportSurface } from "@/components/landing-import-surface";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
@@ -51,6 +52,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
   ];
 
   return (
+    <LandingImportSurface path={config.path}>
     <div className="min-h-screen bg-background text-foreground">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
       <SiteHeader />
@@ -64,16 +66,17 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
             <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">{config.summary}</p>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{config.description}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/editor" className="btn-primary">
+              <ConvertFileButton className="btn-primary">
                 Open or convert {config.extensions}
                 <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </Link>
+              </ConvertFileButton>
               <Link href="/supported-formats" className="btn-secondary">Compare formats</Link>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">Or drop a file on this page. It stays in this browser.</p>
             <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole aria-hidden="true" className="h-4 w-4 text-accent" />Local browser processing. No document upload.</p>
           </div>
           <div className="border border-border bg-panel p-6 sm:p-8">
-            <div className="flex items-center gap-3 border-b border-border pb-5"><FileUp aria-hidden="true" className="h-5 w-5 text-accent" /><div><p className="font-semibold">Open or convert</p><p className="text-sm text-muted-foreground">{config.extensions}</p></div></div>
+            <div className="flex items-center gap-3 border-b border-border pb-5"><FileUp aria-hidden="true" className="h-5 w-5 text-accent" /><div><p className="font-semibold">Drop a file here</p><p className="text-sm text-muted-foreground">{config.extensions}</p></div></div>
             <ol className="mt-6 space-y-5">{config.steps.map((step, index) => <li key={step} className="flex gap-4 text-sm leading-6"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">{index + 1}</span><span>{step}</span></li>)}</ol>
           </div>
         </section>
@@ -136,5 +139,6 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
       </main>
       <SiteFooter />
     </div>
+    </LandingImportSurface>
   );
 }
