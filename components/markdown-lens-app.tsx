@@ -42,7 +42,9 @@ import {
 } from "lucide-react";
 import { DropToConvertOverlay, useFileDrag } from "@/components/file-drop-overlay";
 import { GithubStarLink } from "@/components/github-star-link";
+import { conversionWarningLabel, documentFormatLabel } from "@/lib/document-format";
 import { documentListEmptyState } from "@/lib/document-list";
+import { conversionProgressPercent } from "@/lib/import-progress";
 import { addPendingImports, consumePendingImports } from "@/lib/pending-import";
 import { createSamplePdfFile } from "@/lib/sample-pdf";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
@@ -197,6 +199,7 @@ export function MarkdownLensApp() {
     message: null,
   });
   const [storageWarningDismissed, setStorageWarningDismissed] = useState(false);
+  const [dismissedWarningIds, setDismissedWarningIds] = useState<ReadonlySet<string>>(() => new Set());
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [online, setOnline] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -526,11 +529,26 @@ export function MarkdownLensApp() {
       abortControllers.current.set(id, controller);
       setJobs((current) => [...current, { id, fileName: file.name, file, state: "queued" }]);
       try {
+        if (controller.signal.aborted) throw new ConverterError("cancelled", "Conversion was cancelled.");
         const isImage = file.type.startsWith("image/");
         const useOcr = isImage ? await new Promise<boolean>((resolve) => {
-          ocrResolution.current = resolve;
+          if (controller.signal.aborted) {
+            resolve(false);
+            return;
+          }
+          const onAbort = () => {
+            ocrResolution.current = null;
+            setOcrTarget(null);
+            resolve(false);
+          };
+          controller.signal.addEventListener("abort", onAbort, { once: true });
+          ocrResolution.current = (value) => {
+            controller.signal.removeEventListener("abort", onAbort);
+            resolve(value);
+          };
           setOcrTarget(file);
         }) : false;
+        if (controller.signal.aborted) throw new ConverterError("cancelled", "Conversion was cancelled.");
         setJobs((current) => current.map((job) => (job.id === id ? { ...job, state: "running" } : job)));
         const result = await convertLocalFile(
           file,
@@ -970,10 +988,17 @@ export function MarkdownLensApp() {
           <ImportJobs jobs={jobs} onCancel={(id) => abortControllers.current.get(id)?.abort()} onRetry={(file) => void importFiles([file])} onClear={() => setJobs((current) => current.filter((job) => job.state === "running" || job.state === "queued"))} />
         </aside>
 
-        <main id="main" ref={centralRef} className={cn("min-w-0 flex-1", mobilePane === "documents" || mobilePane === "outline" ? "hidden lg:block" : "block")}>
+        <main id="main" ref={centralRef} className={cn("flex min-w-0 flex-1 flex-col", mobilePane === "documents" || mobilePane === "outline" ? "hidden lg:flex" : "flex")}>
           <h1 className="sr-only">Markdown editor workspace</h1>
+          {activeDocument && (activeDocument.conversion?.warnings.length ?? 0) > 0 && !dismissedWarningIds.has(activeDocument.id) ? (
+            <ConversionWarningBanner
+              count={activeDocument.conversion?.warnings.length ?? 0}
+              onReview={() => setReportOpen(true)}
+              onDismiss={() => setDismissedWarningIds((current) => new Set(current).add(activeDocument.id))}
+            />
+          ) : null}
           <div
-            className="hidden h-full min-h-0 lg:grid"
+            className="hidden min-h-0 flex-1 lg:grid"
             style={{ gridTemplateColumns: `${splitRatio}fr 7px ${100 - splitRatio}fr` }}
           >
             <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
@@ -1011,7 +1036,7 @@ export function MarkdownLensApp() {
             id={`workspace-pane-${mobilePane === "preview" ? "preview" : "editor"}`}
             role="tabpanel"
             aria-labelledby={`workspace-pane-tab-${mobilePane === "preview" ? "preview" : "editor"}`}
-            className="h-full lg:hidden"
+            className="min-h-0 flex-1 lg:hidden"
           >
             {mobilePane === "editor" ? (
               <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
@@ -1363,7 +1388,7 @@ function SharedLinkConsentDialog({
 
 function WorkspacePanel({ label, icon: Icon, detail, children }: { label: string; icon: typeof FileText; detail: string; children: React.ReactNode }) {
   return (
-    <section className="flex min-h-0 min-w-0 flex-col bg-panel" aria-label={label}>
+    <section className="flex h-full min-h-0 min-w-0 flex-col bg-panel" aria-label={label}>
       <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-surface px-3">
         <span className="flex items-center gap-2 text-xs font-semibold"><Icon className="h-3.5 w-3.5 text-accent" />{label}</span>
         <span className="text-[11px] text-muted-foreground">{detail}</span>
@@ -1374,11 +1399,14 @@ function WorkspacePanel({ label, icon: Icon, detail, children }: { label: string
 }
 
 function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicate, onDelete, onRestore, onDeleteForever }: { document: DocumentRecord; active: boolean; trashed: boolean; onSelect: () => void; onRename: () => void; onDuplicate: () => void; onDelete: () => void; onRestore: () => void; onDeleteForever: () => void }) {
+  const format = documentFormatLabel(document.source);
+  const warnings = document.conversion?.warnings.length ?? 0;
   return (
     <div className={cn("group mb-0.5 flex items-center rounded-md border border-transparent", active && !trashed && "border-accent/45 bg-accent/10")}>
-      <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 items-center gap-2.5 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-        <FileText className={cn("h-3.5 w-3.5 shrink-0", active ? "text-accent" : "text-muted-foreground")} />
+      <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] font-semibold tracking-wide text-muted-foreground">{format}</span>
         <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
+        {warnings > 0 ? <span className="shrink-0 text-[10px] font-medium text-amber-800 dark:text-amber-200" aria-label={`${warnings} conversion warning${warnings === 1 ? "" : "s"}`}>{warnings}</span> : null}
         <span className="shrink-0 text-[10px] text-muted-foreground">{relativeTime(document.updatedAt)}</span>
       </button>
       <div className="mr-1 flex items-center md:hidden md:group-hover:flex md:group-focus-within:flex">
@@ -1392,22 +1420,81 @@ function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicat
   );
 }
 
+function ConversionWarningBanner({ count, onReview, onDismiss }: { count: number; onReview: () => void; onDismiss: () => void }) {
+  return (
+    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-700/25 bg-amber-500/10 px-3 py-1 text-amber-950 dark:text-amber-100">
+      <button type="button" onClick={onReview} className="min-h-11 min-w-0 flex-1 truncate text-left text-xs font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        {conversionWarningLabel(count)}
+      </button>
+      <button type="button" onClick={onDismiss} className="min-h-11 shrink-0 rounded-md px-2 text-xs font-medium hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        Dismiss
+      </button>
+    </div>
+  );
+}
+
 function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onRetry: (file: File) => void; onClear: () => void }) {
   if (!jobs.length) return (
     <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground" role="status">
       <FileUp aria-hidden="true" className="mx-auto mb-2 h-4 w-4" />Drop supported files anywhere to import
     </div>
   );
-  const active = jobs.find((job) => job.state === "running" || job.state === "queued") ?? jobs.at(-1)!;
-  const percent = active.progress?.current && active.progress?.total ? Math.round((active.progress.current / active.progress.total) * 100) : null;
+  const finished = jobs.some((job) => job.state === "completed" || job.state === "failed" || job.state === "cancelled");
   return (
     <div className="border-t border-border p-2">
-      <div className="border border-border bg-surface p-2.5">
-        <div className="flex items-center gap-2 text-xs"><FileText aria-hidden="true" className="h-3.5 w-3.5 text-accent" /><span className="min-w-0 flex-1 truncate">{active.fileName}</span>{active.state === "running" ? <button type="button" onClick={() => onCancel(active.id)} aria-label="Cancel conversion" className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X aria-hidden="true" className="h-3.5 w-3.5" /></button> : active.state === "completed" ? <Check aria-hidden="true" className="h-3.5 w-3.5 text-accent" /> : null}</div>
-        {active.state === "running" ? <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${active.fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}><div className="h-full bg-accent transition-all" style={{ width: `${percent ?? 35}%` }} /></div> : null}
-        <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", active.state === "failed" && "text-red-400")} role="status" aria-live="polite">{active.error ?? active.progress?.message ?? active.state}</p>
-        <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-muted-foreground"><span>{jobs.length} job{jobs.length === 1 ? "" : "s"}</span><div className="flex items-center"><button type="button" onClick={() => { if (active.state === "failed" || active.state === "cancelled") onRetry(active.file); }} disabled={active.state !== "failed" && active.state !== "cancelled"} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">Retry</button><button type="button" onClick={onClear} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Clear finished</button></div></div>
+      <ul className="max-h-48 space-y-1.5 overflow-y-auto" aria-label="Conversion jobs" tabIndex={0}>
+        {jobs.map((job) => {
+          const percent = conversionProgressPercent(job.progress);
+          const status = job.error ?? job.progress?.message ?? jobStateLabel(job.state);
+          return (
+            <li key={job.id} className="border border-border bg-surface p-2.5">
+              <div className="flex items-center gap-2 text-xs">
+                {job.state === "completed" ? <Check aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-accent" /> : <FileText aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-accent" />}
+                <span className="min-w-0 flex-1 truncate">{job.fileName}</span>
+                {job.state === "running" || job.state === "queued" ? (
+                  <button type="button" onClick={() => onCancel(job.id)} aria-label={`Cancel conversion of ${job.fileName}`} className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <X aria-hidden="true" className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+              {job.state === "running" ? <ImportProgress fileName={job.fileName} percent={percent} /> : null}
+              <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", job.state === "failed" && "text-red-400")} role="status">{status}</p>
+              {job.state === "failed" || job.state === "cancelled" ? (
+                <button type="button" onClick={() => onRetry(job.file)} aria-label={`Retry conversion of ${job.fileName}`} className="mt-1 min-h-11 rounded-md px-2 text-[10px] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  Retry
+                </button>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[10px] text-muted-foreground">
+        <span>{jobs.length} file{jobs.length === 1 ? "" : "s"}</span>
+        <button type="button" onClick={onClear} disabled={!finished} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">Clear finished</button>
       </div>
+    </div>
+  );
+}
+
+function jobStateLabel(state: ImportJob["state"]) {
+  if (state === "queued") return "Queued";
+  if (state === "running") return "Converting";
+  if (state === "completed") return "Done";
+  if (state === "cancelled") return "Cancelled";
+  return "Failed";
+}
+
+function ImportProgress({ fileName, percent }: { fileName: string; percent: number | null }) {
+  if (percent === null) {
+    return (
+      <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${fileName}`} aria-busy="true">
+        <div className="import-progress-indeterminate h-full bg-accent" />
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+      <div className="h-full bg-accent transition-all" style={{ width: `${percent}%` }} />
     </div>
   );
 }

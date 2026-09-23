@@ -18,6 +18,7 @@ test("document list distinguishes an empty workspace from a search miss", async 
 test("welcome document shows a rendered sample instead of setup instructions", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop split preview");
   await page.goto("/editor");
+  await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Welcome to Markdown Lens/ })).toContainText("MD");
   const preview = page.locator(".markdown-body");
   await expect(preview.getByRole("table")).toContainText("Extracted text");
   await expect(preview.locator("pre")).toContainText("const workspace");

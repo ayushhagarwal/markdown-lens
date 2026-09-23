@@ -456,6 +456,16 @@ section ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+@keyframes markdown-lens-indeterminate {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+.import-progress-indeterminate {
+  width: 40%;
+  animation: markdown-lens-indeterminate 1.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
