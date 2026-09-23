@@ -18,7 +18,7 @@ test("document list distinguishes an empty workspace from a search miss", async 
 test("welcome document shows a rendered sample instead of setup instructions", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop split preview");
   await page.goto("/editor");
-  await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Welcome to Markdown Lens/ })).toContainText("MD");
+  await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /^MD Welcome to Markdown Lens/ })).toContainText("MD");
   const preview = page.locator(".markdown-body");
   await expect(preview.getByRole("table")).toContainText("Extracted text");
   await expect(preview.locator("pre")).toContainText("const workspace");
@@ -209,7 +209,7 @@ test("mobile document row actions are visible without hover", async ({ page }, t
     .click();
 
   const documents = page.locator("#workspace-pane-documents");
-  const row = documents.getByRole("button", { name: /^Untitled document/ }).first().locator("xpath=../..");
+  const row = documents.getByRole("button", { name: /^MD Untitled document/ }).first().locator("xpath=../..");
   await expect(row.getByRole("button", { name: "Actions for Untitled document" })).toBeVisible();
   await row.getByRole("button", { name: "Actions for Untitled document" }).click();
   await expect(row.getByRole("menuitem", { name: "Rename document" })).toBeVisible();
@@ -220,14 +220,14 @@ test("mobile document row actions are visible without hover", async ({ page }, t
   await expect(renameDialog).toBeVisible();
   await renameDialog.getByLabel("Document name").fill("Mobile draft");
   await renameDialog.getByRole("button", { name: "Save name" }).click();
-  await expect(documents.getByRole("button", { name: /^Mobile draft/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^MD Mobile draft/ })).toBeVisible();
 
-  const renamed = documents.getByRole("button", { name: /^Mobile draft/ }).locator("xpath=../..");
+  const renamed = documents.getByRole("button", { name: /^MD Mobile draft/ }).locator("xpath=../..");
   await renamed.getByRole("button", { name: "Actions for Mobile draft" }).click();
   await renamed.getByRole("menuitem", { name: "Move to Trash" }).click();
   await expect(page.getByText("moved to Trash.")).toBeVisible();
   await page.getByRole("button", { name: "Trash", exact: true }).click();
-  const trashedRow = documents.getByRole("button", { name: /^Mobile draft/ }).first().locator("xpath=../..");
+  const trashedRow = documents.getByRole("button", { name: /^MD Mobile draft/ }).first().locator("xpath=../..");
   await trashedRow.getByRole("button", { name: "Actions for Mobile draft" }).click();
   await expect(trashedRow.getByRole("menuitem", { name: "Restore document" })).toBeVisible();
   await trashedRow.getByRole("menuitem", { name: "Delete permanently" }).click();
@@ -253,42 +253,42 @@ test("documents persist independently across immediate switches, rename, trash, 
   const documents = page.getByRole("complementary", { name: "Documents" });
 
   await page.getByRole("button", { name: "New document" }).first().click();
-  await expect(documents.getByRole("button", { name: /^Untitled document/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^MD Untitled document/ })).toBeVisible();
   await editor.fill("# First independent draft");
   await expect(page.locator(".markdown-body").getByRole("heading", { name: "First independent draft" })).toBeVisible();
   await expect(page.getByText("Saved locally", { exact: true })).toBeVisible({ timeout: 15_000 });
-  await expect(documents.getByRole("button", { name: /^First independent draft/ })).toBeVisible({ timeout: 15_000 });
+  await expect(documents.getByRole("button", { name: /^MD First independent draft/ })).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "New document" }).first().click();
-  await expect(documents.getByRole("button", { name: /^Untitled document/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^MD Untitled document/ })).toBeVisible();
 
   await editor.fill("# Second independent draft");
   await expect(page.locator(".markdown-body").getByRole("heading", { name: "Second independent draft" })).toBeVisible();
-  await expect(documents.getByRole("button", { name: /^Second independent draft/ })).toBeVisible();
-  await documents.getByRole("button", { name: /^First independent draft/ }).click();
+  await expect(documents.getByRole("button", { name: /^MD Second independent draft/ })).toBeVisible();
+  await documents.getByRole("button", { name: /^MD First independent draft/ }).click();
   await expect(editor).toContainText("First independent draft");
 
-  const firstRow = documents.getByRole("button", { name: /^First independent draft/ }).locator("xpath=../..");
+  const firstRow = documents.getByRole("button", { name: /^MD First independent draft/ }).locator("xpath=../..");
   await firstRow.getByRole("button", { name: "Actions for First independent draft" }).click();
   await firstRow.getByRole("menuitem", { name: "Rename document" }).click();
   const renameDialog = page.getByRole("dialog", { name: "Rename document" });
   await renameDialog.getByLabel("Document name").fill("Renamed first draft");
   await renameDialog.getByRole("button", { name: "Save name" }).click();
-  await expect(documents.getByRole("button", { name: /^Renamed first draft/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^MD Renamed first draft/ })).toBeVisible();
 
-  const secondRow = documents.getByRole("button", { name: /^Second independent draft/ }).locator("xpath=../..");
+  const secondRow = documents.getByRole("button", { name: /^MD Second independent draft/ }).locator("xpath=../..");
   await secondRow.getByRole("button", { name: "Actions for Second independent draft" }).click();
   await secondRow.getByRole("menuitem", { name: "Move to Trash" }).click();
   await expect(page.getByText("moved to Trash.")).toBeVisible();
   await page.getByRole("button", { name: "Trash", exact: true }).click();
-  const trashedRow = documents.getByRole("button", { name: /^Second independent draft/ }).locator("xpath=../..");
+  const trashedRow = documents.getByRole("button", { name: /^MD Second independent draft/ }).locator("xpath=../..");
   await trashedRow.getByRole("button", { name: "Actions for Second independent draft" }).click();
   await trashedRow.getByRole("menuitem", { name: "Restore document" }).click();
   await page.getByRole("button", { name: "Back to documents" }).click();
 
   await page.reload();
-  await expect(documents.getByRole("button", { name: /^Renamed first draft/ })).toBeVisible();
-  await expect(documents.getByRole("button", { name: /^Second independent draft/ })).toBeVisible();
-  await documents.getByRole("button", { name: /^Second independent draft/ }).click();
+  await expect(documents.getByRole("button", { name: /^MD Renamed first draft/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^MD Second independent draft/ })).toBeVisible();
+  await documents.getByRole("button", { name: /^MD Second independent draft/ }).click();
   await expect(editor).toContainText("Second independent draft");
 });
 
@@ -518,6 +518,7 @@ test("writing controls keep focus, type size, search hits, and local versions", 
 
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
   await page.getByRole("button", { name: "New document" }).first().click();
+  await expect(documents.getByRole("button", { name: /^MD Untitled document/ })).toBeVisible();
   await editor.fill("# Version one");
   await expect(page.getByText("Saved locally", { exact: true })).toBeVisible();
   await editor.fill("# Version two");
