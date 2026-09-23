@@ -8,8 +8,8 @@ test("document list distinguishes an empty workspace from a search miss", async 
   await documents.getByLabel("Search documents").fill("no-such-document");
   await expect(documents.getByText("No documents match this search.")).toBeVisible();
   await documents.getByLabel("Search documents").fill("");
-  await documents.getByRole("button", { name: /Welcome to Markdown Lens/ }).first().hover();
-  await documents.getByRole("button", { name: "Move to Trash" }).click();
+  await documents.getByRole("button", { name: "Actions for Welcome to Markdown Lens" }).first().click();
+  await documents.getByRole("menuitem", { name: "Move to Trash" }).click();
   await expect(documents.getByText("No documents yet.")).toBeVisible();
   await expect(documents.getByRole("button", { name: "New document" })).toBeVisible();
   await expect(documents.getByRole("button", { name: "Open or convert" })).toBeVisible();
@@ -209,23 +209,28 @@ test("mobile document row actions are visible without hover", async ({ page }, t
     .click();
 
   const documents = page.locator("#workspace-pane-documents");
-  const row = documents.getByRole("button", { name: /Untitled document/ }).first().locator("..");
-  await expect(row.getByRole("button", { name: "Rename document" })).toBeVisible();
-  await expect(row.getByRole("button", { name: "Move to Trash" })).toBeVisible();
+  const row = documents.getByRole("button", { name: /^Untitled document/ }).first().locator("xpath=../..");
+  await expect(row.getByRole("button", { name: "Actions for Untitled document" })).toBeVisible();
+  await row.getByRole("button", { name: "Actions for Untitled document" }).click();
+  await expect(row.getByRole("menuitem", { name: "Rename document" })).toBeVisible();
+  await expect(row.getByRole("menuitem", { name: "Move to Trash" })).toBeVisible();
 
-  await row.getByRole("button", { name: "Rename document" }).click();
+  await row.getByRole("menuitem", { name: "Rename document" }).click();
   const renameDialog = page.getByRole("dialog", { name: "Rename document" });
   await expect(renameDialog).toBeVisible();
   await renameDialog.getByLabel("Document name").fill("Mobile draft");
   await renameDialog.getByRole("button", { name: "Save name" }).click();
-  await expect(documents.getByRole("button", { name: /Mobile draft/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^Mobile draft/ })).toBeVisible();
 
-  await row.getByRole("button", { name: "Move to Trash" }).click();
+  const renamed = documents.getByRole("button", { name: /^Mobile draft/ }).locator("xpath=../..");
+  await renamed.getByRole("button", { name: "Actions for Mobile draft" }).click();
+  await renamed.getByRole("menuitem", { name: "Move to Trash" }).click();
   await expect(page.getByText("moved to Trash.")).toBeVisible();
   await page.getByRole("button", { name: "Trash", exact: true }).click();
-  const trashedRow = documents.getByRole("button", { name: /Mobile draft/ }).first().locator("..");
-  await expect(trashedRow.getByRole("button", { name: "Restore document" })).toBeVisible();
-  await trashedRow.getByRole("button", { name: "Delete permanently" }).click();
+  const trashedRow = documents.getByRole("button", { name: /^Mobile draft/ }).first().locator("xpath=../..");
+  await trashedRow.getByRole("button", { name: "Actions for Mobile draft" }).click();
+  await expect(trashedRow.getByRole("menuitem", { name: "Restore document" })).toBeVisible();
+  await trashedRow.getByRole("menuitem", { name: "Delete permanently" }).click();
   const deleteDialog = page.getByRole("alertdialog", { name: "Delete document permanently?" });
   await expect(deleteDialog).toBeVisible();
   await deleteDialog.getByRole("button", { name: "Cancel" }).click();
@@ -248,42 +253,42 @@ test("documents persist independently across immediate switches, rename, trash, 
   const documents = page.getByRole("complementary", { name: "Documents" });
 
   await page.getByRole("button", { name: "New document" }).first().click();
-  await expect(documents.getByRole("button", { name: /Untitled document/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^Untitled document/ })).toBeVisible();
   await editor.fill("# First independent draft");
   await expect(page.locator(".markdown-body").getByRole("heading", { name: "First independent draft" })).toBeVisible();
   await expect(page.getByText("Saved locally", { exact: true })).toBeVisible({ timeout: 15_000 });
-  await expect(documents.getByRole("button", { name: /First independent draft/ })).toBeVisible({ timeout: 15_000 });
+  await expect(documents.getByRole("button", { name: /^First independent draft/ })).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "New document" }).first().click();
-  await expect(documents.getByRole("button", { name: /Untitled document/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^Untitled document/ })).toBeVisible();
 
   await editor.fill("# Second independent draft");
   await expect(page.locator(".markdown-body").getByRole("heading", { name: "Second independent draft" })).toBeVisible();
-  await expect(documents.getByRole("button", { name: /Second independent draft/ })).toBeVisible();
-  await documents.getByRole("button", { name: /First independent draft/ }).click();
+  await expect(documents.getByRole("button", { name: /^Second independent draft/ })).toBeVisible();
+  await documents.getByRole("button", { name: /^First independent draft/ }).click();
   await expect(editor).toContainText("First independent draft");
 
-  const firstRow = documents.getByRole("button", { name: /First independent draft/ }).locator("..");
-  await firstRow.hover();
-  await firstRow.getByRole("button", { name: "Rename document" }).click();
+  const firstRow = documents.getByRole("button", { name: /^First independent draft/ }).locator("xpath=../..");
+  await firstRow.getByRole("button", { name: "Actions for First independent draft" }).click();
+  await firstRow.getByRole("menuitem", { name: "Rename document" }).click();
   const renameDialog = page.getByRole("dialog", { name: "Rename document" });
   await renameDialog.getByLabel("Document name").fill("Renamed first draft");
   await renameDialog.getByRole("button", { name: "Save name" }).click();
-  await expect(documents.getByRole("button", { name: /Renamed first draft/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^Renamed first draft/ })).toBeVisible();
 
-  const secondRow = documents.getByRole("button", { name: /Second independent draft/ }).locator("..");
-  await secondRow.hover();
-  await secondRow.getByRole("button", { name: "Move to Trash" }).click();
+  const secondRow = documents.getByRole("button", { name: /^Second independent draft/ }).locator("xpath=../..");
+  await secondRow.getByRole("button", { name: "Actions for Second independent draft" }).click();
+  await secondRow.getByRole("menuitem", { name: "Move to Trash" }).click();
   await expect(page.getByText("moved to Trash.")).toBeVisible();
   await page.getByRole("button", { name: "Trash", exact: true }).click();
-  const trashedRow = documents.getByRole("button", { name: /Second independent draft/ }).locator("..");
-  await trashedRow.hover();
-  await trashedRow.getByRole("button", { name: "Restore document" }).click();
+  const trashedRow = documents.getByRole("button", { name: /^Second independent draft/ }).locator("xpath=../..");
+  await trashedRow.getByRole("button", { name: "Actions for Second independent draft" }).click();
+  await trashedRow.getByRole("menuitem", { name: "Restore document" }).click();
   await page.getByRole("button", { name: "Back to documents" }).click();
 
   await page.reload();
-  await expect(documents.getByRole("button", { name: /Renamed first draft/ })).toBeVisible();
-  await expect(documents.getByRole("button", { name: /Second independent draft/ })).toBeVisible();
-  await documents.getByRole("button", { name: /Second independent draft/ }).click();
+  await expect(documents.getByRole("button", { name: /^Renamed first draft/ })).toBeVisible();
+  await expect(documents.getByRole("button", { name: /^Second independent draft/ })).toBeVisible();
+  await documents.getByRole("button", { name: /^Second independent draft/ }).click();
   await expect(editor).toContainText("Second independent draft");
 });
 
@@ -469,6 +474,64 @@ test("outline follows rendered headings and focuses the selected target", async 
   await expect(page.getByRole("heading", { level: 1, name: "Document title" })).toBeFocused();
   await expect(page.getByRole("heading", { level: 2, name: "Details" })).toHaveCount(2);
   await expect(page.locator("#details-1")).toHaveCount(1);
+});
+
+test("editor and preview stay aligned and the outline follows the preview", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop split preview");
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  const sections = Array.from({ length: 24 }, (_, index) => `## Section ${index}\n\nParagraph ${index}.`).join("\n\n");
+  await editor.fill(sections);
+  await expect(page.getByRole("button", { name: "Section 23, heading level 2" })).toBeVisible();
+
+  await page.locator("#section-10").evaluate((element) => element.scrollIntoView({ block: "start" }));
+  await expect(page.locator('[aria-label="Document outline"] [aria-current="location"]')).toHaveAttribute("aria-label", /Section (9|10|11), heading level 2/);
+  await expect.poll(() => page.locator(".cm-scroller:visible").first().evaluate((element) => element.scrollTop)).toBeGreaterThan(40);
+
+  await page.getByRole("heading", { name: "Section 10" }).click();
+  await expect(page.getByText("Ln 41, Col 1")).toBeVisible();
+});
+
+test("writing controls keep focus, type size, search hits, and local versions", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop writing controls");
+  await page.goto("/editor");
+  const documents = page.getByRole("complementary", { name: "Documents" });
+  await documents.getByLabel("Search documents").fill("real renderer");
+  await expect(documents.locator("mark")).toContainText("real renderer");
+
+  await page.getByRole("button", { name: "Focus", exact: true }).click();
+  await expect(documents).toBeHidden();
+  await expect(page.getByRole("complementary", { name: "Outline" })).toBeHidden();
+  await page.reload();
+  await expect(page.getByRole("complementary", { name: "Documents" })).toBeHidden();
+  await page.getByRole("button", { name: "Focus", exact: true }).click();
+  await expect(page.getByRole("complementary", { name: "Documents" })).toBeVisible();
+
+  const editorSurface = page.locator(".cm-editor:visible").first();
+  const editorContent = page.locator(".cm-content:visible").first();
+  await expect(editorSurface).toHaveCSS("font-size", "13.5px");
+  await page.getByRole("button", { name: "Increase font size" }).click();
+  await expect(editorSurface).toHaveCSS("font-size", "15px");
+  await expect(editorContent).toHaveClass(/cm-lineWrapping/);
+  await page.getByRole("button", { name: "Wrap", exact: true }).click();
+  await expect(editorContent).not.toHaveClass(/cm-lineWrapping/);
+
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await page.getByRole("button", { name: "New document" }).first().click();
+  await editor.fill("# Version one");
+  await expect(page.getByText("Saved locally", { exact: true })).toBeVisible();
+  await editor.fill("# Version two");
+  await expect(page.getByRole("heading", { name: "Version two" })).toBeVisible();
+  await page.getByRole("button", { name: "Versions", exact: true }).click();
+  const versions = page.getByRole("dialog", { name: "Local versions" });
+  await expect(versions).toBeVisible();
+  await versions.getByRole("button", { name: /Restore / }).click();
+  await expect(editor).toContainText("Version one");
+
+  const download = page.waitForEvent("download");
+  await page.keyboard.press("ControlOrMeta+s");
+  await download;
+  await expect(page.getByText("Saved on this device. Downloaded a copy.")).toBeVisible();
 });
 
 test("find and replace reports match position and honors search options", async ({ page }, testInfo) => {

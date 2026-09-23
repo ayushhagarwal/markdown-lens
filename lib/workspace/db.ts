@@ -1,10 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import { WELCOME_DOCUMENT_MARKDOWN, WELCOME_DOCUMENT_TITLE } from "@/lib/welcome-document";
+import { nextDocumentVersions } from "@/lib/document-versions";
 import {
   createId,
   createDocumentRecord,
   type DocumentAsset,
   type DocumentRecord,
+  type DocumentVersion,
 } from "@/lib/workspace/types";
 import {
   validateDocumentRecord,
@@ -12,7 +14,7 @@ import {
 } from "@/lib/workspace/backup-validation";
 
 const DATABASE_NAME = "markdown-lens-workspace";
-const DATABASE_VERSION = 2;
+const DATABASE_VERSION = 3;
 const LEGACY_DRAFT_KEY = "markdown-lens:draft";
 const MIGRATION_KEY = "markdown-lens:workspace-migrated-v1";
 
@@ -41,6 +43,11 @@ interface MarkdownLensSchema extends DBSchema {
     value: QuarantinedWorkspaceRecord;
     indexes: { "by-quarantined": number };
   };
+  versions: {
+    key: string;
+    value: DocumentVersion;
+    indexes: { "by-document": string };
+  };
 }
 
 export type WorkspaceStorageStatus =
@@ -50,6 +57,7 @@ export type WorkspaceStorageStatus =
 const memoryDocuments = new Map<string, DocumentRecord>();
 const memoryAssets = new Map<string, DocumentAsset>();
 const memoryQuarantine = new Map<string, QuarantinedWorkspaceRecord>();
+const memoryVersions = new Map<string, DocumentVersion>();
 const storageListeners = new Set<(status: WorkspaceStorageStatus) => void>();
 let storageStatus: WorkspaceStorageStatus = { mode: "persistent", message: null };
 let databasePromise: Promise<IDBPDatabase<MarkdownLensSchema> | null> | null = null;
@@ -69,6 +77,10 @@ function database() {
           if (oldVersion < 2) {
             const quarantine = db.createObjectStore("quarantine", { keyPath: "id" });
             quarantine.createIndex("by-quarantined", "quarantinedAt");
+          }
+          if (oldVersion < 3) {
+            const versions = db.createObjectStore("versions", { keyPath: "id" });
+            versions.createIndex("by-document", "documentId");
           }
         },
       }).catch(async () => {
@@ -234,11 +246,15 @@ export async function restoreDocument(id: string) {
 export async function permanentlyDeleteDocument(id: string) {
   await withStorage(
     async (db) => {
-      const transaction = db.transaction(["documents", "assets"], "readwrite");
-      const assets = await transaction.objectStore("assets").index("by-document").getAllKeys(id);
+      const transaction = db.transaction(["documents", "assets", "versions"], "readwrite");
+      const [assets, versions] = await Promise.all([
+        transaction.objectStore("assets").index("by-document").getAllKeys(id),
+        transaction.objectStore("versions").index("by-document").getAllKeys(id),
+      ]);
       await Promise.all([
         transaction.objectStore("documents").delete(id),
         ...assets.map((assetId) => transaction.objectStore("assets").delete(assetId)),
+        ...versions.map((versionId) => transaction.objectStore("versions").delete(versionId)),
         transaction.done,
       ]);
     },
@@ -247,8 +263,37 @@ export async function permanentlyDeleteDocument(id: string) {
       for (const [assetId, asset] of memoryAssets) {
         if (asset.documentId === id) memoryAssets.delete(assetId);
       }
+      for (const [versionId, version] of memoryVersions) {
+        if (version.documentId === id) memoryVersions.delete(versionId);
+      }
     },
   );
+}
+
+export async function listDocumentVersions(documentId: string) {
+  const records = await withStorage(
+    (db) => db.getAllFromIndex("versions", "by-document", documentId),
+    () => [...memoryVersions.values()].filter((version) => version.documentId === documentId),
+  );
+  return records.sort((left, right) => right.savedAt - left.savedAt);
+}
+
+export async function recordDocumentVersion(
+  documentId: string,
+  markdown: string,
+  savedAt: number,
+  options?: { force?: boolean },
+) {
+  const existing = await listDocumentVersions(documentId);
+  const next = nextDocumentVersions(existing, {
+    id: createId(),
+    documentId,
+    markdown,
+    savedAt,
+  }, savedAt, options);
+  if (next === existing) return existing;
+  await replaceDocumentVersions(documentId, next);
+  return next;
 }
 
 export async function putAssets(assets: DocumentAsset[]) {
@@ -462,6 +507,36 @@ function assertNoImportCollisions(
   }
 }
 
+async function replaceDocumentVersions(documentId: string, versions: readonly DocumentVersion[]) {
+  await withStorage(
+    async (db) => {
+      const transaction = db.transaction("versions", "readwrite");
+      const keep = new Set(versions.map((version) => version.id));
+      const keys = await transaction.store.index("by-document").getAllKeys(documentId);
+      await Promise.all([
+        ...keys.filter((key) => !keep.has(String(key))).map((key) => transaction.store.delete(key)),
+        ...versions.map((version) => transaction.store.put(version)),
+        transaction.done,
+      ]);
+    },
+    () => {
+      for (const [id, version] of memoryVersions) {
+        if (version.documentId === documentId) memoryVersions.delete(id);
+      }
+      for (const version of versions) memoryVersions.set(version.id, version);
+    },
+  );
+}
+
+function isStoredDocumentVersion(value: unknown): value is DocumentVersion {
+  if (!value || typeof value !== "object") return false;
+  const version = value as Partial<DocumentVersion>;
+  return typeof version.id === "string"
+    && typeof version.documentId === "string"
+    && typeof version.markdown === "string"
+    && typeof version.savedAt === "number";
+}
+
 function importIntoMemory(documents: DocumentRecord[], assets: DocumentAsset[]) {
   assertNoImportCollisions(
     documents,
@@ -507,6 +582,10 @@ async function activateMemoryFallback(db: IDBPDatabase<MarkdownLensSchema> | nul
           );
           memoryQuarantine.set(quarantined.id, quarantined);
         }
+      }
+      const versions = await db.getAll("versions").catch(() => []);
+      for (const version of versions) {
+        if (isStoredDocumentVersion(version)) memoryVersions.set(version.id, version);
       }
       for (const asset of assets as unknown[]) {
         if (isStoredDocumentAsset(asset)) {

@@ -19,8 +19,8 @@ import {
   ChevronRight,
   Clipboard,
   Command,
-  Copy,
   Download,
+  Ellipsis,
   Eye,
   FileArchive,
   FileDown,
@@ -28,6 +28,7 @@ import {
   FileText,
   FileUp,
   HardDrive,
+  History,
   Loader2,
   Moon,
   PanelLeft,
@@ -42,9 +43,13 @@ import {
 } from "lucide-react";
 import { DropToConvertOverlay, useFileDrag } from "@/components/file-drop-overlay";
 import { GithubStarLink } from "@/components/github-star-link";
+import { clipboardImageFiles } from "@/lib/clipboard-images";
 import { conversionWarningLabel, documentFormatLabel } from "@/lib/document-format";
 import { documentListEmptyState } from "@/lib/document-list";
+import { documentMatchSnippet } from "@/lib/document-search";
+import { versionTimeLabel } from "@/lib/document-versions";
 import { conversionProgressPercent } from "@/lib/import-progress";
+import { activeHeadingId, pairedScrollOffset } from "@/lib/scroll-sync";
 import { addPendingImports, consumePendingImports } from "@/lib/pending-import";
 import { createSamplePdfFile } from "@/lib/sample-pdf";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
@@ -60,9 +65,12 @@ import {
   getDocumentAssets,
   importWorkspace,
   initializeWorkspace,
+  listDocumentVersions,
   listDocuments,
   moveDocumentToTrash,
   permanentlyDeleteDocument,
+  putAssets,
+  recordDocumentVersion,
   restoreDocument,
   saveDocument,
   subscribeToWorkspaceStorage,
@@ -72,7 +80,9 @@ import {
   createDocumentRecord,
   createId,
   type DocumentRecord,
+  type DocumentVersion,
 } from "@/lib/workspace/types";
+import type { MarkdownEditorActions } from "@/components/workspace/markdown-editor";
 import { parseWorkspaceBackupFile } from "@/lib/workspace/backup-validation";
 import {
   downloadBlob,
@@ -138,6 +148,10 @@ type BeforeInstallPromptEvent = Event & {
 
 const THEME_KEY = "markdown-lens:theme";
 const SPLIT_KEY = "markdown-lens:split-ratio";
+const FOCUS_KEY = "markdown-lens:focus";
+const FONT_SIZE_KEY = "markdown-lens:font-size";
+const WRAP_KEY = "markdown-lens:wrap";
+const EDITOR_FONT_SIZES = [13.5, 15, 17] as const;
 
 function isApplePlatform() {
   return (
@@ -179,6 +193,12 @@ export function MarkdownLensApp() {
   const [showTrash, setShowTrash] = useState(false);
   const [documentsOpen, setDocumentsOpen] = useState(true);
   const [outlineOpen, setOutlineOpen] = useState(true);
+  const [focusMode, setFocusMode] = useState(false);
+  const [editorFontSize, setEditorFontSize] = useState<(typeof EDITOR_FONT_SIZES)[number]>(13.5);
+  const [lineWrap, setLineWrap] = useState(true);
+  const [versions, setVersions] = useState<readonly DocumentVersion[]>([]);
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [activeHeadingIdState, setActiveHeadingId] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
   const [splitRatio, setSplitRatio] = useState(50);
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
@@ -210,7 +230,13 @@ export function MarkdownLensApp() {
   const backupInputRef = useRef<HTMLInputElement>(null);
   const abortControllers = useRef(new Map<string, AbortController>());
   const ocrResolution = useRef<((useOcr: boolean) => void) | null>(null);
-  const editorActions = useRef<{ focus: () => void; openSearch: () => void } | null>(null);
+  const editorActions = useRef<MarkdownEditorActions | null>(null);
+  const editorScrollRef = useRef<HTMLElement | null>(null);
+  const previewScrollRef = useRef<HTMLElement | null>(null);
+  const scrollHold = useRef(false);
+  const [scrollSurfaceVersion, setScrollSurfaceVersion] = useState(0);
+  const pasteImagesRef = useRef<(files: File[]) => Promise<string[]>>(async () => []);
+  const handlePasteImages = useCallback((files: File[]) => pasteImagesRef.current(files), []);
   const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null | undefined>) | null>(null);
   const importFilesRef = useRef<(files: File[]) => Promise<void>>(async () => undefined);
   const readyRef = useRef(false);
@@ -258,8 +284,12 @@ export function MarkdownLensApp() {
     setSaveState("saving");
     try {
       const inferredTitle = activeDocument.title === "Untitled document" ? getDocumentTitle(markdown) : activeDocument.title;
+      const previousMarkdown = activeDocument.markdown;
       const saved = await saveDocument({ ...activeDocument, title: inferredTitle, markdown });
       setDocuments((current) => current.map((document) => (document.id === saved.id ? saved : document)));
+      if (previousMarkdown !== markdown) {
+        setVersions(await recordDocumentVersion(saved.id, previousMarkdown, saved.updatedAt));
+      }
       setSaveState("saved");
       return saved;
     } catch {
@@ -294,6 +324,12 @@ export function MarkdownLensApp() {
     document.documentElement.classList.toggle("dark", nextTheme === "dark");
     const storedRatio = Number(readLocalPreference(SPLIT_KEY));
     if (storedRatio >= 30 && storedRatio <= 70) setSplitRatio(storedRatio);
+    setFocusMode(readLocalPreference(FOCUS_KEY) === "1");
+    const storedFontSize = Number(readLocalPreference(FONT_SIZE_KEY));
+    if (EDITOR_FONT_SIZES.includes(storedFontSize as (typeof EDITOR_FONT_SIZES)[number])) {
+      setEditorFontSize(storedFontSize as (typeof EDITOR_FONT_SIZES)[number]);
+    }
+    setLineWrap(readLocalPreference(WRAP_KEY) !== "off");
 
     let cancelled = false;
     async function load() {
@@ -386,6 +422,20 @@ export function MarkdownLensApp() {
   }, [activeAssetIds, activeDocumentId]);
 
   useEffect(() => {
+    if (!activeDocumentId) {
+      setVersions([]);
+      return;
+    }
+    let cancelled = false;
+    void listDocumentVersions(activeDocumentId).then((records) => {
+      if (!cancelled) setVersions(records);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeDocumentId]);
+
+  useEffect(() => {
     if (!ready || !activeDocument || activeDocument.markdown === markdown) return;
     setSaveState("saving");
     const timeout = window.setTimeout(() => void persistActiveDraft(), 400);
@@ -428,12 +478,55 @@ export function MarkdownLensApp() {
         void createNewDocument();
       } else if (key === "s") {
         event.preventDefault();
-        downloadMarkdown();
+        void saveAndDownload();
       }
     };
     window.addEventListener("keydown", handleKeyboard);
     return () => window.removeEventListener("keydown", handleKeyboard);
   });
+
+  useEffect(() => {
+    const editor = editorScrollRef.current;
+    const preview = previewScrollRef.current;
+    if (!editor || !preview) return;
+    let lock: "editor" | "preview" | null = null;
+    let timer = 0;
+    const arm = (source: "editor" | "preview") => {
+      lock = source;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        lock = null;
+      }, 90);
+    };
+    const onEditorScroll = () => {
+      if (scrollHold.current || lock === "preview") return;
+      arm("editor");
+      preview.scrollTop = pairedScrollOffset(editor, preview);
+    };
+    const updateHeading = () => {
+      const viewportTop = preview.getBoundingClientRect().top + 80;
+      const entries = [...preview.querySelectorAll<HTMLElement>("h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]")].map((heading) => ({
+        id: heading.id,
+        top: heading.getBoundingClientRect().top,
+      }));
+      const nextHeading = activeHeadingId(entries, viewportTop);
+      setActiveHeadingId((current) => (current === nextHeading ? current : nextHeading));
+    };
+    const onPreviewScroll = () => {
+      updateHeading();
+      if (scrollHold.current || lock === "editor") return;
+      arm("preview");
+      editor.scrollTop = pairedScrollOffset(preview, editor);
+    };
+    editor.addEventListener("scroll", onEditorScroll, { passive: true });
+    preview.addEventListener("scroll", onPreviewScroll, { passive: true });
+    updateHeading();
+    return () => {
+      window.clearTimeout(timer);
+      editor.removeEventListener("scroll", onEditorScroll);
+      preview.removeEventListener("scroll", onPreviewScroll);
+    };
+  }, [deferredMarkdown, scrollSurfaceVersion]);
 
   const refreshDocuments = useCallback(async () => {
     setDocuments(await listDocuments({ includeDeleted: true }));
@@ -616,6 +709,90 @@ export function MarkdownLensApp() {
     downloadBlob(new Blob([markdown], { type: "text/markdown;charset=utf-8" }), `${toFileName(activeDocument?.title ?? getDocumentTitle(markdown))}.md`);
   }
 
+  async function saveAndDownload() {
+    const saved = await persistActiveDraft();
+    if (!saved) return;
+    if (markdown.trim()) downloadMarkdown();
+    setNotice({ message: markdown.trim() ? "Saved on this device. Downloaded a copy." : "Saved on this device." });
+  }
+
+  async function pasteImages(files: File[]) {
+    if (!activeDocument || !files.length) return [];
+    const usedNames = new Set(Object.keys(assetUrls).map((name) => name.toLowerCase()));
+    const assets = files.map((file) => ({
+      id: createId(),
+      documentId: activeDocument.id,
+      name: getUniqueAssetFileName(file.name || "pasted-image.png", usedNames),
+      mimeType: file.type || "image/png",
+      blob: file,
+    }));
+    const inferredTitle = activeDocument.title === "Untitled document" ? getDocumentTitle(markdown) : activeDocument.title;
+    const saved = await saveDocument({
+      ...activeDocument,
+      title: inferredTitle,
+      markdown,
+      assetIds: [...activeDocument.assetIds, ...assets.map((asset) => asset.id)],
+    });
+    await putAssets(assets);
+    setDocuments((current) => current.map((document) => (document.id === saved.id ? saved : document)));
+    setSaveState("saved");
+    return assets.map((asset) => `![Pasted image](assets/${asset.name})`);
+  }
+  pasteImagesRef.current = pasteImages;
+
+  function bindScrollSurface(kind: "editor" | "preview", element: HTMLElement) {
+    const ref = kind === "editor" ? editorScrollRef : previewScrollRef;
+    if (ref.current === element) return;
+    ref.current = element;
+    setScrollSurfaceVersion((version) => version + 1);
+  }
+
+  function registerEditor(actions: MarkdownEditorActions) {
+    editorActions.current = actions;
+    const element = actions.scrollElement();
+    if (element.clientHeight > 0) bindScrollSurface("editor", element);
+  }
+
+  function leaveFocus() {
+    setFocusMode(false);
+    removeLocalPreference(FOCUS_KEY);
+  }
+
+  function toggleFocus() {
+    setFocusMode((current) => {
+      const next = !current;
+      if (next) writeLocalPreference(FOCUS_KEY, "1");
+      else removeLocalPreference(FOCUS_KEY);
+      return next;
+    });
+  }
+
+  function updateEditorFontSize(direction: -1 | 1) {
+    setEditorFontSize((current) => {
+      const index = EDITOR_FONT_SIZES.indexOf(current);
+      const next = EDITOR_FONT_SIZES[Math.min(EDITOR_FONT_SIZES.length - 1, Math.max(0, index + direction))] ?? current;
+      writeLocalPreference(FONT_SIZE_KEY, String(next));
+      return next;
+    });
+  }
+
+  function toggleLineWrap() {
+    setLineWrap((current) => {
+      const next = !current;
+      if (next) removeLocalPreference(WRAP_KEY);
+      else writeLocalPreference(WRAP_KEY, "off");
+      return next;
+    });
+  }
+
+  async function restoreVersion(version: DocumentVersion) {
+    if (!activeDocument) return;
+    setVersions(await recordDocumentVersion(activeDocument.id, markdown, Date.now(), { force: true }));
+    setMarkdown(version.markdown);
+    setVersionsOpen(false);
+    setNotice({ message: "Restored a local version. The current draft was kept in the version list." });
+  }
+
   async function exportHtml() {
     if (!previewRef.current) return;
     const html = buildStandaloneHtmlDocument({
@@ -767,9 +944,44 @@ export function MarkdownLensApp() {
   function navigateToHeading(id: string) {
     const target = previewRef.current?.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
     if (!target) return;
+    const line = headings.find((heading) => heading.id === id)?.line;
+    scrollHold.current = true;
+    window.setTimeout(() => {
+      scrollHold.current = false;
+    }, 450);
+    if (line) editorActions.current?.revealLine(line);
+    setActiveHeadingId(id);
     target.tabIndex = -1;
     target.focus({ preventScroll: true });
     target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handlePreviewClick(event: React.MouseEvent<HTMLElement>) {
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest("a, button")) return;
+    const heading = target.closest<HTMLElement>("h1, h2, h3, h4, h5, h6");
+    if (!heading?.id) return;
+    const line = headings.find((item) => item.id === heading.id)?.line;
+    if (!line) return;
+    editorActions.current?.moveCursorToLine(line);
+    setActiveHeadingId(heading.id);
+  }
+
+  function handleWorkspacePaste(event: React.ClipboardEvent<HTMLElement>) {
+    if (event.defaultPrevented) return;
+    const target = event.target;
+    if (!(target instanceof Element) || target.closest("input, textarea, select, [contenteditable='true']")) return;
+    const files = clipboardImageFiles(event.clipboardData);
+    const text = event.clipboardData.getData("text/plain");
+    if (!files.length && !text) return;
+    event.preventDefault();
+    if (files.length) {
+      void pasteImages(files).then((snippets) => {
+        if (snippets.length) editorActions.current?.insertText(`${snippets.join("\n")}\n`);
+      });
+      return;
+    }
+    editorActions.current?.insertText(text);
   }
 
   const commands = [
@@ -777,10 +989,12 @@ export function MarkdownLensApp() {
       { label: "Open or convert", hint: `${modPrefix}O`, action: () => fileInputRef.current?.click() },
       { label: "Try a sample PDF", action: () => void importFiles([createSamplePdfFile()]) },
       { label: "Find and replace", hint: `${modPrefix}F`, action: () => editorActions.current?.openSearch() },
-      { label: "Show Documents", action: () => setDocumentsOpen(true) },
-      { label: "Show Outline", action: () => setOutlineOpen(true) },
+      { label: focusMode ? "Leave focus layout" : "Focus layout", action: toggleFocus },
+      { label: "Show Documents", action: () => { leaveFocus(); setDocumentsOpen(true); } },
+      { label: "Show Outline", action: () => { leaveFocus(); setOutlineOpen(true); } },
       { label: "Reset editor and preview split", action: resetSplitRatio },
-      { label: "Download Markdown", hint: `${modPrefix}S`, action: downloadMarkdown },
+      { label: "Show local versions", action: () => setVersionsOpen(true) },
+      { label: "Save and download", hint: `${modPrefix}S`, action: () => void saveAndDownload() },
       { label: "Copy Markdown", action: () => void copyMarkdown() },
       { label: "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
@@ -792,6 +1006,7 @@ export function MarkdownLensApp() {
     <div
       className="workspace-shell flex h-dvh min-h-0 flex-col overflow-hidden bg-background text-foreground"
       {...dragProps}
+      onPaste={handleWorkspacePaste}
       onDrop={(event) => {
         const files = Array.from(event.dataTransfer.files);
         if (!files.length) return;
@@ -843,7 +1058,7 @@ export function MarkdownLensApp() {
             <BrandIcon className="h-6 w-6" priority />
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
-          <TopButton icon={PanelLeft} label="Documents" onClick={() => setDocumentsOpen((open) => !open)} active={documentsOpen} expanded={documentsOpen} controls="workspace-pane-documents" className="hidden md:flex" />
+          <TopButton icon={PanelLeft} label="Documents" onClick={() => { if (focusMode) { leaveFocus(); setDocumentsOpen(true); return; } setDocumentsOpen((open) => !open); }} active={documentsOpen && !focusMode} expanded={documentsOpen && !focusMode} controls="workspace-pane-documents" className="hidden md:flex" />
           <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="sm:hidden" />
           <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="hidden sm:flex" />
           <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} disabled={!ready} emphasis className="max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
@@ -931,7 +1146,7 @@ export function MarkdownLensApp() {
           aria-labelledby={mobilePane === "documents" ? "workspace-pane-tab-documents" : undefined}
           className={cn(
             "workspace-rail z-30 w-[260px] shrink-0 flex-col border-r border-border bg-background 2xl:w-[300px]",
-            railDisplay(documentsOpen, mobilePane === "documents"),
+            railDisplay(documentsOpen && !focusMode, mobilePane === "documents"),
             mobilePane === "documents" && "absolute inset-y-0 left-0 w-full max-w-[340px] shadow-2xl lg:static lg:w-[260px] lg:max-w-none lg:shadow-none 2xl:w-[300px]",
           )}
           aria-label="Documents"
@@ -955,6 +1170,7 @@ export function MarkdownLensApp() {
                 <DocumentRow
                   key={document.id}
                   document={document}
+                  query={documentSearch}
                   active={activeId === document.id}
                   trashed={showTrash}
                   onSelect={() => void selectDocument(document)}
@@ -1002,7 +1218,7 @@ export function MarkdownLensApp() {
             style={{ gridTemplateColumns: `${splitRatio}fr 7px ${100 - splitRatio}fr` }}
           >
             <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
-              <MarkdownEditor value={markdown} theme={theme} onChange={updateMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
+              <MarkdownEditor value={markdown} theme={theme} fontSize={editorFontSize} lineWrap={lineWrap} onChange={updateMarkdown} onCursorChange={setCursor} onPasteImages={handlePasteImages} onReady={registerEditor} />
             </WorkspacePanel>
             <button
               type="button"
@@ -1027,7 +1243,20 @@ export function MarkdownLensApp() {
               <span className="grid gap-0.5 opacity-50 group-hover:opacity-100" aria-hidden><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /></span>
             </button>
             <WorkspacePanel label="Preview" icon={Eye} detail="GitHub-style output">
-              <div className="h-full overflow-y-auto">
+              <div
+                className="h-full overflow-y-auto"
+                onClick={handlePreviewClick}
+                ref={(node) => {
+                  if (!node) return;
+                  const publish = () => {
+                    if (node.clientHeight > 0) bindScrollSurface("preview", node);
+                  };
+                  const observer = new ResizeObserver(publish);
+                  observer.observe(node);
+                  publish();
+                  return () => observer.disconnect();
+                }}
+              >
                 <MarkdownPreview markdown={deferredMarkdown} theme={theme} previewRef={previewRef} assetUrls={assetUrls} />
               </div>
             </WorkspacePanel>
@@ -1040,11 +1269,26 @@ export function MarkdownLensApp() {
           >
             {mobilePane === "editor" ? (
               <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
-                <MarkdownEditor value={markdown} theme={theme} onChange={updateMarkdown} onCursorChange={setCursor} onReady={(actions) => (editorActions.current = actions)} />
+                <MarkdownEditor value={markdown} theme={theme} fontSize={editorFontSize} lineWrap={lineWrap} onChange={updateMarkdown} onCursorChange={setCursor} onPasteImages={handlePasteImages} onReady={registerEditor} />
               </WorkspacePanel>
             ) : (
               <WorkspacePanel label="Preview" icon={Eye} detail="GitHub-style output">
-                <div className="h-full overflow-y-auto"><MarkdownPreview markdown={deferredMarkdown} theme={theme} previewRef={previewRef} assetUrls={assetUrls} /></div>
+                <div
+                  className="h-full overflow-y-auto"
+                  onClick={handlePreviewClick}
+                  ref={(node) => {
+                    if (!node) return;
+                    const publish = () => {
+                      if (node.clientHeight > 0) bindScrollSurface("preview", node);
+                    };
+                    const observer = new ResizeObserver(publish);
+                    observer.observe(node);
+                    publish();
+                    return () => observer.disconnect();
+                  }}
+                >
+                  <MarkdownPreview markdown={deferredMarkdown} theme={theme} previewRef={previewRef} assetUrls={assetUrls} />
+                </div>
               </WorkspacePanel>
             )}
           </div>
@@ -1056,7 +1300,7 @@ export function MarkdownLensApp() {
           aria-labelledby={mobilePane === "outline" ? "workspace-pane-tab-outline" : undefined}
           className={cn(
             "workspace-rail z-30 w-[220px] shrink-0 flex-col border-l border-border bg-background 2xl:w-[260px]",
-            railDisplay(outlineOpen, mobilePane === "outline"),
+            railDisplay(outlineOpen && !focusMode, mobilePane === "outline"),
             mobilePane === "outline" && "absolute inset-y-0 right-0 w-full max-w-[320px] shadow-2xl lg:static lg:w-[220px] lg:max-w-none lg:shadow-none 2xl:w-[260px]",
           )}
           aria-label="Outline"
@@ -1070,7 +1314,7 @@ export function MarkdownLensApp() {
           />
           <nav className="min-h-0 flex-1 overflow-y-auto py-2" aria-label="Document outline">
             {headings.length ? headings.map((heading) => (
-              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} onClick={() => navigateToHeading(heading.id)} className="flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring" style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
+              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} aria-current={activeHeadingIdState === heading.id ? "location" : undefined} onClick={() => navigateToHeading(heading.id)} className={cn("flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", activeHeadingIdState === heading.id && "border-accent bg-muted text-foreground")} style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
                 <span aria-hidden className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
                 <span className="line-clamp-2 leading-4">{heading.text}</span>
               </button>
@@ -1111,6 +1355,13 @@ export function MarkdownLensApp() {
               Reset split
             </button>
           ) : null}
+          <button type="button" onClick={toggleFocus} aria-pressed={focusMode} className={cn("h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", focusMode && "bg-muted text-foreground")}>Focus</button>
+          <span className="hidden items-center sm:flex">
+            <button type="button" onClick={() => updateEditorFontSize(-1)} disabled={editorFontSize === EDITOR_FONT_SIZES[0]} aria-label="Decrease font size" className="h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">A−</button>
+            <button type="button" onClick={() => updateEditorFontSize(1)} disabled={editorFontSize === EDITOR_FONT_SIZES[EDITOR_FONT_SIZES.length - 1]} aria-label="Increase font size" className="h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">A+</button>
+            <button type="button" onClick={toggleLineWrap} aria-pressed={lineWrap} className={cn("h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", lineWrap && "bg-muted text-foreground")}>Wrap</button>
+          </span>
+          <button type="button" onClick={() => setVersionsOpen(true)} aria-haspopup="dialog" className="inline-flex h-7 items-center gap-1 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><History aria-hidden="true" className="h-3.5 w-3.5" />Versions</button>
           <span role="status" className={cn("h-1.5 w-1.5 rounded-full", saveState === "saved" ? "bg-accent" : saveState === "saving" ? "bg-amber-400" : "bg-red-400")}>
             <span className="sr-only">{saveState}</span>
           </span>
@@ -1206,6 +1457,7 @@ export function MarkdownLensApp() {
       {commandOpen ? <CommandPalette search={commandSearch} onSearch={setCommandSearch} commands={visibleCommands} onClose={() => { setCommandOpen(false); setCommandSearch(""); }} /> : null}
       {formatGuideOpen ? <FormatGuide onClose={() => setFormatGuideOpen(false)} /> : null}
       {reportOpen && activeDocument?.conversion ? <ConversionReportDialog document={activeDocument} onClose={() => setReportOpen(false)} /> : null}
+      {versionsOpen ? <VersionsDialog versions={versions} onRestore={(version) => void restoreVersion(version)} onClose={() => setVersionsOpen(false)} /> : null}
       {shareLink ? <ShareLinkDialog preview={shareLink} onCopy={() => void copyShareLink()} onClose={() => setShareLink(null)} /> : null}
       {pendingShareFragment !== null ? (
         <SharedLinkConsentDialog
@@ -1398,23 +1650,95 @@ function WorkspacePanel({ label, icon: Icon, detail, children }: { label: string
   );
 }
 
-function DocumentRow({ document, active, trashed, onSelect, onRename, onDuplicate, onDelete, onRestore, onDeleteForever }: { document: DocumentRecord; active: boolean; trashed: boolean; onSelect: () => void; onRename: () => void; onDuplicate: () => void; onDelete: () => void; onRestore: () => void; onDeleteForever: () => void }) {
+function DocumentRow({ document, query, active, trashed, onSelect, onRename, onDuplicate, onDelete, onRestore, onDeleteForever }: { document: DocumentRecord; query: string; active: boolean; trashed: boolean; onSelect: () => void; onRename: () => void; onDuplicate: () => void; onDelete: () => void; onRestore: () => void; onDeleteForever: () => void }) {
   const format = documentFormatLabel(document.source);
   const warnings = document.conversion?.warnings.length ?? 0;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const snippet = documentMatchSnippet(document.markdown, query);
+  const actions = trashed
+    ? [{ label: "Restore document", onClick: onRestore }, { label: "Delete permanently", onClick: onDeleteForever }]
+    : [{ label: "Rename document", onClick: onRename }, { label: "Duplicate document", onClick: onDuplicate }, { label: "Move to Trash", onClick: onDelete }];
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node) && !triggerRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      const items = [...menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []];
+      const currentIndex = items.indexOf(window.document.activeElement as HTMLButtonElement);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenuOpen(false);
+        triggerRef.current?.focus();
+        return;
+      }
+      if (!items.length || !["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (currentIndex + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+      items[nextIndex]?.focus();
+    };
+    window.document.addEventListener("pointerdown", close);
+    window.document.addEventListener("keydown", onKey);
+    menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+    return () => {
+      window.document.removeEventListener("pointerdown", close);
+      window.document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
   return (
-    <div className={cn("group mb-0.5 flex items-center rounded-md border border-transparent", active && !trashed && "border-accent/45 bg-accent/10")}>
-      <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] font-semibold tracking-wide text-muted-foreground">{format}</span>
-        <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
-        {warnings > 0 ? <span className="shrink-0 text-[10px] font-medium text-amber-800 dark:text-amber-200" aria-label={`${warnings} conversion warning${warnings === 1 ? "" : "s"}`}>{warnings}</span> : null}
-        <span className="shrink-0 text-[10px] text-muted-foreground">{relativeTime(document.updatedAt)}</span>
-      </button>
-      <div className="mr-1 flex items-center md:hidden md:group-hover:flex md:group-focus-within:flex">
-        {trashed ? (
-          <><IconButton icon={RotateCcw} label="Restore document" onClick={onRestore} compact /><IconButton icon={Trash2} label="Delete permanently" onClick={onDeleteForever} compact /></>
-        ) : (
-          <><IconButton icon={Pencil} label="Rename document" onClick={onRename} compact /><IconButton icon={Copy} label="Duplicate document" onClick={onDuplicate} compact /><IconButton icon={Trash2} label="Move to Trash" onClick={onDelete} compact /></>
-        )}
+    <div className={cn("mb-0.5 rounded-md border border-transparent", active && !trashed && "border-accent/45 bg-accent/10")}>
+      <div className="flex items-start">
+        <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 flex-col gap-1 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+          <span className="flex min-w-0 items-center gap-2.5">
+            <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] font-semibold tracking-wide text-muted-foreground">{format}</span>
+            <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
+            {warnings > 0 ? <span className="shrink-0 text-[10px] font-medium text-amber-800 dark:text-amber-200" aria-label={`${warnings} conversion warning${warnings === 1 ? "" : "s"}`}>{warnings}</span> : null}
+            <span className="shrink-0 text-[10px] text-muted-foreground">{relativeTime(document.updatedAt)}</span>
+          </span>
+          {snippet ? <span className="line-clamp-1 pl-6 text-[10px] text-muted-foreground">{snippet.prefix}<mark className="rounded-sm bg-amber-400/35 px-0.5 text-foreground">{snippet.match}</mark>{snippet.suffix}</span> : null}
+        </button>
+        <button ref={triggerRef} type="button" aria-label={`Actions for ${document.title}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} className="mr-0.5 mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Ellipsis aria-hidden="true" className="h-4 w-4" />
+        </button>
+      </div>
+      {menuOpen ? (
+        <div ref={menuRef} role="menu" aria-label={`Actions for ${document.title}`} className="grid gap-0.5 px-1 pb-1">
+          {actions.map((action) => (
+            <button key={action.label} type="button" role="menuitem" onClick={() => { setMenuOpen(false); action.onClick(); }} className="flex h-9 items-center rounded-md px-2.5 text-left text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{action.label}</button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function VersionsDialog({ versions, onRestore, onClose }: { versions: readonly DocumentVersion[]; onRestore: (version: DocumentVersion) => void; onClose: () => void }) {
+  const dialogRef = useDialogFocus(onClose);
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="versions-title" className="w-full max-w-md rounded-lg border border-border bg-panel p-5 shadow-2xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="versions-title" className="text-lg font-semibold">Local versions</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Up to four snapshots stay on this device.</p>
+          </div>
+          <IconButton icon={X} label="Close local versions" onClick={onClose} />
+        </div>
+        {versions.length ? (
+          <ul className="mt-5 max-h-64 space-y-1 overflow-y-auto" aria-label="Saved versions" tabIndex={0}>
+            {versions.map((version) => {
+              const label = versionTimeLabel(version.savedAt);
+              return (
+                <li key={version.id} className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+                  <span className="text-sm">{label}</span>
+                  <button type="button" onClick={() => onRestore(version)} className="min-h-11 rounded-md px-2 text-xs font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Restore {label}</button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : <p className="mt-5 text-sm text-muted-foreground">No earlier versions yet. Snapshots appear as you edit.</p>}
       </div>
     </div>
   );

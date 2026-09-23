@@ -1,10 +1,11 @@
 "use client";
 
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
 import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import { clipboardImageFiles } from "@/lib/clipboard-images";
 
 const MAX_COUNTED_MATCHES = 10_000;
 const BASIC_SETUP = {
@@ -80,19 +81,36 @@ function describeSearchMatches(view: EditorView) {
   return current ? `${current.toLocaleString()} of ${totalLabel} matches` : `${totalLabel} matches`;
 }
 
+export type MarkdownEditorActions = {
+  focus: () => void;
+  openSearch: () => void;
+  revealLine: (line: number) => void;
+  moveCursorToLine: (line: number) => void;
+  insertText: (text: string) => void;
+  scrollElement: () => HTMLElement;
+};
+
 export const MarkdownEditor = memo(function MarkdownEditor({
   value,
   theme,
+  fontSize,
+  lineWrap,
   onChange,
   onCursorChange,
+  onPasteImages,
   onReady,
 }: {
   value: string;
   theme: "light" | "dark";
+  fontSize: number;
+  lineWrap: boolean;
   onChange: (value: string) => void;
   onCursorChange: (position: { line: number; column: number }) => void;
-  onReady: (actions: { focus: () => void; openSearch: () => void }) => void;
+  onPasteImages: (files: File[]) => Promise<string[]>;
+  onReady: (actions: MarkdownEditorActions) => void;
 }) {
+  const onPasteImagesRef = useRef(onPasteImages);
+  onPasteImagesRef.current = onPasteImages;
   const handleUpdate = useCallback(
     (update: ViewUpdate) => {
       if (!update.selectionSet && !update.docChanged) return;
@@ -108,10 +126,28 @@ export const MarkdownEditor = memo(function MarkdownEditor({
   const extensions = useMemo(
     () => [
       markdownLanguage(),
-      EditorView.lineWrapping,
+      ...(lineWrap ? [EditorView.lineWrapping] : []),
       searchMatchStatus,
+      EditorView.domEventHandlers({
+        paste(event, view) {
+          const files = clipboardImageFiles(event.clipboardData);
+          if (!files.length) return false;
+          event.preventDefault();
+          const insertAt = view.state.selection.main;
+          void onPasteImagesRef.current(files).then((snippets) => {
+            if (!snippets.length) return;
+            const needsBreak = insertAt.from > 0 && view.state.sliceDoc(insertAt.from - 1, insertAt.from) !== "\n";
+            const text = `${needsBreak ? "\n" : ""}${snippets.join("\n")}\n`;
+            view.dispatch({
+              changes: { from: insertAt.from, to: insertAt.to, insert: text },
+              selection: { anchor: insertAt.from + text.length },
+            });
+          });
+          return true;
+        },
+      }),
       EditorView.theme({
-        "&": { height: "100%", backgroundColor: "transparent", fontSize: "13.5px" },
+        "&": { height: "100%", backgroundColor: "transparent", fontSize: `${fontSize}px` },
         ".cm-scroller": {
           fontFamily: "var(--font-geist-mono), SFMono-Regular, Consolas, monospace",
           lineHeight: "1.72",
@@ -156,7 +192,7 @@ export const MarkdownEditor = memo(function MarkdownEditor({
         },
       }),
     ],
-    [],
+    [fontSize, lineWrap],
   );
 
   return (
@@ -168,11 +204,45 @@ export const MarkdownEditor = memo(function MarkdownEditor({
       basicSetup={BASIC_SETUP}
       onChange={onChange}
       onCreateEditor={(view) => {
-        onReady({ focus: () => view.focus(), openSearch: () => void openSearchPanel(view) });
+        const lineAt = (lineNumber: number) => view.state.doc.line(Math.min(Math.max(1, lineNumber), view.state.doc.lines));
+        const actions: MarkdownEditorActions = {
+          focus: () => view.focus(),
+          openSearch: () => void openSearchPanel(view),
+          revealLine(lineNumber) {
+            const line = lineAt(lineNumber);
+            view.dispatch({ effects: EditorView.scrollIntoView(line.from, { y: "start" }) });
+          },
+          moveCursorToLine(lineNumber) {
+            const line = lineAt(lineNumber);
+            view.dispatch({
+              selection: { anchor: line.from },
+              effects: EditorView.scrollIntoView(line.from, { y: "center" }),
+            });
+            onCursorChange({ line: line.number, column: 1 });
+            view.focus();
+          },
+          insertText(text) {
+            const range = view.state.selection.main;
+            view.dispatch({
+              changes: { from: range.from, to: range.to, insert: text },
+              selection: { anchor: range.from + text.length },
+            });
+            view.focus();
+          },
+          scrollElement: () => view.scrollDOM,
+        };
+        const publish = () => {
+          if (!view.scrollDOM.isConnected) return;
+          if (view.scrollDOM.clientHeight === 0) return;
+          onReady(actions);
+        };
+        publish();
+        const observer = new ResizeObserver(publish);
+        observer.observe(view.scrollDOM);
       }}
       onUpdate={handleUpdate}
       aria-label="Markdown editor"
       className="h-full overflow-hidden"
     />
   );
-}, (previous, next) => previous.value === next.value && previous.theme === next.theme);
+}, (previous, next) => previous.value === next.value && previous.theme === next.theme && previous.fontSize === next.fontSize && previous.lineWrap === next.lineWrap);
