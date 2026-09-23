@@ -33,9 +33,18 @@ test("trying the sample PDF opens it in the editor", async ({ page }, testInfo) 
   await page.getByRole("button", { name: "Try a sample PDF" }).click();
   await expect(page).toHaveURL(/\/editor$/);
   if (testInfo.project.name !== "mobile") {
-    await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Sample handbook/ })).toBeVisible();
+    const handbook = page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Sample handbook/ });
+    await expect(handbook).toBeVisible();
+    await expect(handbook).toContainText("PDF");
   }
   await expect(page.getByRole("region", { name: "Preview" })).toContainText("Keep decisions documented.");
+  const warning = page.getByRole("button", { name: "1 warning, review before you export" });
+  await expect(warning).toBeVisible();
+  await warning.click();
+  await expect(page.getByRole("dialog", { name: "Conversion report" })).toBeVisible();
+  await page.getByRole("button", { name: "Close conversion report" }).click();
+  await page.locator("#main").getByRole("button", { name: "Dismiss", exact: true }).click();
+  await expect(warning).toBeHidden();
 });
 
 test("converter pages choose a file instead of only opening the editor", async ({ page }) => {
