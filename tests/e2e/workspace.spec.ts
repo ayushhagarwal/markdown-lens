@@ -574,6 +574,8 @@ test("share links require explicit consent and preserve existing local drafts", 
   await page.getByRole("menuitem", { name: "Create share link" }).click();
 
   const createDialog = page.getByRole("dialog", { name: "Create share link" });
+  await expect(createDialog).toContainText("This link contains the full text.");
+  await expect(createDialog).toContainText("Pasting it into a chat or email publishes the document.");
   await expect(createDialog).toContainText("Anyone with this URL can read and copy the document.");
   await expect(createDialog.getByText(/[\d,]+ characters/)).toBeVisible();
   await createDialog.getByRole("button", { name: "Copy share link" }).click();
@@ -598,6 +600,76 @@ test("share links require explicit consent and preserve existing local drafts", 
   await expect(editor).toContainText("Shared payload");
   await expect.poll(() => page.evaluate(() => window.location.hash)).toBe("");
   expect(requestedUrls.every((url) => !url.includes("#v1:"))).toBe(true);
+});
+
+test("export menu separates this document from the workspace", async ({ page }, testInfo) => {
+  await page.goto("/editor");
+  if (testInfo.project.name !== "mobile") {
+    await expect(page.getByRole("button", { name: "Print", exact: true })).toBeVisible();
+  }
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  const menu = page.getByRole("menu", { name: "Export options" });
+  const documentGroup = menu.getByRole("group", { name: "This document" });
+  const workspaceGroup = menu.getByRole("group", { name: "Workspace" });
+  await expect(documentGroup.getByRole("menuitem", { name: "Create share link" })).toContainText("Contains the full text");
+  await expect(documentGroup.getByRole("menuitem", { name: "Print / save PDF" })).toBeVisible();
+  await expect(workspaceGroup.getByRole("menuitem", { name: "Restore workspace backup" })).toBeVisible();
+  await expect(documentGroup.getByRole("menuitem", { name: "Restore workspace backup" })).toHaveCount(0);
+  await expect(workspaceGroup.getByRole("menuitem", { name: "Create share link" })).toHaveCount(0);
+});
+
+test("a document that cannot fit in a share link offers a download", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop editor fill");
+  test.setTimeout(60_000);
+  await page.goto("/editor");
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  const markdown = await page.evaluate(() => {
+    let state = 0x12345678;
+    let text = "";
+    while (text.length < 50_000) {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      text += (state >>> 0).toString(36);
+    }
+    return text.slice(0, 50_000);
+  });
+  await editor.fill(markdown);
+  await page.getByRole("button", { name: "Export", exact: true }).click();
+  const menu = page.getByRole("menu", { name: "Export options" });
+  await expect(menu).toContainText("This document is too large for a share link.");
+  await expect(menu.getByRole("menuitem", { name: "Create share link" })).toHaveCount(0);
+  const downloadPromise = page.waitForEvent("download");
+  await menu.getByRole("menuitem", { name: "Download .md instead", exact: true }).click();
+  expect((await downloadPromise).suggestedFilename()).toMatch(/\.md$/);
+});
+
+test("editor follows the system theme until a choice is saved", async ({ browser }) => {
+  const lightContext = await browser.newContext({ colorScheme: "light" });
+  const lightPage = await lightContext.newPage();
+  await lightPage.goto("http://127.0.0.1:3000/editor");
+  await expect(lightPage.locator("html")).not.toHaveClass(/dark/);
+  await expect(lightPage.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+  await lightPage.reload();
+  await expect(lightPage.locator("html")).not.toHaveClass(/dark/);
+  await lightPage.getByRole("button", { name: "Switch to dark mode" }).click();
+  await expect(lightPage.locator("html")).toHaveClass(/dark/);
+  await lightPage.reload();
+  await expect(lightPage.locator("html")).toHaveClass(/dark/);
+  await lightContext.close();
+
+  const darkContext = await browser.newContext({ colorScheme: "dark" });
+  const darkPage = await darkContext.newPage();
+  await darkPage.goto("http://127.0.0.1:3000/editor");
+  await expect(darkPage.locator("html")).toHaveClass(/dark/);
+  await expect(darkPage.getByRole("button", { name: "Switch to light mode" })).toBeVisible();
+  await darkContext.close();
+
+  const savedContext = await browser.newContext({ colorScheme: "dark" });
+  await savedContext.addInitScript(() => localStorage.setItem("markdown-lens:theme", "light"));
+  const savedPage = await savedContext.newPage();
+  await savedPage.goto("http://127.0.0.1:3000/editor");
+  await expect(savedPage.locator("html")).not.toHaveClass(/dark/);
+  await expect(savedPage.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+  await savedContext.close();
 });
 
 test("command palette hints match platform modifier", async ({ page }, testInfo) => {

@@ -97,7 +97,7 @@ import { convertLocalFile, converterCapabilities } from "@/lib/converters/regist
 import { ConverterError } from "@/lib/converters/error";
 import type { ConversionResult, ConverterProgress } from "@/lib/converters/types";
 import {
-  createShareFragment,
+  assessShareLink,
   inspectShareFragment,
   readShareFragment,
   type ShareFragmentPreview,
@@ -240,6 +240,7 @@ export function MarkdownLensApp() {
   const persistActiveDraftRef = useRef<(() => Promise<DocumentRecord | null | undefined>) | null>(null);
   const importFilesRef = useRef<(files: File[]) => Promise<void>>(async () => undefined);
   const readyRef = useRef(false);
+  const themeExplicit = useRef(false);
   const { active: fileDragActive, reset: resetFileDrag, dragProps } = useFileDrag();
   const deferredMarkdown = useDeferredValue(markdown);
   const modPrefix = useMemo(() => commandModPrefix(), []);
@@ -318,10 +319,6 @@ export function MarkdownLensApp() {
       setWorkspaceStorage(status);
       if (status.mode === "memory") setStorageWarningDismissed(false);
     });
-    const storedTheme = readLocalPreference(THEME_KEY) as Theme | null;
-    const nextTheme = storedTheme ?? "dark";
-    setTheme(nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
     const storedRatio = Number(readLocalPreference(SPLIT_KEY));
     if (storedRatio >= 30 && storedRatio <= 70) setSplitRatio(storedRatio);
     setFocusMode(readLocalPreference(FOCUS_KEY) === "1");
@@ -458,10 +455,27 @@ export function MarkdownLensApp() {
   }, [ready]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    document.documentElement.style.colorScheme = theme;
-    if (ready) writeLocalPreference(THEME_KEY, theme);
-  }, [ready, theme]);
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const stored = readLocalPreference(THEME_KEY);
+    const apply = (next: Theme) => {
+      setTheme(next);
+      document.documentElement.classList.toggle("dark", next === "dark");
+      document.documentElement.style.colorScheme = next;
+    };
+    if (stored === "light" || stored === "dark") {
+      themeExplicit.current = true;
+      apply(stored);
+      return;
+    }
+    themeExplicit.current = false;
+    const followSystem = () => {
+      if (themeExplicit.current) return;
+      apply(media.matches ? "dark" : "light");
+    };
+    followSystem();
+    media.addEventListener("change", followSystem);
+    return () => media.removeEventListener("change", followSystem);
+  }, []);
 
   useEffect(() => {
     const handleKeyboard = (event: KeyboardEvent) => {
@@ -808,14 +822,15 @@ export function MarkdownLensApp() {
   }
 
   function prepareShareLink() {
-    try {
-      const fragment = createShareFragment(markdown);
-      const url = `${location.origin}${location.pathname}${fragment}`;
-      setShareLink({ url, length: url.length });
-      setExportOpen(false);
-    } catch (error) {
-      setNotice({ message: error instanceof Error ? error.message : "A share link could not be created." });
+    const assessment = assessShareLink(markdown);
+    setExportOpen(false);
+    if (!assessment.ok) {
+      downloadMarkdown();
+      setNotice({ message: "This document is too large for a share link. Downloaded a Markdown file instead." });
+      return;
     }
+    const url = `${location.origin}${location.pathname}${assessment.fragment}`;
+    setShareLink({ url, length: url.length });
   }
 
   async function copyShareLink() {
@@ -941,6 +956,17 @@ export function MarkdownLensApp() {
     removeLocalPreference(SPLIT_KEY);
   }
 
+  function toggleTheme() {
+    themeExplicit.current = true;
+    setTheme((current) => {
+      const next = current === "dark" ? "light" : "dark";
+      writeLocalPreference(THEME_KEY, next);
+      document.documentElement.classList.toggle("dark", next === "dark");
+      document.documentElement.style.colorScheme = next;
+      return next;
+    });
+  }
+
   function navigateToHeading(id: string) {
     const target = previewRef.current?.querySelector<HTMLElement>(`#${CSS.escape(id)}`);
     if (!target) return;
@@ -984,6 +1010,12 @@ export function MarkdownLensApp() {
     editorActions.current?.insertText(text);
   }
 
+  const shareAssessment = useMemo(
+    () => (exportOpen || commandOpen ? assessShareLink(markdown) : null),
+    [commandOpen, exportOpen, markdown],
+  );
+  const shareLinkTooLarge = shareAssessment?.ok === false;
+
   const commands = [
       { label: "New document", hint: `${modPrefix}N`, action: () => void createNewDocument() },
       { label: "Open or convert", hint: `${modPrefix}O`, action: () => fileInputRef.current?.click() },
@@ -996,7 +1028,7 @@ export function MarkdownLensApp() {
       { label: "Show local versions", action: () => setVersionsOpen(true) },
       { label: "Save and download", hint: `${modPrefix}S`, action: () => void saveAndDownload() },
       { label: "Copy Markdown", action: () => void copyMarkdown() },
-      { label: "Create share link", action: prepareShareLink },
+      { label: shareLinkTooLarge ? "Download .md instead of a share link" : "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
       { label: "Star on GitHub", action: () => window.open(siteConfig.githubUrl, "_blank", "noopener,noreferrer") },
     ];
@@ -1097,7 +1129,7 @@ export function MarkdownLensApp() {
           <button type="button" onClick={() => setCommandOpen(true)} aria-haspopup="dialog" className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex">
             <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>{modPrefix}K</kbd>
           </button>
-          <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))} />
+          <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme} />
           <GithubStarLink variant="nav" className="h-9 px-2.5 text-xs" />
           <IconButton icon={Command} label="Open commands" hasPopup="dialog" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
@@ -1373,7 +1405,7 @@ export function MarkdownLensApp() {
           <div className="hidden h-8 overflow-hidden rounded-md border border-border xl:flex">
             <QuickExport label=".md" onClick={downloadMarkdown} />
             <QuickExport label=".html" onClick={exportHtml} />
-            <QuickExport label=".pdf" onClick={() => window.print()} />
+            <QuickExport label="Print" onClick={() => window.print()} />
             <QuickExport label="…" onClick={() => setExportOpen(true)} ariaLabel="More export options" />
           </div>
           {exportOpen ? (
@@ -1402,16 +1434,29 @@ export function MarkdownLensApp() {
                 const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (currentIndex + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
                 items[nextIndex]?.focus();
               }}
-              className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-64 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl"
+              className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-72 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl"
             >
-              <MenuAction icon={Clipboard} label="Copy Markdown" onClick={() => void copyMarkdown()} />
-              <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
-              <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
-              {activeDocument?.assetIds.length ? <MenuAction icon={FileArchive} label="Export Markdown + assets" onClick={() => void exportDocumentBundle()} /> : null}
-              <MenuAction icon={Share2} label="Create share link" hasPopup="dialog" onClick={prepareShareLink} />
-              <MenuAction icon={FileArchive} label="Export workspace backup" onClick={() => void downloadWorkspaceBackup()} />
-              <MenuAction icon={ArchiveRestore} label="Restore workspace backup" onClick={() => backupInputRef.current?.click()} />
-              <MenuAction icon={FileText} label="Print / save PDF" onClick={() => window.print()} />
+              <div role="group" aria-label="This document" className="grid gap-1">
+                <p aria-hidden="true" className="px-2.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">This document</p>
+                <MenuAction icon={Clipboard} label="Copy Markdown" onClick={() => void copyMarkdown()} />
+                <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
+                <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
+                {activeDocument?.assetIds.length ? <MenuAction icon={FileArchive} label="Export Markdown + assets" onClick={() => void exportDocumentBundle()} /> : null}
+                {shareLinkTooLarge ? (
+                  <>
+                    <p className="px-2.5 py-1 text-[11px] leading-4 text-muted-foreground">This document is too large for a share link.</p>
+                    <MenuAction icon={Download} label="Download .md instead" onClick={downloadMarkdown} />
+                  </>
+                ) : (
+                  <MenuAction icon={Share2} label="Create share link" detail="Contains the full text. Pasting it publishes the document." hasPopup="dialog" onClick={prepareShareLink} />
+                )}
+                <MenuAction icon={FileText} label="Print / save PDF" onClick={() => window.print()} />
+              </div>
+              <div role="group" aria-label="Workspace" className="mt-1 grid gap-1 border-t border-border pt-1">
+                <p aria-hidden="true" className="px-2.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Workspace</p>
+                <MenuAction icon={FileArchive} label="Export workspace backup" onClick={() => void downloadWorkspaceBackup()} />
+                <MenuAction icon={ArchiveRestore} label="Restore workspace backup" onClick={() => backupInputRef.current?.click()} />
+              </div>
             </div>
           ) : null}
           {!outlineOpen ? <IconButton icon={ChevronLeft} label="Show Outline" onClick={() => setOutlineOpen(true)} compact /> : null}
@@ -1695,7 +1740,7 @@ function DocumentRow({ document, query, active, trashed, onSelect, onRename, onD
             <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] font-semibold tracking-wide text-muted-foreground">{format}</span>
             <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
             {warnings > 0 ? <span className="shrink-0 text-[10px] font-medium text-amber-800 dark:text-amber-200" aria-label={`${warnings} conversion warning${warnings === 1 ? "" : "s"}`}>{warnings}</span> : null}
-            <span className="shrink-0 text-[10px] text-muted-foreground">{relativeTime(document.updatedAt)}</span>
+            <span className={cn("shrink-0 text-[10px]", active && !trashed ? "text-foreground/80" : "text-muted-foreground")}>{relativeTime(document.updatedAt)}</span>
           </span>
           {snippet ? <span className="line-clamp-1 pl-6 text-[10px] text-muted-foreground">{snippet.prefix}<mark className="rounded-sm bg-amber-400/35 px-0.5 text-foreground">{snippet.match}</mark>{snippet.suffix}</span> : null}
         </button>
@@ -1903,8 +1948,8 @@ function ShareLinkDialog({
           </div>
           <IconButton icon={X} label="Close share link dialog" onClick={onClose} />
         </div>
-        <div className="mt-5 rounded-md border border-amber-400/35 bg-amber-400/10 p-3 text-sm leading-6 text-amber-100">
-          Anyone with this URL can read and copy the document. Encoding is not encryption—do not use this for secrets or confidential content.
+        <div className="mt-5 rounded-md border border-amber-400/35 bg-amber-400/10 p-3 text-sm leading-6 text-amber-950 dark:text-amber-100">
+          This link contains the full text. Pasting it into a chat or email publishes the document. Anyone with this URL can read and copy the document. Encoding is not encryption—do not use this for secrets or confidential content.
         </div>
         <dl className="mt-4 border-y border-border py-3 text-sm">
           <div className="flex items-center justify-between gap-4">
@@ -2048,8 +2093,16 @@ function IconButton({ icon: Icon, label, hasPopup, onClick, compact, className, 
   return <button type="button" onClick={onClick} disabled={disabled} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
 }
 
-function MenuAction({ icon: Icon, label, hasPopup, onClick }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void }) {
-  return <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={() => { onClick(); }} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><Icon aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />{label}</button>;
+function MenuAction({ icon: Icon, label, detail, hasPopup, onClick }: { icon: typeof FileText; label: string; detail?: string; hasPopup?: "dialog"; onClick: () => void }) {
+  return (
+    <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={onClick} className={cn("flex w-full gap-2.5 rounded-md px-2.5 text-left text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", detail ? "items-start py-2" : "h-9 items-center")}>
+      <Icon aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground", detail && "mt-0.5")} />
+      <span className="min-w-0">
+        <span className="block">{label}</span>
+        {detail ? <span className="mt-0.5 block text-[10px] leading-4 text-muted-foreground">{detail}</span> : null}
+      </span>
+    </button>
+  );
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
