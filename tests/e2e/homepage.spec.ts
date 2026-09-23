@@ -33,7 +33,7 @@ test("trying the sample PDF opens it in the editor", async ({ page }, testInfo) 
   await page.getByRole("button", { name: "Try a sample PDF" }).click();
   await expect(page).toHaveURL(/\/editor$/);
   if (testInfo.project.name !== "mobile") {
-    const handbook = page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Sample handbook/ });
+    const handbook = page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /^PDF Sample handbook/ });
     await expect(handbook).toBeVisible();
     await expect(handbook).toContainText("PDF");
   }
