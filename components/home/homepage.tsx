@@ -3,6 +3,7 @@ import { ArrowRight, FileCheck2, LockKeyhole, Sparkles } from "lucide-react";
 import { ProductPreview } from "@/components/home/product-preview";
 import { ConversionWorkflow } from "@/components/home/conversion-workflow";
 import { BrandIcon } from "@/components/brand-icon";
+import { ConvertFileButton, LandingImportSurface, TrySamplePdfButton } from "@/components/landing-import-surface";
 import { GithubStarLink } from "@/components/github-star-link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -10,6 +11,7 @@ import { converterLinks, siteConfig } from "@/lib/site";
 
 export function Homepage() {
   return (
+    <LandingImportSurface path="/">
     <div className="home-shell min-h-screen overflow-x-clip bg-background text-foreground">
       <SiteHeader wide />
       <main id="main">
@@ -25,12 +27,19 @@ export function Homepage() {
               <span className="sm:hidden">Preview GitHub-style Markdown and convert PDFs, Office files, HTML, EPUB, data, and images—entirely in your browser.</span>
               <span className="hidden sm:inline">Preview GitHub-style Markdown, then convert PDFs, Office files, HTML, EPUB, data, and images into editable source—entirely in your browser.</span>
             </p>
-            <div className="mt-9 flex flex-col items-start gap-5">
-              <Link href="/editor" className="btn-primary home-action group">
-                Open workspace
+            <div className="mt-9 flex flex-col items-start gap-4">
+              <ConvertFileButton className="btn-primary home-action group">
+                Convert a file
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden />
-              </Link>
+              </ConvertFileButton>
+              <TrySamplePdfButton className="btn-secondary home-action">
+                Try a sample PDF
+              </TrySamplePdfButton>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link href="/editor" className="home-text-link group">
+                  Open workspace
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
+                </Link>
                 <Link href="/supported-formats" className="home-text-link group">
                   View supported formats
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden />
@@ -38,6 +47,7 @@ export function Homepage() {
                 <GithubStarLink variant="text" className="home-text-link group" />
               </div>
             </div>
+            <p className="mt-4 max-w-[520px] text-sm leading-6 text-muted-foreground">Or drop a PDF, Word file, or other supported document anywhere on this page.</p>
             <nav className="mt-8 flex max-w-[520px] flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground" aria-label="Popular converters">
               {converterLinks.slice(0, 6).map((link) => (
                 <Link key={link.href} href={link.href} className="rounded-sm transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -107,6 +117,7 @@ export function Homepage() {
       </main>
       <SiteFooter />
     </div>
+    </LandingImportSurface>
   );
 }
 

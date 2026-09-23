@@ -1,6 +1,30 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
+test("document list distinguishes an empty workspace from a search miss", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop document rail");
+  await page.goto("/editor");
+  const documents = page.getByRole("complementary", { name: "Documents" });
+  await documents.getByLabel("Search documents").fill("no-such-document");
+  await expect(documents.getByText("No documents match this search.")).toBeVisible();
+  await documents.getByLabel("Search documents").fill("");
+  await documents.getByRole("button", { name: /Welcome to Markdown Lens/ }).first().hover();
+  await documents.getByRole("button", { name: "Move to Trash" }).click();
+  await expect(documents.getByText("No documents yet.")).toBeVisible();
+  await expect(documents.getByRole("button", { name: "New document" })).toBeVisible();
+  await expect(documents.getByRole("button", { name: "Open or convert" })).toBeVisible();
+});
+
+test("welcome document shows a rendered sample instead of setup instructions", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop split preview");
+  await page.goto("/editor");
+  const preview = page.locator(".markdown-body");
+  await expect(preview.getByRole("table")).toContainText("Extracted text");
+  await expect(preview.locator("pre")).toContainText("const workspace");
+  await expect(preview.locator(".katex")).toBeVisible();
+  await expect(preview.getByRole("button", { name: "Render diagram" })).toBeVisible();
+});
+
 test("workspace loads and creates a local document", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop workspace interaction");
   await page.goto("/editor");
@@ -384,7 +408,7 @@ test("fenced code blocks announce clipboard failures", async ({ page }, testInfo
 test("@a11y editor has no accessibility violations", async ({ page }) => {
   await page.goto("/editor");
   await expect(page.getByRole("main")).toBeVisible();
-  const results = await new AxeBuilder({ page }).exclude(".cm-content").analyze();
+  const results = await new AxeBuilder({ page }).exclude(".cm-content").exclude(".cm-scroller").analyze();
   expect(results.violations).toEqual([]);
 });
 

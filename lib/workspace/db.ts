@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { WELCOME_DOCUMENT_MARKDOWN, WELCOME_DOCUMENT_TITLE } from "@/lib/welcome-document";
 import {
   createId,
   createDocumentRecord,
@@ -102,7 +103,18 @@ export async function closeWorkspaceDatabase() {
   databasePromise = null;
 }
 
-export async function initializeWorkspace() {
+let initializeQueue: Promise<unknown> = Promise.resolve();
+
+export function initializeWorkspace() {
+  const run = initializeQueue.then(() => initializeWorkspaceOnce());
+  initializeQueue = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+async function initializeWorkspaceOnce() {
   const records = await listDocuments({ includeDeleted: true });
   const migrationComplete = readLocalStorage(MIGRATION_KEY) === "1";
   const legacyDraft = migrationComplete ? null : readLocalStorage(LEGACY_DRAFT_KEY);
@@ -120,8 +132,8 @@ export async function initializeWorkspace() {
   } else if (records.length === 0) {
     await addDocument(
       createDocumentRecord({
-        title: "Welcome to Markdown Lens",
-        markdown: welcomeMarkdown,
+        title: WELCOME_DOCUMENT_TITLE,
+        markdown: WELCOME_DOCUMENT_MARKDOWN,
       }),
     );
   }
@@ -564,17 +576,3 @@ function dataUrlToBlob(value: string) {
 function titleFromMarkdown(markdown: string) {
   return markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() || "Imported draft";
 }
-
-const welcomeMarkdown = `# Welcome to Markdown Lens
-
-Your private, local-first Markdown workbench.
-
-## Start here
-
-- Create or import documents from the **Documents** rail.
-- Edit Markdown and review the rendered preview side by side.
-- Use the **Outline** to navigate long documents.
-- Export Markdown, HTML, PDF, or a complete workspace backup.
-
-> Documents stay in this browser unless you explicitly export or share them.
-`;
