@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { addPendingImports, consumePendingImports, stagePendingImports } from "@/lib/pending-import";
+import {
+  addPendingImports,
+  consumePendingExample,
+  consumePendingImports,
+  stagePendingExample,
+  stagePendingImports,
+} from "@/lib/pending-import";
 
 function file(name: string) {
   return new File(["hello"], name, { type: "text/plain" });
@@ -8,6 +14,7 @@ function file(name: string) {
 describe("pending imports", () => {
   beforeEach(() => {
     consumePendingImports();
+    consumePendingExample();
   });
 
   test("stages a fresh selection and then clears it on consume", () => {
@@ -15,6 +22,13 @@ describe("pending imports", () => {
     stagePendingImports([file("b.docx")]);
     expect(consumePendingImports().map((item) => item.name)).toEqual(["b.docx"]);
     expect(consumePendingImports()).toEqual([]);
+  });
+
+  test("stages one example document and clears it on consume", () => {
+    stagePendingExample({ title: "Headings", markdown: "# Heading 1" });
+    stagePendingExample({ title: "Emphasis", markdown: "**Bold text**" });
+    expect(consumePendingExample()).toEqual({ title: "Emphasis", markdown: "**Bold text**" });
+    expect(consumePendingExample()).toBeNull();
   });
 
   test("appends files that arrive before the editor is ready", () => {

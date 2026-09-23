@@ -42,7 +42,6 @@ import {
   X,
 } from "lucide-react";
 import { DropToConvertOverlay, useFileDrag } from "@/components/file-drop-overlay";
-import { GithubStarLink } from "@/components/github-star-link";
 import { clipboardImageFiles } from "@/lib/clipboard-images";
 import { conversionWarningLabel, documentFormatLabel } from "@/lib/document-format";
 import { documentListEmptyState } from "@/lib/document-list";
@@ -50,13 +49,12 @@ import { documentMatchSnippet } from "@/lib/document-search";
 import { versionTimeLabel } from "@/lib/document-versions";
 import { conversionProgressPercent } from "@/lib/import-progress";
 import { activeHeadingId, pairedScrollOffset } from "@/lib/scroll-sync";
-import { addPendingImports, consumePendingImports } from "@/lib/pending-import";
+import { addPendingImports, consumePendingExample, consumePendingImports } from "@/lib/pending-import";
 import { createSamplePdfFile } from "@/lib/sample-pdf";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "@/components/brand-icon";
 import { siteConfig } from "@/lib/site";
-import { recordConversionAndShouldAsk } from "@/lib/star-prompt";
 import {
   addDocument,
   addDocumentWithAssets,
@@ -162,20 +160,6 @@ function isApplePlatform() {
 
 function commandModPrefix(apple = isApplePlatform()) {
   return apple ? "⌘" : "Ctrl+";
-}
-
-function offerStarAsk(setNotice: (notice: ToastNotice) => void) {
-  try {
-    if (!recordConversionAndShouldAsk(localStorage)) return;
-  } catch {
-    // Private mode can block localStorage; do not interrupt the conversion flow.
-    return;
-  }
-  setNotice({
-    message: "You’ve converted two documents locally. Star the project if it helped.",
-    actionLabel: "Star",
-    actionHref: siteConfig.githubUrl,
-  });
 }
 
 export function MarkdownLensApp() {
@@ -342,8 +326,16 @@ export function MarkdownLensApp() {
         clearShareFragment();
       }
       if (cancelled) return;
-      setDocuments(records);
-      const first = records.find((record) => record.deletedAt === undefined);
+      const example = consumePendingExample();
+      let openedRecords = records;
+      if (example) {
+        const document = createDocumentRecord({ title: example.title, markdown: example.markdown });
+        await addDocument(document);
+        if (cancelled) return;
+        openedRecords = [document, ...records];
+      }
+      setDocuments(openedRecords);
+      const first = openedRecords.find((record) => record.deletedAt === undefined);
       setActiveId(first?.id ?? null);
       setMarkdown(first?.markdown ?? "");
       readyRef.current = true;
@@ -675,7 +667,6 @@ export function MarkdownLensApp() {
           setActiveId(lastDocument.id);
           setMarkdown(lastDocument.markdown);
           setMobilePane("preview");
-          offerStarAsk(setNotice);
         }
         setJobs((current) => current.map((job) => (job.id === id ? { ...job, state: "completed" } : job)));
       } catch (error) {
@@ -1030,7 +1021,6 @@ export function MarkdownLensApp() {
       { label: "Copy Markdown", action: () => void copyMarkdown() },
       { label: shareLinkTooLarge ? "Download .md instead of a share link" : "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
-      { label: "Star on GitHub", action: () => window.open(siteConfig.githubUrl, "_blank", "noopener,noreferrer") },
     ];
   const visibleCommands = commands.filter((command) => command.label.toLowerCase().includes(commandSearch.toLowerCase()));
 
@@ -1130,7 +1120,6 @@ export function MarkdownLensApp() {
             <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>{modPrefix}K</kbd>
           </button>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme} />
-          <GithubStarLink variant="nav" className="h-9 px-2.5 text-xs" />
           <IconButton icon={Command} label="Open commands" hasPopup="dialog" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
       </header>

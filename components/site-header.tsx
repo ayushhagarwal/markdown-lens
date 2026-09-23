@@ -5,10 +5,26 @@ import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandIcon } from "@/components/brand-icon";
-import { GithubStarLink } from "@/components/github-star-link";
+import { useLandingFilePicker } from "@/components/landing-import-surface";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { primaryNav } from "@/lib/site";
 import { cn } from "@/lib/utils";
+
+function ConvertFileControl({ className, onActivate }: { className?: string; onActivate?: () => void }) {
+  const openPicker = useLandingFilePicker();
+  if (openPicker) {
+    return (
+      <button type="button" className={className} onClick={() => { onActivate?.(); openPicker(); }}>
+        Convert a file
+      </button>
+    );
+  }
+  return (
+    <Link href="/" className={className} onClick={onActivate}>
+      Convert a file
+    </Link>
+  );
+}
 
 export function SiteHeader({ wide = false }: { wide?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -81,15 +97,9 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
                 {link.label}
               </Link>
             ))}
-            <GithubStarLink variant="nav" />
           </nav>
           <ThemeToggle />
-          <Link
-            href="/editor"
-            className="btn-header ml-1"
-          >
-            Open workspace
-          </Link>
+          <ConvertFileControl className="btn-header ml-1" />
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -118,10 +128,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
                 {link.label}
               </Link>
             ))}
-            <GithubStarLink variant="nav" className="h-11 justify-self-start px-3 py-3 text-base" onClick={() => setOpen(false)} />
-            <Link href="/editor" onClick={() => setOpen(false)} className="btn-primary mt-2">
-              Open workspace
-            </Link>
+            <ConvertFileControl className="btn-primary mt-2" onActivate={() => setOpen(false)} />
           </nav>
           </div>
         </>
