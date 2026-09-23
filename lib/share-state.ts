@@ -12,6 +12,17 @@ export type ShareFragmentPreview = {
   compressedCharacters: number;
 };
 
+export function assessShareLink(markdown: string):
+  | { ok: true; fragment: string }
+  | { ok: false; reason: "markdown" | "url" } {
+  if (markdown.length > SHARE_MARKDOWN_LIMIT) return { ok: false, reason: "markdown" };
+  try {
+    return { ok: true, fragment: createShareFragment(markdown) };
+  } catch {
+    return { ok: false, reason: "url" };
+  }
+}
+
 export function createShareFragment(markdown: string) {
   if (markdown.length > SHARE_MARKDOWN_LIMIT) {
     throw new Error("This document is too large to share safely in a browser link.");

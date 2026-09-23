@@ -1,12 +1,23 @@
 import { describe, expect, test } from "vitest";
 import LZString from "lz-string";
 import {
+  assessShareLink,
   createShareFragment,
   inspectShareFragment,
   readShareFragment,
   SHARE_FRAGMENT_LIMIT,
   SHARE_MARKDOWN_LIMIT,
 } from "@/lib/share-state";
+
+function incompressibleShareMarkdown() {
+  let state = 0x12345678;
+  let text = "";
+  while (text.length < 50_000) {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    text += (state >>> 0).toString(36);
+  }
+  return text.slice(0, 50_000);
+}
 
 describe("share fragments", () => {
   test("round-trips Unicode Markdown", () => {
@@ -32,6 +43,12 @@ describe("share fragments", () => {
 
     const boundaryMarkdown = "b".repeat(SHARE_MARKDOWN_LIMIT);
     expect(readShareFragment(createShareFragment(boundaryMarkdown))).toBe(boundaryMarkdown);
+  });
+
+  test("says whether a document can fit in a share link before one is created", () => {
+    expect(assessShareLink("# Short note")).toMatchObject({ ok: true });
+    expect(assessShareLink("a".repeat(SHARE_MARKDOWN_LIMIT + 1))).toEqual({ ok: false, reason: "markdown" });
+    expect(assessShareLink(incompressibleShareMarkdown())).toEqual({ ok: false, reason: "url" });
   });
 
   test("rejects unsupported share-link versions without treating ordinary anchors as errors", () => {
