@@ -227,7 +227,10 @@ export function MarkdownLensApp() {
   const themeExplicit = useRef(false);
   const { active: fileDragActive, reset: resetFileDrag, dragProps } = useFileDrag();
   const deferredMarkdown = useDeferredValue(markdown);
-  const modPrefix = useMemo(() => commandModPrefix(), []);
+  const [modPrefix, setModPrefix] = useState("Ctrl+");
+  useEffect(() => {
+    setModPrefix(commandModPrefix());
+  }, []);
 
   useEffect(() => {
     if (!exportOpen) return;

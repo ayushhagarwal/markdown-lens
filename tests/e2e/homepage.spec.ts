@@ -136,7 +136,7 @@ test("cheatsheet preview matches the editor and opens an example", async ({ page
   await expect(page.locator('.cm-content[contenteditable="true"]:visible').first()).toContainText("Heading 1");
   if (testInfo.project.name !== "mobile") {
     await expect(page.getByRole("region", { name: "Preview" })).toContainText("Heading 1");
-    await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /Headings/ })).toBeVisible();
+    await expect(page.getByRole("complementary", { name: "Documents" }).getByRole("button", { name: /^MD Headings/ })).toBeVisible();
   }
 });
 
