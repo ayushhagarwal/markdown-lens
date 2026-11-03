@@ -15,6 +15,30 @@ const FRONT_MATTER = /^([^\S\n\r]*)-{3}\s*[\n\r]([\s\S]*?)[\n\r]\1-{3}\s*[\n\r]+
 const DIRECTIVE_SOURCE = String.raw`%{2}{\s*(?:(\w+)\s*:|(\w+))\s*(?:(\w+)|((?:(?!}%{2}).|\r?\n)*))?\s*(?:}%{2})?`;
 const URL_REFERENCE = /url\s*\(/i;
 
+const RESOURCE_TAGS = new Set([
+  "img",
+  "image",
+  "use",
+  "foreignobject",
+  "feimage",
+  "object",
+  "embed",
+  "iframe",
+  "link",
+  "script",
+]);
+
+/**
+ * Removes remote image targets and url() references from diagram source before
+ * mermaid.render mounts a temporary SVG on document.body.
+ */
+export function stripMermaidRemoteResources(code: string) {
+  const withoutUrlFunctions = removeUrlReferences(code);
+  const withoutMarkup = removeResourceElements(withoutUrlFunctions);
+  const withoutImages = removeRemoteMarkdownImages(withoutMarkup);
+  return removeRemoteUrls(withoutImages);
+}
+
 export function assertMermaidDiagramSafe(code: string) {
   if (
     frontMatterHasUnsafeSetting(code) ||
@@ -233,6 +257,200 @@ function decodeCss(value: string) {
 function safeCodePoint(codePoint: number) {
   if (!Number.isFinite(codePoint) || codePoint <= 0 || codePoint > 0x10ffff) return "";
   return String.fromCodePoint(codePoint);
+}
+
+function removeResourceElements(code: string) {
+  let result = "";
+  let index = 0;
+  while (index < code.length) {
+    const tag = code[index] === "<" ? readTag(code, index) : null;
+    if (!tag) {
+      result += code[index] ?? "";
+      index += 1;
+      continue;
+    }
+    const name = tag.name.toLowerCase();
+    if (!RESOURCE_TAGS.has(name)) {
+      result += code.slice(index, tag.end);
+      index = tag.end;
+      continue;
+    }
+    if (name === "foreignobject" && !tag.closing && !tag.selfClosing) {
+      index = skipUntilClosingTag(code, tag.end, name);
+      continue;
+    }
+    index = tag.end;
+  }
+  return result;
+}
+
+function readTag(code: string, start: number) {
+  if (code[start] !== "<") return null;
+  let index = start + 1;
+  const closing = code[index] === "/";
+  if (closing) index += 1;
+  while (index < code.length && isAsciiWhitespace(code[index] ?? "")) index += 1;
+  const nameStart = index;
+  while (index < code.length && /[A-Za-z0-9:]/.test(code[index] ?? "")) index += 1;
+  if (index === nameStart) return null;
+  const name = code.slice(nameStart, index);
+  let quote: string | null = null;
+  let selfClosing = false;
+  for (; index < code.length; index += 1) {
+    const character = code[index] ?? "";
+    if (quote) {
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === "/" && code[index + 1] === ">") {
+      selfClosing = true;
+      continue;
+    }
+    if (character === ">") {
+      return { name, end: index + 1, selfClosing, closing };
+    }
+  }
+  return null;
+}
+
+function skipUntilClosingTag(code: string, start: number, tagName: string) {
+  let depth = 1;
+  let index = start;
+  while (index < code.length && depth > 0) {
+    const tag = code[index] === "<" ? readTag(code, index) : null;
+    if (!tag) {
+      index += 1;
+      continue;
+    }
+    if (tag.name.toLowerCase() === tagName && !tag.selfClosing) depth += tag.closing ? -1 : 1;
+    index = tag.end;
+  }
+  return index;
+}
+
+function removeRemoteMarkdownImages(code: string) {
+  let result = "";
+  let index = 0;
+  while (index < code.length) {
+    const image = code.startsWith("![", index) ? readMarkdownImage(code, index) : null;
+    if (!image) {
+      result += code[index] ?? "";
+      index += 1;
+      continue;
+    }
+    if (isRemoteImageUrl(image.destination)) {
+      result += image.alt;
+      index = image.end;
+      continue;
+    }
+    result += code.slice(index, image.end);
+    index = image.end;
+  }
+  return result;
+}
+
+function readMarkdownImage(code: string, start: number) {
+  if (!code.startsWith("![", start)) return null;
+  const altEnd = code.indexOf("]", start + 2);
+  if (altEnd < 0 || code[altEnd + 1] !== "(") return null;
+  let index = altEnd + 2;
+  while (index < code.length && isAsciiWhitespace(code[index] ?? "")) index += 1;
+  const angled = code[index] === "<";
+  if (angled) index += 1;
+  const destinationStart = index;
+  if (angled) {
+    while (index < code.length && code[index] !== ">") index += 1;
+    if (code[index] !== ">") return null;
+  } else {
+    while (index < code.length && code[index] !== ")" && code[index] !== "\n") index += 1;
+    if (code[index] !== ")") return null;
+  }
+  const destination = code.slice(destinationStart, index).trim();
+  if (angled) {
+    index += 1;
+    while (index < code.length && isAsciiWhitespace(code[index] ?? "")) index += 1;
+    if (code[index] !== ")") return null;
+  }
+  return { alt: code.slice(start + 2, altEnd), destination, end: index + 1 };
+}
+
+function removeRemoteUrls(code: string) {
+  let result = "";
+  let index = 0;
+  while (index < code.length) {
+    const schemeEnd = matchRemoteScheme(code, index);
+    if (schemeEnd < 0) {
+      result += code[index] ?? "";
+      index += 1;
+      continue;
+    }
+    index = readUrlRemainder(code, schemeEnd);
+    result += "#";
+  }
+  return result;
+}
+
+function matchRemoteScheme(code: string, index: number) {
+  const https = matchLoosePrefix(code, index, "https://");
+  if (https >= 0) return https;
+  const http = matchLoosePrefix(code, index, "http://");
+  if (http >= 0) return http;
+  if (code[index] === "/" && code[index + 1] === "/") {
+    const next = code[index + 2] ?? "";
+    if (/[a-z0-9]/i.test(next)) return index + 2;
+  }
+  return -1;
+}
+
+function matchLoosePrefix(code: string, index: number, prefix: string) {
+  let cursor = index;
+  for (const expected of prefix) {
+    while (cursor < code.length && isAsciiWhitespace(code[cursor] ?? "")) cursor += 1;
+    if ((code[cursor] ?? "").toLowerCase() !== expected) return -1;
+    cursor += 1;
+  }
+  return cursor;
+}
+
+function readUrlRemainder(code: string, start: number) {
+  let index = start;
+  while (index < code.length) {
+    const character = code[index] ?? "";
+    if (isAsciiWhitespace(character)) {
+      let look = index + 1;
+      while (look < code.length && isAsciiWhitespace(code[look] ?? "")) look += 1;
+      const next = code[look] ?? "";
+      if (!isUrlCharacter(next)) break;
+      index = look;
+      continue;
+    }
+    if (!isUrlCharacter(character)) break;
+    index += 1;
+  }
+  return index;
+}
+
+function isUrlCharacter(character: string) {
+  return /[a-z0-9\-._~:/?#@!$&*+,;=%]/i.test(character);
+}
+
+function isRemoteImageUrl(value: string) {
+  const normalized = value.replace(/[\u0009\u000A\u000B\u000C\u000D\u0020]+/g, "").toLowerCase();
+  return (
+    normalized.startsWith("https:") ||
+    normalized.startsWith("http:") ||
+    normalized.startsWith("//") ||
+    normalized.startsWith("data:") ||
+    normalized.startsWith("blob:")
+  );
+}
+
+function isAsciiWhitespace(character: string) {
+  return character === " " || character === "\n" || character === "\r" || character === "\t" || character === "\f" || character === "\v";
 }
 
 function isUnsafeResourceLink(value: string) {

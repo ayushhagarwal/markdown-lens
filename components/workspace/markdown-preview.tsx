@@ -37,7 +37,7 @@ import {
   MAX_MERMAID_SOURCE_CHARACTERS,
   MAX_MERMAID_SVG_CHARACTERS,
 } from "@/lib/markdown-limits";
-import { assertMermaidDiagramSafe, sanitizeMermaidSvg } from "@/lib/mermaid-security";
+import { assertMermaidDiagramSafe, sanitizeMermaidSvg, stripMermaidRemoteResources } from "@/lib/mermaid-security";
 
 let mermaidRenderQueue: Promise<void> = Promise.resolve();
 
@@ -289,7 +289,8 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
     let cancelled = false;
     const render = async () => {
       assertMermaidSourceBudget(code);
-      assertMermaidDiagramSafe(code);
+      const source = stripMermaidRemoteResources(code);
+      assertMermaidDiagramSafe(source);
       const { default: mermaid } = await import("mermaid");
       if (cancelled) return;
       await enqueueMermaidRender(async () => {
@@ -301,7 +302,7 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
           maxEdges: MAX_MERMAID_GRAPH_STATEMENTS,
           maxTextSize: MAX_MERMAID_SOURCE_CHARACTERS,
         });
-        const rendered = await mermaid.render(`markdown-lens-mermaid-${crypto.randomUUID()}`, code);
+        const rendered = await mermaid.render(`markdown-lens-mermaid-${crypto.randomUUID()}`, source);
         const svg = sanitizeMermaidSvg(rendered.svg);
         if (svg.length > MAX_MERMAID_SVG_CHARACTERS) {
           throw new Error("The rendered Mermaid diagram exceeds the SVG output limit.");

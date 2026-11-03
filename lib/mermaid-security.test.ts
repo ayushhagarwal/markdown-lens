@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { assertMermaidDiagramSafe, sanitizeMermaidSvg } from "@/lib/mermaid-security";
+import { assertMermaidDiagramSafe, sanitizeMermaidSvg, stripMermaidRemoteResources } from "@/lib/mermaid-security";
 
 const diagram = "flowchart LR\nA-->B";
 
@@ -24,6 +24,25 @@ describe("mermaid preview security", () => {
       assertMermaidDiagramSafe(`%%{init: {"fontFamily": "arial", "theme": "dark"}}%%\n${diagram}`),
     ).not.toThrow();
     expect(() => assertMermaidDiagramSafe(diagram)).not.toThrow();
+  });
+
+  test("rewrites remote https images and themeCSS url() before render", () => {
+    const source = [
+      '%%{init: {"themeCSS": "svg{background:url(https://attacker.invalid/theme.png)}"}}%%',
+      "flowchart LR",
+      'A["![opened](https://attacker.invalid/pixel.png)"] --> B',
+      "C[\"<img src='https://attacker.invalid/label.png' alt='x'>\"]",
+      "D[h t t p s : / / attacker.invalid/spaced.png]",
+    ].join("\n");
+
+    const rewritten = stripMermaidRemoteResources(source);
+
+    expect(rewritten).not.toMatch(/url\s*\(/i);
+    expect(rewritten).not.toMatch(/https?:\/\//i);
+    expect(rewritten).not.toContain("attacker.invalid");
+    expect(rewritten).toContain("flowchart LR");
+    expect(rewritten).toContain("--> B");
+    expect(() => assertMermaidDiagramSafe(rewritten)).not.toThrow();
   });
 
   test("rejects font style statements that reference url()", () => {
