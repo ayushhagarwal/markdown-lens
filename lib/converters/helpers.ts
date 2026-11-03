@@ -9,11 +9,42 @@ export function titleFromFile(file: File) {
   return file.name.replace(/\.[^.]+$/, "").trim() || "Imported document";
 }
 
+const MARKDOWN_SPECIAL = /([\\`*_[\]{}()#!|<>~])/g;
+
 export function escapeMarkdownText(value: unknown) {
   return String(value ?? "")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/([\\`*_[\]{}()#!|<>~])/g, "\\$1");
+    .replace(MARKDOWN_SPECIAL, "\\$1");
+}
+
+/** Basename safe to embed in a Markdown link destination. */
+export function safeAssetFileName(name: string, usedNames?: Set<string>) {
+  const basename = String(name ?? "")
+    .replace(/\\/g, "/")
+    .split("/")
+    .filter((segment) => segment.length > 0)
+    .pop() ?? "";
+  const cleaned = basename.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+  const safe = cleaned && !/^\.+$/.test(cleaned) ? cleaned : "asset";
+  if (!usedNames) return safe;
+
+  const key = safe.toLowerCase();
+  if (!usedNames.has(key)) {
+    usedNames.add(key);
+    return safe;
+  }
+  const extensionIndex = safe.lastIndexOf(".");
+  const stem = extensionIndex > 0 ? safe.slice(0, extensionIndex) : safe;
+  const extension = extensionIndex > 0 ? safe.slice(extensionIndex) : "";
+  let suffix = 2;
+  let candidate = `${stem}-${suffix}${extension}`;
+  while (usedNames.has(candidate.toLowerCase())) {
+    suffix += 1;
+    candidate = `${stem}-${suffix}${extension}`;
+  }
+  usedNames.add(candidate.toLowerCase());
+  return candidate;
 }
 
 export function markdownHeading(level: number, value: unknown, fallback = "Untitled") {
@@ -79,9 +110,8 @@ export function baseResult(
 
 export function escapeTableCell(value: unknown) {
   return String(value ?? "")
+    .replace(MARKDOWN_SPECIAL, "\\$1")
     .replace(/\r?\n/g, "<br>")
-    .replace(/\\/g, "\\\\")
-    .replace(/\|/g, "\\|")
     .trim();
 }
 

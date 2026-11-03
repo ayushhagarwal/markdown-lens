@@ -100,10 +100,12 @@ export function sanitizePreviewHtml(preview: HTMLElement) {
   clone.querySelectorAll("*").forEach((element) => {
     for (const attribute of Array.from(element.attributes)) {
       const name = attribute.name.toLowerCase();
-      const value = attribute.value.trim().toLowerCase();
+      const value = attribute.value;
       if (
         name.startsWith("on") ||
         name === "srcdoc" ||
+        (name === "style" && !isSafeExportStyle(value)) ||
+        (name === "srcset" && !isSafeExportSrcSet(value)) ||
         (["href", "src", "xlink:href"].includes(name) && !isSafeExportUrl(value, name))
       ) {
         element.removeAttribute(attribute.name);
@@ -114,18 +116,109 @@ export function sanitizePreviewHtml(preview: HTMLElement) {
   return clone.innerHTML;
 }
 
+const ASCII_WHITESPACE = /[\u0009\u000A\u000B\u000C\u000D\u0020]+/g;
+
 function isSafeExportUrl(value: string, attributeName: string) {
-  if (!value || value.startsWith("//")) return false;
-  if (value.startsWith("#") || value.startsWith("/") || value.startsWith("./") || value.startsWith("../")) {
-    return attributeName === "href" || attributeName === "xlink:href";
+  const normalized = value.replace(ASCII_WHITESPACE, "").toLowerCase();
+  if (!normalized || normalized.includes("\\") || normalized.startsWith("//")) return false;
+
+  if (normalized.startsWith("#")) {
+    return isLinkAttribute(attributeName);
   }
-  if (/^[a-z][a-z0-9+.-]*:/.test(value)) {
-    if (attributeName === "href" || attributeName === "xlink:href") {
-      return value.startsWith("http:") || value.startsWith("https:") || value.startsWith("mailto:");
+
+  if (/^[a-z][a-z0-9+.-]*:/.test(normalized)) {
+    let url: URL;
+    try {
+      url = new URL(normalized);
+    } catch {
+      return false;
     }
-    return value.startsWith("http:") || value.startsWith("https:") || value.startsWith("blob:") || value.startsWith("data:image/");
+    if (url.protocol === "http:" || url.protocol === "https:") return true;
+    if (url.protocol === "mailto:") return isLinkAttribute(attributeName);
+    if (url.protocol === "data:") return isImageAttribute(attributeName) && isImageDataUrl(normalized);
+    return false;
   }
+
+  return isLinkAttribute(attributeName);
+}
+
+function isSafeExportStyle(value: string) {
+  const normalized = value.replace(ASCII_WHITESPACE, "").toLowerCase();
+  if (/expression\(|javascript:|vbscript:|-moz-binding|@import|behavior:/.test(normalized)) return false;
+  const bodies = cssUrlBodies(normalized);
+  const references = normalized.match(/url\(/g) ?? [];
+  if (bodies.length !== references.length) return false;
+  return bodies.every((body) => isSafeExportUrl(unquoteCssUrl(body), "src"));
+}
+
+function isSafeExportSrcSet(value: string) {
+  const candidates = value.replace(ASCII_WHITESPACE, "").split(",").filter((candidate) => candidate.length > 0);
+  return candidates.length > 0 && candidates.every((candidate) => isSafeExportUrl(candidate, "src"));
+}
+
+function isLinkAttribute(attributeName: string) {
   return attributeName === "href" || attributeName === "xlink:href";
+}
+
+function isImageAttribute(attributeName: string) {
+  return attributeName === "src" || attributeName === "xlink:href";
+}
+
+function isImageDataUrl(value: string) {
+  if (!value.startsWith("data:image/")) return false;
+  const comma = value.indexOf(",");
+  if (comma < 0) return false;
+  const mime = value.slice("data:".length, comma).split(";")[0] ?? "";
+  return /^image\/[a-z0-9.+-]+$/.test(mime) && !/svg|xml|html|script/.test(mime);
+}
+
+function cssUrlBodies(value: string) {
+  const bodies: string[] = [];
+  const pattern = /url\(/gi;
+  for (const match of value.matchAll(pattern)) {
+    const start = (match.index ?? 0) + match[0].length;
+    const end = endOfCssUrl(value, start);
+    if (end === value.length && value[end - 1] !== ")") return bodies;
+    bodies.push(value.slice(start, Math.max(start, end - 1)));
+  }
+  return bodies;
+}
+
+function endOfCssUrl(value: string, start: number) {
+  let quote: string | null = null;
+  let depth = 1;
+  for (let index = start; index < value.length; index += 1) {
+    const character = value[index];
+    if (quote) {
+      if (character === "\\" && index + 1 < value.length) {
+        index += 1;
+        continue;
+      }
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === "(") depth += 1;
+    if (character === ")") {
+      depth -= 1;
+      if (depth === 0) return index + 1;
+    }
+  }
+  return value.length;
+}
+
+function unquoteCssUrl(value: string) {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+  return trimmed;
 }
 
 export async function prepareStandaloneBodyHtml(preview: HTMLElement) {

@@ -3,6 +3,7 @@ import { strToU8, zipSync } from "fflate";
 import { describe, expect, test } from "vitest";
 import {
   parseCellReference,
+  presentationConverter,
   spreadsheetConverter,
 } from "@/lib/converters/office-converters";
 import { DEFAULT_CONVERSION_LIMITS } from "@/lib/converters/types";
@@ -46,6 +47,25 @@ describe("Office converters", () => {
     expect(result.markdown).toContain("| Workspace | Ready |");
     expect(result.markdown).not.toContain("Hidden");
     expect(result.warnings).toContain("Hidden worksheets were excluded.");
+  });
+
+  test("embeds presentation media under a safe basename", async () => {
+    const bytes = zipSync({
+      "ppt/slides/slide1.xml": strToU8(
+        `<p:sld><a:t>Launch ![opened](https://attacker.invalid/pixel)</a:t><a:t>Body</a:t></p:sld>`,
+      ),
+      "ppt/media/photo).png ![x](javascript:alert(1))": strToU8("image-bytes"),
+    });
+    const file = new NodeFile([bytes], "deck.pptx", {
+      type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    }) as unknown as File;
+
+    const result = await presentationConverter.convert(file, {}, context);
+    expect(result.markdown).toContain("## Launch \\!\\[opened\\]\\(https://attacker.invalid/pixel\\)");
+    expect(result.markdown).toContain("![Image from slide 1](assets/photo-.png-x-javascript-alert-1)");
+    expect(result.markdown).not.toContain("assets/photo).png");
+    expect(result.markdown).not.toContain("](javascript:");
+    expect(result.assets[0]?.name).toBe("photo-.png-x-javascript-alert-1");
   });
 
   test("accepts Excel's last column and rejects malformed or out-of-range references", () => {

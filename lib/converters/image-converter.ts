@@ -5,8 +5,10 @@ import {
   assertGeneratedMarkdown,
   baseResult,
   escapeMarkdownText,
+  fencedCodeBlock,
   markdownHeading,
   matchesFile,
+  safeAssetFileName,
   titleFromFile,
 } from "@/lib/converters/helpers";
 
@@ -56,7 +58,7 @@ export const imageConverter: LocalConverter = {
         await worker.terminate();
       }
     }
-    const imageName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const imageName = safeAssetFileName(file.name);
     const safeTitle = escapeMarkdownText(title);
     const metadata = [`- Dimensions: ${dimensions.width} × ${dimensions.height}`, `- Type: ${file.type || "image"}`, `- Size: ${formatBytes(file.size)}`].join("\n");
     const markdown = [
@@ -64,7 +66,7 @@ export const imageConverter: LocalConverter = {
       `![${safeTitle}](assets/${imageName})`,
       "## Image details",
       metadata,
-      extractedText ? `## Extracted text\n\n${extractedText}` : "",
+      formatExtractedText(extractedText),
     ]
       .filter(Boolean)
       .join("\n\n");
@@ -81,6 +83,12 @@ export const imageConverter: LocalConverter = {
     });
   },
 };
+
+export function formatExtractedText(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  return `## Extracted text\n\n${fencedCodeBlock("text", trimmed)}`;
+}
 
 async function imageDimensions(file: File, limits: ConversionLimits) {
   const header = new Uint8Array(

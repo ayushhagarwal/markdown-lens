@@ -10,6 +10,7 @@ import {
   markdownHeading,
   matchesFile,
   matrixToMarkdown,
+  safeAssetFileName,
   titleFromFile,
 } from "@/lib/converters/helpers";
 import { DEFAULT_CONVERSION_LIMITS } from "@/lib/converters/types";
@@ -49,6 +50,12 @@ describe("converter input helpers", () => {
 
   test("escapes cells and pads ragged rows into deterministic GFM tables", () => {
     expect(escapeTableCell("one | two\nthree")).toBe("one \\| two<br>three");
+    expect(escapeTableCell("![opened](https://attacker.invalid/pixel)")).toBe(
+      escapeMarkdownText("![opened](https://attacker.invalid/pixel)"),
+    );
+    expect(escapeTableCell('=HYPERLINK("https://attacker.invalid","click") ![img](https://attacker.invalid/x.png)')).toBe(
+      '=HYPERLINK\\("https://attacker.invalid","click"\\) \\!\\[img\\]\\(https://attacker.invalid/x.png\\)',
+    );
     expect(
       matrixToMarkdown([
         ["Name", "Note"],
@@ -79,5 +86,16 @@ describe("converter input helpers", () => {
     );
     expect(fenced.startsWith("````xml\n")).toBe(true);
     expect(fenced.endsWith("\n````")).toBe(true);
+  });
+
+  test("restricts generated asset names to a safe basename", () => {
+    expect(safeAssetFileName("../unsafe folder/report?.pdf")).toBe("report-.pdf");
+    expect(safeAssetFileName("ppt/media/image).png ![x](https://attacker.invalid/p.png)")).toBe("p.png");
+    expect(safeAssetFileName("photo).png ![x](javascript:alert(1))")).toBe("photo-.png-x-javascript-alert-1");
+    expect(safeAssetFileName("..")).toBe("asset");
+    const usedNames = new Set<string>();
+    expect(safeAssetFileName("ppt/media/photo.png", usedNames)).toBe("photo.png");
+    expect(safeAssetFileName("other/photo.png", usedNames)).toBe("photo-2.png");
+    expect(safeAssetFileName("photo).png ![x](javascript:alert(1))")).not.toMatch(/[()!\s/]/);
   });
 });

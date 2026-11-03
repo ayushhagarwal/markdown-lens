@@ -8,6 +8,7 @@ import "katex/dist/katex.min.css";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ComponentPropsWithoutRef,
   type ReactElement,
@@ -36,6 +37,7 @@ import {
   MAX_MERMAID_SOURCE_CHARACTERS,
   MAX_MERMAID_SVG_CHARACTERS,
 } from "@/lib/markdown-limits";
+import { assertMermaidDiagramSafe, sanitizeMermaidSvg } from "@/lib/mermaid-security";
 
 let mermaidRenderQueue: Promise<void> = Promise.resolve();
 
@@ -287,6 +289,7 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
     let cancelled = false;
     const render = async () => {
       assertMermaidSourceBudget(code);
+      assertMermaidDiagramSafe(code);
       const { default: mermaid } = await import("mermaid");
       if (cancelled) return;
       await enqueueMermaidRender(async () => {
@@ -298,7 +301,8 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
           maxEdges: MAX_MERMAID_GRAPH_STATEMENTS,
           maxTextSize: MAX_MERMAID_SOURCE_CHARACTERS,
         });
-        const { svg } = await mermaid.render(`markdown-lens-mermaid-${crypto.randomUUID()}`, code);
+        const rendered = await mermaid.render(`markdown-lens-mermaid-${crypto.randomUUID()}`, code);
+        const svg = sanitizeMermaidSvg(rendered.svg);
         if (svg.length > MAX_MERMAID_SVG_CHARACTERS) {
           throw new Error("The rendered Mermaid diagram exceeds the SVG output limit.");
         }
@@ -346,7 +350,32 @@ function MermaidDiagram({ code, theme }: { code: string; theme: "light" | "dark"
       </div>
     );
   }
-  return <div role="img" aria-label="Mermaid diagram" className="not-prose my-5 overflow-auto border border-border bg-white p-4 dark:bg-slate-950" dangerouslySetInnerHTML={{ __html: state.svg ?? "" }} />;
+  return <SafeMermaidSvg svg={state.svg ?? ""} />;
+}
+
+function SafeMermaidSvg({ svg }: { svg: string }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    host.replaceChildren();
+    try {
+      const parsed = new DOMParser().parseFromString(sanitizeMermaidSvg(svg), "image/svg+xml");
+      const root = parsed.documentElement;
+      if (root?.localName.toLowerCase() === "svg") host.append(document.importNode(root, true));
+    } catch {
+      host.replaceChildren();
+    }
+    return () => host.replaceChildren();
+  }, [svg]);
+  return (
+    <div
+      ref={hostRef}
+      role="img"
+      aria-label="Mermaid diagram"
+      className="not-prose my-5 overflow-auto border border-border bg-white p-4 dark:bg-slate-950"
+    />
+  );
 }
 
 function enqueueMermaidRender<T>(task: () => Promise<T>) {

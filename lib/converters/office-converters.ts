@@ -12,6 +12,7 @@ import {
   markdownListItem,
   matchesFile,
   matrixToMarkdown,
+  safeAssetFileName,
   titleFromFile,
 } from "@/lib/converters/helpers";
 import { extractBoundedZip } from "@/lib/converters/bounded-zip";
@@ -172,19 +173,22 @@ export const presentationConverter: LocalConverter = {
         "This presentation contains too many or too-large media assets.",
       );
     }
-    const assets = mediaEntries.map(([path, bytes]) => ({
-        name: path.split("/").pop() ?? "slide-image",
+    const usedAssetNames = new Set<string>();
+    const assets = mediaEntries.map(([path, bytes]) => {
+      const name = safeAssetFileName(path, usedAssetNames);
+      return {
+        name,
         mimeType: mediaType(path),
         blob: new Blob([copyBytes(bytes)], { type: mediaType(path) }),
         sourceLocation: path,
         altText: "Image extracted from presentation",
-      }));
+      };
+    });
     const title = titleFromFile(file);
     const markdownSections = sections.map((section, index) => {
-      const media = mediaEntries[index];
-      if (!media) return section;
-      const name = media[0].split("/").pop() ?? "slide-image";
-      return `${section}\n\n![Image from slide ${index + 1}](assets/${name})`;
+      const asset = assets[index];
+      if (!asset) return section;
+      return `${section}\n\n![Image from slide ${index + 1}](assets/${asset.name})`;
     });
     const markdown = `${markdownHeading(1, title)}\n\n${markdownSections.join("\n\n---\n\n")}\n`;
     assertNonEmpty(sections.join(""), "PowerPoint presentation");

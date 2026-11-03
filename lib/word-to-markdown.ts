@@ -1,3 +1,5 @@
+import { escapeTableCell } from "@/lib/converters/helpers";
+
 export class NoExtractableWordTextError extends Error {
   constructor() {
     super("This Word document does not contain extractable text.");
@@ -193,10 +195,6 @@ function tableRowsToMarkdown(table: HTMLElement) {
 
 function cleanTableCell(text: string) {
   return text.replace(/\s+/g, " ").trim();
-}
-
-function escapeTableCell(text: string) {
-  return text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 }
 
 function ensureMarkdownTitle(markdown: string, title: string) {

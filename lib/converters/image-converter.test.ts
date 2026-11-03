@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   assertImageBudget,
+  formatExtractedText,
   parseImageHeader,
 } from "@/lib/converters/image-converter";
 import { DEFAULT_CONVERSION_LIMITS } from "@/lib/converters/types";
@@ -31,6 +32,14 @@ describe("image header budgets", () => {
         DEFAULT_CONVERSION_LIMITS,
       ),
     ).toThrow("width, height, pixel, or frame limit");
+  });
+
+  test("puts OCR text in a fence so formulas and images stay literal", () => {
+    const section = formatExtractedText("![opened](https://attacker.invalid/pixel)\n$E=mc^2$");
+    expect(section.startsWith("## Extracted text\n\n```text\n")).toBe(true);
+    expect(section).toContain("![opened](https://attacker.invalid/pixel)\n$E=mc^2$");
+    expect(section.endsWith("\n```")).toBe(true);
+    expect(formatExtractedText("   ")).toBe("");
   });
 
   test("fails closed on malformed headers", () => {

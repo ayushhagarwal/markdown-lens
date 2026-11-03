@@ -39,6 +39,41 @@ describe("standalone HTML export", () => {
     expect(unsafeImage?.hasAttribute("onerror")).toBe(false);
   });
 
+  test("parses export URLs and checks image sources, srcset, and style", () => {
+    const preview = document.createElement("div");
+    preview.innerHTML = [
+      '<a href="java\nscript:alert(1)">Broken scheme</a>',
+      '<a href=" java script:alert(2)">Spaced scheme</a>',
+      '<a href="#section">Fragment</a>',
+      '<a href="./docs/page">Relative</a>',
+      '<a href="mailto:hello@example.com">Mail</a>',
+      '<img src="data:image/png;base64,aaaa" alt="png">',
+      '<img src="data:image/svg+xml,&lt;svg&gt;" alt="svg">',
+      '<img src="blob:https://example.com/11111111-1111-1111-1111-111111111111" alt="blob">',
+      '<img src="https://example.com/a.png" srcset="https://example.com/a.png 1x, javascript:alert(3) 2x" alt="srcset">',
+      '<img src="https://example.com/b.png" srcset="https://example.com/b.png 1x, https://example.com/c.png 2x" alt="safe srcset">',
+      '<p style="color: red">Styled</p>',
+      '<p style="background:url(javascript:alert(4))">Unsafe style</p>',
+      '<p style="background: url(https://example.com/bg.png)">Remote style</p>',
+    ].join("");
+
+    const result = document.createElement("div");
+    result.innerHTML = sanitizePreviewHtml(preview);
+
+    expect(result.querySelector('a[href^="java"]')).toBeNull();
+    expect(result.querySelector('a[href="#section"]')).not.toBeNull();
+    expect(result.querySelector('a[href="./docs/page"]')).not.toBeNull();
+    expect(result.querySelector('a[href="mailto:hello@example.com"]')).not.toBeNull();
+    expect(result.querySelector('img[alt="png"]')?.getAttribute("src")).toBe("data:image/png;base64,aaaa");
+    expect(result.querySelector('img[alt="svg"]')?.hasAttribute("src")).toBe(false);
+    expect(result.querySelector('img[alt="blob"]')?.hasAttribute("src")).toBe(false);
+    expect(result.querySelector('img[alt="srcset"]')?.hasAttribute("srcset")).toBe(false);
+    expect(result.querySelector('img[alt="safe srcset"]')?.hasAttribute("srcset")).toBe(true);
+    expect(result.querySelector("p")?.getAttribute("style")).toBe("color: red");
+    expect(result.querySelectorAll("p")[1]?.hasAttribute("style")).toBe(false);
+    expect(result.querySelectorAll("p")[2]?.getAttribute("style")).toContain("https://example.com/bg.png");
+  });
+
   test("builds a self-contained document with an escaped title and restrictive CSP", () => {
     const html = buildStandaloneHtmlDocument({
       title: 'Release <Notes> & "Plans"',
