@@ -48,7 +48,7 @@ function OpenExampleButton({ title, markdown }: { title: string; markdown: strin
         stagePendingExample({ title, markdown });
         router.push("/editor");
       }}
-      aria-label={`Open the ${title} example`}
+      aria-label={`Open this example: ${title}`}
       className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 text-xs font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       Open this example

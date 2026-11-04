@@ -18,7 +18,7 @@ export function SiteFooter() {
             <Link href="/supported-formats" className={footerLinkClassName}>Formats</Link>
             <Link href="/markdown-cheatsheet" className={footerLinkClassName}>Guide</Link>
             <a href={`${siteConfig.githubUrl}/blob/main/CHANGELOG.md`} target="_blank" rel="noopener noreferrer" aria-label="Read the changelog on GitHub (opens in a new tab)" className={footerLinkClassName}>Changelog</a>
-            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noopener noreferrer" aria-label="Read contributing guidelines on GitHub (opens in a new tab)" className={footerLinkClassName}>Contribute</a>
+            <a href={`${siteConfig.githubUrl}/blob/main/CONTRIBUTING.md`} target="_blank" rel="noopener noreferrer" aria-label="Contribute: read the guidelines on GitHub (opens in a new tab)" className={footerLinkClassName}>Contribute</a>
             <a href={`${siteConfig.githubUrl}/blob/main/SECURITY.md`} target="_blank" rel="noopener noreferrer" aria-label="Read security policy on GitHub (opens in a new tab)" className={footerLinkClassName}>Security</a>
             <GithubStarLink variant="text" className={footerLinkClassName}>Star</GithubStarLink>
           </nav>
@@ -32,7 +32,7 @@ export function SiteFooter() {
         </nav>
         <p className="text-muted-foreground">
           Built locally. Shared openly.{" "}
-          <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="If it helped, star the source (opens in a new tab)" className={footerLinkClassName}>
+          <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="If it helped, star the source. (opens in a new tab)" className={footerLinkClassName}>
             If it helped, star the source.
           </a>
           <span aria-hidden="true">{" "}·{" "}</span>

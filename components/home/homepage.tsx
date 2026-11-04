@@ -84,7 +84,7 @@ export function Homepage() {
               </p>
               <div className="mt-7 flex flex-wrap gap-x-8 gap-y-4 text-sm sm:text-base">
                 <Link href="/supported-formats" className="home-inline-link">Supported formats</Link>
-                <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Inspect the Markdown Lens source on GitHub (opens in a new tab)" className="home-inline-link">Read the source</a>
+                <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Read the source of Markdown Lens on GitHub (opens in a new tab)" className="home-inline-link">Read the source</a>
               </div>
             </div>
           </div>

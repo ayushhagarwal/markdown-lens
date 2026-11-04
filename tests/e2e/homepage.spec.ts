@@ -15,7 +15,7 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
   await expect(page.getByLabel("Choose a file to convert")).toHaveAttribute("accept", expect.stringContaining(".pdf"));
   await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" }).first()).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveClass(/focus-visible:ring-2/);
-  await expect(page.getByRole("contentinfo").getByRole("link", { name: "If it helped, star the source (opens in a new tab)" })).toBeVisible();
+  await expect(page.getByRole("contentinfo").getByRole("link", { name: "If it helped, star the source. (opens in a new tab)" })).toBeVisible();
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Report a bug (opens in a new tab)" })).toBeVisible();
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Request a feature (opens in a new tab)" })).toBeVisible();
   const pdfLink = page.getByRole("navigation", { name: "Popular converters" }).getByRole("link", { name: "PDF" });
@@ -131,7 +131,7 @@ test("cheatsheet preview matches the editor and opens an example", async ({ page
   await page.goto("/markdown-cheatsheet");
   await expect(page.getByRole("heading", { level: 1, name: "Heading 1" })).toBeVisible();
   await expect(page.getByRole("group", { name: /Remote image blocked from example.com/ })).toBeVisible();
-  await page.getByRole("button", { name: "Open the Headings example" }).click();
+  await page.getByRole("button", { name: "Open this example: Headings" }).click();
   await expect(page).toHaveURL(/\/editor$/);
   await expect(page.locator('.cm-content[contenteditable="true"]:visible').first()).toContainText("Heading 1");
   if (testInfo.project.name !== "mobile") {

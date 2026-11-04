@@ -1139,7 +1139,7 @@ export function MarkdownLensApp() {
             role="tab"
             id={`workspace-pane-tab-${id}`}
             aria-selected={mobilePane === id}
-            aria-controls={`workspace-pane-${id}`}
+            aria-controls={mobilePane === id ? `workspace-pane-${id}` : undefined}
             tabIndex={mobilePane === id ? 0 : -1}
             onKeyDown={(event) => {
               if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;

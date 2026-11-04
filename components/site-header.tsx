@@ -109,7 +109,7 @@ export function SiteHeader({ wide = false }: { wide?: boolean }) {
             type="button"
             aria-label={open ? "Close navigation" : "Open navigation"}
             aria-expanded={open}
-            aria-controls="site-mobile-menu"
+            aria-controls={open ? "site-mobile-menu" : undefined}
             onClick={() => setOpen((current) => !current)}
             className="inline-flex h-11 w-11 items-center justify-center rounded-md border border-border text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >

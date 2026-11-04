@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo";
 
 const title = "Free Word to Markdown Converter (.docx) | Markdown Lens";
 const description =
-  "Convert a Microsoft Word .docx file to editable Markdown locally in your browser. Keep headings, lists, links, simple tables, and common text formatting without a server upload.";
+  "Convert a Word .docx file to editable Markdown locally in your browser, keeping headings, lists, links, tables, and formatting without an upload.";
 
 export const metadata: Metadata = pageMetadata({
   title,

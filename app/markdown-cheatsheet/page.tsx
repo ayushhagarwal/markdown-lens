@@ -39,12 +39,16 @@ export default function MarkdownCheatsheetPage() {
         "A concise Markdown reference for headings, lists, tables, links, code, Mermaid diagrams, and math.",
       url: `${siteConfig.url}/markdown-cheatsheet`,
       mainEntityOfPage: `${siteConfig.url}/markdown-cheatsheet`,
+      datePublished: "2026-06-20",
       dateModified: siteConfig.dateModified,
+      image: `${siteConfig.url}/screenshot.png`,
       inLanguage: "en",
       author: {
         "@type": "Person",
+        "@id": "https://ayushdev.com/#person",
         name: siteConfig.author.name,
         url: siteConfig.author.url,
+        sameAs: ["https://ayushdev.com/"],
       },
     },
     {
@@ -90,6 +94,9 @@ export default function MarkdownCheatsheetPage() {
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
             The syntax you will use most often. Each preview uses the same renderer as the editor.
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Published <time dateTime="2026-06-20">June 20, 2026</time> · Updated <time dateTime={siteConfig.dateModified}>{new Date(`${siteConfig.dateModified}T12:00:00Z`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}</time>
           </p>
         </section>
 
