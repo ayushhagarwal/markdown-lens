@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@types/mdast": "^4.0.4",
     "@types/node": "^26.4.1",
     "@types/papaparse": "^5.3.16",
