@@ -64,6 +64,17 @@ export const converterLinks = [
   { href: "/zip-to-markdown", label: "ZIP", description: "Import supported files from a ZIP." },
 ] as const;
 
+export const moreApps = [
+  { href: "https://bonely.app", label: "Bonely" },
+  { href: "https://buddhadaily.ayushdev.com", label: "BuddhaDaily" },
+  { href: "https://diveatlas.ayushdev.com", label: "DiveAtlas" },
+  { href: "https://fiberly.ayushdev.com", label: "Fiberly" },
+  { href: "https://garagelog.ayushdev.com", label: "GarageLog" },
+  { href: "https://office-comply.ayushdev.com", label: "OfficeComply" },
+  { href: "https://skin-ritual.ayushdev.com", label: "SkinRitual" },
+  { href: "https://xmllens.ayushdev.com", label: "XML Lens" },
+] as const;
+
 export const sitemapPaths = [
   { path: "", priority: 1, changeFrequency: "weekly" as const },
   { path: "/pdf-to-markdown", priority: 0.9, changeFrequency: "monthly" as const },

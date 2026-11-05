@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BrandIcon } from "@/components/brand-icon";
 import { GithubStarLink } from "@/components/github-star-link";
-import { converterLinks, siteConfig } from "@/lib/site";
+import { converterLinks, moreApps, siteConfig } from "@/lib/site";
 
 const footerLinkClassName = "transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
@@ -30,6 +30,16 @@ export function SiteFooter() {
             </Link>
           ))}
         </nav>
+        <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-muted-foreground">
+          <span>More apps</span>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="More apps">
+            {moreApps.map((app) => (
+              <a key={app.href} href={app.href} rel="noopener" className={footerLinkClassName}>
+                {app.label}
+              </a>
+            ))}
+          </nav>
+        </div>
         <p className="text-muted-foreground">
           Built locally. Shared openly.{" "}
           <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="If it helped, star the source. (opens in a new tab)" className={footerLinkClassName}>
