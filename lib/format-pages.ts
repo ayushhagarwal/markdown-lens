@@ -3,7 +3,7 @@ import type { FormatLandingConfig } from "@/components/format-landing-page";
 export const formatPages = {
   pptx: {
     path: "/pptx-to-markdown",
-    title: "Convert PowerPoint PPTX to Markdown locally",
+    title: "Convert PowerPoint (PPTX) to Markdown locally",
     extensions: "PPTX",
     summary: "Open a PowerPoint presentation and turn slide titles, text, notes, and tables into editable Markdown without uploading the file.",
     description: "Markdown Lens reads modern PowerPoint packages in your browser, keeps slide boundaries, and extracts embedded images as local document assets.",
@@ -13,6 +13,9 @@ export const formatPages = {
     faq: [
       { question: "Are PowerPoint files uploaded?", answer: "No. PPTX packages are opened and parsed locally in the browser." },
       { question: "Are slide images included?", answer: "Embedded images are stored as local document assets and can be exported with the Markdown bundle." },
+      { question: "What does the converted Markdown look like?", answer: "Each slide becomes a level-2 heading taken from its first text, the remaining slide text becomes a bullet list, and speaker notes appear under a level-3 \"Speaker notes\" heading. Slides with no text are titled \"Slide 1\", \"Slide 2\" and so on." },
+      { question: "Can I convert PPTX to an .md file?", answer: "Yes. After conversion you can edit the result in the editor and export it as a .md file, or as a bundle with the extracted images." },
+      { question: "Can I convert an old .ppt PowerPoint file?", answer: "Not directly. Open the .ppt in PowerPoint, Keynote or LibreOffice Impress, save it as .pptx, then convert that file here." },
     ],
     related: [
       { href: "/word-to-markdown", title: "Word to Markdown converter", description: "Convert .docx headings, lists, links, tables, and images locally." },

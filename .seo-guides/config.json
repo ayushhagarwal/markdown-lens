@@ -1,0 +1,40 @@
+{
+  "property": "https://markdownlens.ayushdev.com/",
+  "origin": "https://markdownlens.ayushdev.com",
+  "site_slug": "markdownlens",
+  "brand_terms": ["markdown lens", "markdownlens"],
+  "guide_prefix": "/guides/",
+  "guide_paths": [],
+  "ymyl": false,
+  "ymyl_rules": "",
+  "min_impressions": 20,
+  "min_words": 900,
+  "positioning": "A privacy-first local Markdown editor and document converter for PDF, Word, Office, HTML, EPUB, and images in the browser.",
+  "audience": "Developers, writers and teams converting documents to Markdown for docs, notes, and LLM workflows.",
+  "competitors": [],
+  "author": "Ayush Agarwal",
+  "content": {
+    "format": "component",
+    "path": "lib/format-pages.ts",
+    "types": "components/format-landing-page.tsx",
+    "style_model": "pptx"
+  },
+  "register_files": ["app/sitemap.ts", "lib/site.ts"],
+  "register_command": "",
+  "linking": {
+    "hub": "/supported-formats",
+    "product_pages": ["/editor", "/pptx-to-markdown", "/word-to-markdown", "/pdf-to-markdown", "/excel-to-markdown", "/csv-to-markdown", "/json-to-markdown", "/html-to-markdown", "/markdown-cheatsheet"],
+    "how_to_link_from_product_page": "Add an entry to the page's `related` array in lib/format-pages.ts."
+  },
+  "cta": {
+    "url": "/editor",
+    "campaign_param": "",
+    "campaign_value": "",
+    "inline_component": "Link to /editor in body text."
+  },
+  "build_command": "npm run build",
+  "built_html_path": ".next/server/app/{slug}.html",
+  "default_branch": "main",
+  "deploy_status_context": "Vercel",
+  "off_limits": []
+}
