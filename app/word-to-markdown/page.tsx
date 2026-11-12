@@ -150,7 +150,12 @@ const config = {
     {
       href: "/pptx-to-markdown",
       title: "PowerPoint to Markdown converter",
-      description: "Convert PPTX slides, notes, tables, and embedded images locally.",
+      description: "Convert PPTX slides, notes, and embedded images locally.",
+    },
+    {
+      href: "/zip-to-markdown",
+      title: "ZIP to Markdown importer",
+      description: "Convert a folder of Word files and other documents from one ZIP archive.",
     },
   ],
 } as const satisfies ConversionLandingPageConfig;

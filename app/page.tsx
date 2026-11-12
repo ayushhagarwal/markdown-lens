@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Homepage } from "@/components/home/homepage";
 import { pageMetadata } from "@/lib/seo";
-import { siteConfig } from "@/lib/site";
+import { modifiedFor, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   ...pageMetadata({
@@ -31,7 +31,7 @@ export default function Home() {
       url: siteConfig.url,
       description: siteConfig.description,
       inLanguage: "en",
-      publisher: { "@id": `${siteConfig.url}/#creator` },
+      publisher: { "@id": siteConfig.author.id },
     },
     {
       "@context": "https://schema.org",
@@ -43,15 +43,15 @@ export default function Home() {
       isPartOf: { "@id": `${siteConfig.url}/#website` },
       mainEntity: { "@id": `${siteConfig.url}/#software` },
       inLanguage: "en",
-      dateModified: siteConfig.dateModified,
+      dateModified: modifiedFor("/"),
     },
     {
       "@context": "https://schema.org",
       "@type": "Person",
-      "@id": `${siteConfig.url}/#creator`,
+      "@id": siteConfig.author.id,
       name: siteConfig.author.name,
       url: siteConfig.author.url,
-      sameAs: [siteConfig.author.url],
+      sameAs: siteConfig.author.sameAs,
     },
     {
       "@context": "https://schema.org",
@@ -67,7 +67,7 @@ export default function Home() {
       codeRepository: siteConfig.githubUrl,
       isAccessibleForFree: true,
       license: `${siteConfig.githubUrl}/blob/main/LICENSE`,
-      creator: { "@id": `${siteConfig.url}/#creator` },
+      creator: { "@id": siteConfig.author.id },
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
       description: siteConfig.description,
       featureList: siteConfig.features,

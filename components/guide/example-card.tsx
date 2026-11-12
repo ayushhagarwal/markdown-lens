@@ -68,5 +68,5 @@ function GuidePreview({ markdown }: { markdown: string }) {
     return () => observer.disconnect();
   }, []);
 
-  return <MarkdownPreview markdown={markdown} theme={theme} previewRef={previewRef} assetUrls={{}} compact />;
+  return <MarkdownPreview markdown={markdown} theme={theme} previewRef={previewRef} assetUrls={{}} compact demoteH1 />;
 }

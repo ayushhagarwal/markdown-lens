@@ -4,8 +4,9 @@ import { formatPages } from "@/lib/format-pages";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "CSV to Markdown Table Converter",
-  description: formatPages.csv.summary,
+  title: "CSV to Markdown Table Converter – Free",
+  description:
+    "Convert CSV or TSV to a Markdown table free in your browser. Handles quoted commas, keeps the header row, and outputs GitHub-flavored tables. No upload.",
   path: formatPages.csv.path,
 });
 

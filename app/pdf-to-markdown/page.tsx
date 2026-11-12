@@ -134,6 +134,11 @@ const config = {
         "Not directly. Scanned PDFs contain images rather than selectable text, and Markdown Lens does not perform OCR. Run OCR in a trusted tool first, then convert the resulting text-based PDF.",
     },
     {
+      question: "Does it extract images from the PDF?",
+      answer:
+        "No. The PDF converter extracts text only, so the Markdown has no image links. If you need Markdown with local image files, convert the original Word (.docx) or PowerPoint (.pptx) file instead, which keeps embedded images as assets, or save the figures as images and import them with the image converter.",
+    },
+    {
       question: "Will the Markdown look exactly like the PDF?",
       answer:
         "No. Markdown represents document structure rather than fixed visual layout. The converter aims for editable headings, paragraphs, lists, links, code-like blocks, and page boundaries; complex tables and visual positioning may require cleanup.",
@@ -147,8 +152,13 @@ const config = {
     },
     {
       href: "/markdown-cheatsheet",
-      title: "Markdown cheatsheet",
+      title: "Markdown cheat sheet",
       description: "Review the syntax used in the generated output and copy practical examples.",
+    },
+    {
+      href: "/zip-to-markdown",
+      title: "ZIP to Markdown importer",
+      description: "Convert a folder of PDFs and other documents from one ZIP archive at once.",
     },
   ],
 } as const satisfies ConversionLandingPageConfig;

@@ -4,7 +4,7 @@ import { GithubStarLink } from "@/components/github-star-link";
 import { ConvertFileButton, LandingImportSurface } from "@/components/landing-import-surface";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { siteConfig } from "@/lib/site";
+import { modifiedFor, siteConfig } from "@/lib/site";
 
 export type FormatLandingConfig = {
   path: string;
@@ -17,6 +17,27 @@ export type FormatLandingConfig = {
   steps: readonly string[];
   faq: readonly { question: string; answer: string }[];
   related: readonly { href: string; title: string; description: string }[];
+  /** Real converter output for a small input, shown as an input/output example. */
+  sample?: {
+    heading: string;
+    fileName: string;
+    sourceLabel: string;
+    sourceLines: readonly string[];
+    markdown: string;
+    note?: string;
+  };
+  /** Extra how-to and reference sections rendered after the limitations. */
+  sections?: readonly FormatLandingSection[];
+};
+
+export type FormatLandingSection = {
+  heading: string;
+  paragraphs?: readonly string[];
+  list?: readonly string[];
+  ordered?: boolean;
+  table?: { head: readonly string[]; rows: readonly (readonly string[])[] };
+  code?: string;
+  links?: readonly { href: string; label: string }[];
 };
 
 export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
@@ -29,7 +50,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
       description: config.summary,
       isPartOf: { "@id": `${siteConfig.url}/#website` },
       about: { "@id": `${siteConfig.url}/#software` },
-      dateModified: siteConfig.dateModified,
+      dateModified: modifiedFor(config.path),
       inLanguage: "en",
     },
     {
@@ -81,6 +102,8 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
           </div>
         </section>
 
+        {config.sample ? <SampleSection sample={config.sample} /> : null}
+
         <section className="border-y border-border bg-surface">
           <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
             <div><h2 className="text-3xl font-semibold tracking-tight">What the converter preserves</h2><ul className="mt-7 space-y-4">{config.preserves.map((item) => <li key={item} className="flex items-start gap-3 text-sm leading-6"><Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-accent" />{item}</li>)}</ul></div>
@@ -88,7 +111,13 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
           </div>
         </section>
 
-        <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-16 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
+        {config.sections?.length ? (
+          <div className="mx-auto w-full max-w-4xl space-y-14 px-4 py-16 sm:px-6 lg:px-8">
+            {config.sections.map((section) => <GuideSection key={section.heading} section={section} />)}
+          </div>
+        ) : null}
+
+        <section className="mx-auto grid w-full max-w-7xl gap-8 border-t border-border px-4 py-16 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
           <h2 className="text-3xl font-semibold tracking-tight">Questions about {config.extensions}</h2>
           <div className="divide-y divide-border border-y border-border">
             {config.faq.map((item) => (
@@ -140,5 +169,72 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
       <SiteFooter />
     </div>
     </LandingImportSurface>
+  );
+}
+
+function SampleSection({ sample }: { sample: NonNullable<FormatLandingConfig["sample"]> }) {
+  return (
+    <section className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8" aria-labelledby="sample-heading">
+      <h2 id="sample-heading" className="text-3xl font-semibold tracking-tight">{sample.heading}</h2>
+      {sample.note ? <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{sample.note}</p> : null}
+      <div className="mt-8 grid overflow-hidden border border-border md:grid-cols-2">
+        <div className="border-b border-border bg-surface/55 p-5 md:border-b-0 md:border-r">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{sample.sourceLabel}</p>
+          <p className="mt-3 font-mono text-sm font-semibold">{sample.fileName}</p>
+          <ul className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
+            {sample.sourceLines.map((line, index) => (
+              <li key={`${line}-${index}`} className="whitespace-pre-wrap break-words rounded-md bg-muted/70 px-3 py-2 font-mono text-xs">{line}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="min-w-0 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Markdown output</p>
+          <pre tabIndex={0} className="mt-3 overflow-x-auto rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-xs leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{sample.markdown}</code></pre>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function GuideSection({ section }: { section: FormatLandingSection }) {
+  const ListTag = section.ordered ? "ol" : "ul";
+  return (
+    <section>
+      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{section.heading}</h2>
+      {section.paragraphs?.map((paragraph) => (
+        <p key={paragraph} className="mt-4 leading-7 text-muted-foreground">{paragraph}</p>
+      ))}
+      {section.list ? (
+        <ListTag className={`mt-4 space-y-2 pl-5 leading-7 text-muted-foreground ${section.ordered ? "list-decimal" : "list-disc"}`}>
+          {section.list.map((item) => <li key={item}>{item}</li>)}
+        </ListTag>
+      ) : null}
+      {section.table ? (
+        <div className="mt-5 overflow-x-auto border border-border">
+          <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+            <thead className="bg-surface">
+              <tr>{section.table.head.map((cell) => <th key={cell} scope="col" className="border-b border-border px-4 py-3 font-semibold">{cell}</th>)}</tr>
+            </thead>
+            <tbody>
+              {section.table.rows.map((row) => (
+                <tr key={row.join("|")} className="border-b border-border last:border-0">
+                  {row.map((cell, index) => <td key={`${index}-${cell}`} className={`px-4 py-3 ${index === 1 ? "font-mono text-xs" : ""}`}>{cell}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+      {section.code ? (
+        <pre tabIndex={0} className="mt-5 overflow-x-auto rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-xs leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{section.code}</code></pre>
+      ) : null}
+      {section.links?.length ? (
+        <p className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          {section.links.map((link) => (
+            <Link key={link.href} href={link.href} className="font-medium text-accent underline-offset-4 hover:underline">{link.label}</Link>
+          ))}
+        </p>
+      ) : null}
+    </section>
   );
 }

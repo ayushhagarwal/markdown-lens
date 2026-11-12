@@ -5,7 +5,7 @@
 - [Markdown Lens](https://markdownlens.ayushdev.com/): Product overview, Markdown editor, document conversion, privacy details, and links to converters.
 - [PDF to Markdown Converter](https://markdownlens.ayushdev.com/pdf-to-markdown): Convert selectable text from PDF files into editable Markdown locally, with page markers, inferred headings and lists, and explicit limitations.
 - [Word to Markdown Converter](https://markdownlens.ayushdev.com/word-to-markdown): Convert modern Word .docx files into Markdown locally while retaining headings, lists, links, simple tables, images, and common formatting.
-- [PowerPoint to Markdown Converter](https://markdownlens.ayushdev.com/pptx-to-markdown): Convert PPTX slides, notes, tables, and embedded images locally.
+- [PowerPoint to Markdown Converter](https://markdownlens.ayushdev.com/pptx-to-markdown): Convert PPTX slides, speaker notes, and embedded images locally; each slide becomes a heading with bullet points.
 - [Excel to Markdown Converter](https://markdownlens.ayushdev.com/excel-to-markdown): Convert visible XLSX worksheets into GitHub-flavored Markdown tables.
 - [HTML to Markdown Converter](https://markdownlens.ayushdev.com/html-to-markdown): Convert local HTML files into editable Markdown.
 - [CSV to Markdown Converter](https://markdownlens.ayushdev.com/csv-to-markdown): Convert CSV or TSV files into Markdown tables.

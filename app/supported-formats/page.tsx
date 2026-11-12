@@ -4,6 +4,7 @@ import { ArrowRight, Check, CircleAlert, LockKeyhole } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { pageMetadata } from "@/lib/seo";
+import { modifiedFor, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata({
   title: "Supported Document and Markdown Formats",
@@ -28,8 +29,43 @@ const formats = [
 ] as const;
 
 export default function SupportedFormatsPage() {
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": `${siteConfig.url}/supported-formats/#webpage`,
+      url: `${siteConfig.url}/supported-formats`,
+      name: "Supported Markdown and document formats",
+      description: "Every local document-to-Markdown workflow in Markdown Lens, with its file extensions and main limitation.",
+      isPartOf: { "@id": `${siteConfig.url}/#website` },
+      about: { "@id": `${siteConfig.url}/#software` },
+      dateModified: modifiedFor("/supported-formats"),
+      inLanguage: "en",
+      mainEntity: {
+        "@type": "ItemList",
+        name: "Markdown Lens converters",
+        numberOfItems: formats.length,
+        itemListElement: formats.map(([format, extensions, , , href], index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: `${format} (${extensions})`,
+          url: `${siteConfig.url}${href}`,
+        })),
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: siteConfig.name, item: siteConfig.url },
+        { "@type": "ListItem", position: 2, name: "Supported formats", item: `${siteConfig.url}/supported-formats` },
+      ],
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <SiteHeader />
       <main id="main">
         <section className="mx-auto w-full max-w-5xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">

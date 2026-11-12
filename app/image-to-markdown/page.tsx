@@ -4,8 +4,9 @@ import { formatPages } from "@/lib/format-pages";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Image to Markdown with Local OCR",
-  description: formatPages.image.summary,
+  title: "Image to Markdown Converter with Local OCR",
+  description:
+    "Convert PNG, JPG, WebP, or BMP images to Markdown in your browser, with optional English OCR that runs on your device. Free, private, no upload.",
   path: formatPages.image.path,
 });
 

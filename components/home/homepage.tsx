@@ -55,6 +55,38 @@ export function Homepage() {
           <ProductPreview />
         </section>
 
+        <section className="border-t border-border/70 px-5 py-16 sm:px-8 lg:py-20" aria-labelledby="about-title">
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+            <div>
+              <h2 id="about-title" className="text-balance text-3xl font-semibold leading-tight tracking-[-0.04em] sm:text-4xl">What is Markdown Lens?</h2>
+              <p className="mt-5 text-base leading-7 text-muted-foreground sm:text-lg">
+                Markdown Lens is a free, open-source Markdown editor that also converts documents to Markdown. You can
+                write with a live GitHub-style preview, or open a PDF, Word, PowerPoint, Excel, HTML, CSV, JSON, XML,
+                EPUB, ZIP, or image file and get editable Markdown back. Everything runs in your browser: files are not
+                uploaded, and no account is needed.
+              </p>
+            </div>
+            <dl className="grid gap-6 sm:grid-cols-2">
+              <div>
+                <dt className="font-semibold">Who it is for</dt>
+                <dd className="mt-2 text-sm leading-6 text-muted-foreground">Developers writing READMEs and docs, writers who prefer plain text, and teams turning documents into clean source for wikis, Git, or AI assistants.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold">How it differs from online converters</dt>
+                <dd className="mt-2 text-sm leading-6 text-muted-foreground">Many web converters upload your file to a server. Markdown Lens parses it on your device, so confidential documents stay with you.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold">How it compares with command-line tools</dt>
+                <dd className="mt-2 text-sm leading-6 text-muted-foreground">Tools like Pandoc support more formats and options but need an install. Markdown Lens needs only a browser and shows the result next to an editor.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold">Price and source</dt>
+                <dd className="mt-2 text-sm leading-6 text-muted-foreground">Free, with no sign-up or watermark. The code is <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline-offset-4 hover:underline">public on GitHub</a>, and the app can be installed to work offline.</dd>
+              </div>
+            </dl>
+          </div>
+        </section>
+
         <section className="border-t border-border/70 px-5 py-20 sm:px-8 lg:py-28" aria-labelledby="why-title">
           <div className="mx-auto max-w-6xl">
             <div className="max-w-2xl">

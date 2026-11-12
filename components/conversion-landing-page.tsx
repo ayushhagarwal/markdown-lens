@@ -12,7 +12,7 @@ import { GithubStarLink } from "@/components/github-star-link";
 import { ConvertFileButton, LandingImportSurface } from "@/components/landing-import-surface";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { siteConfig } from "@/lib/site";
+import { modifiedFor, siteConfig } from "@/lib/site";
 
 export type ConversionLandingPageConfig = {
   path: string;
@@ -70,7 +70,7 @@ export function ConversionLandingPage({ config }: { config: ConversionLandingPag
         "@id": `${siteConfig.url}/#software`,
       },
       inLanguage: "en",
-      dateModified: siteConfig.dateModified,
+      dateModified: modifiedFor(config.path),
     },
     {
       "@context": "https://schema.org",

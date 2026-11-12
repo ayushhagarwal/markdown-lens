@@ -4,8 +4,9 @@ import { formatPages } from "@/lib/format-pages";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Excel XLSX to Markdown Converter",
-  description: formatPages.excel.summary,
+  title: "Excel to Markdown Table Converter (XLSX)",
+  description:
+    "Convert Excel XLSX sheets to Markdown tables free in your browser. Each visible worksheet becomes its own GitHub-flavored table. No upload, no sign-up.",
   path: formatPages.excel.path,
 });
 

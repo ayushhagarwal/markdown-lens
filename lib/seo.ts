@@ -28,6 +28,10 @@ export function pageMetadata({
   index?: boolean;
 }): Metadata {
   const fullTitle = brandedTitle(title);
+  // Every indexed route ships its own opengraph-image; noindex routes reuse the site image.
+  const image = index
+    ? { ...defaultOgImage, url: `${path === "/" ? "" : path}/opengraph-image`, alt: fullTitle }
+    : defaultOgImage;
   return {
     title: absoluteTitle ? { absolute: fullTitle } : title,
     description,
@@ -44,13 +48,13 @@ export function pageMetadata({
       title: fullTitle,
       description,
       siteName: siteConfig.name,
-      images: [defaultOgImage],
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title: fullTitle,
       description,
-      images: [defaultOgImage.url],
+      images: [image.url],
     },
   };
 }

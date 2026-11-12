@@ -12,8 +12,10 @@ export const siteConfig = {
   dateModified: "2026-09-04",
   softwareVersion: packageJson.version,
   author: {
+    id: "https://ayushdev.com/#person",
     name: "Ayush Agarwal",
     url: "https://github.com/ayushhagarwal",
+    sameAs: ["https://ayushdev.com/", "https://github.com/ayushhagarwal"],
   },
   features: [
     "Live Markdown editor and preview",
@@ -74,6 +76,33 @@ export const moreApps = [
   { href: "https://skin-ritual.ayushdev.com", label: "SkinRitual" },
   { href: "https://xmllens.ayushdev.com", label: "XML Lens" },
 ] as const;
+
+/**
+ * Last meaningful content change per public path (YYYY-MM-DD). Update the entry
+ * when a page's content changes: it feeds the sitemap `lastmod`, each page's
+ * `dateModified`, and the IndexNow workflow, which only resubmits URLs whose
+ * `lastmod` changed.
+ */
+export const pageModified: Record<string, string> = {
+  "": "2026-11-12",
+  "/pdf-to-markdown": "2026-11-12",
+  "/word-to-markdown": "2026-11-12",
+  "/supported-formats": "2026-11-12",
+  "/markdown-cheatsheet": "2026-11-12",
+  "/pptx-to-markdown": "2026-11-12",
+  "/excel-to-markdown": "2026-11-12",
+  "/html-to-markdown": "2026-11-12",
+  "/csv-to-markdown": "2026-11-12",
+  "/json-to-markdown": "2026-11-12",
+  "/xml-to-markdown": "2026-11-12",
+  "/epub-to-markdown": "2026-11-12",
+  "/image-to-markdown": "2026-11-12",
+  "/zip-to-markdown": "2026-11-12",
+};
+
+export function modifiedFor(path: string) {
+  return pageModified[path === "/" ? "" : path] ?? siteConfig.dateModified;
+}
 
 export const sitemapPaths = [
   { path: "", priority: 1, changeFrequency: "weekly" as const },

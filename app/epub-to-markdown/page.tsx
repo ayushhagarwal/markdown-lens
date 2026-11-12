@@ -4,8 +4,9 @@ import { formatPages } from "@/lib/format-pages";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "EPUB to Markdown Converter",
-  description: formatPages.epub.summary,
+  title: "EPUB to Markdown Converter – Free & Private",
+  description:
+    "Convert a DRM-free EPUB book to one Markdown file in your browser, with chapters in reading order, headings, lists, and links kept. Free, no upload.",
   path: formatPages.epub.path,
 });
 

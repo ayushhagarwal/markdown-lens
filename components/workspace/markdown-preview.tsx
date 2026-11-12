@@ -47,14 +47,30 @@ export function MarkdownPreview({
   previewRef,
   assetUrls,
   compact = false,
+  demoteH1 = false,
 }: {
   markdown: string;
   theme: "light" | "dark";
   previewRef: RefObject<HTMLDivElement | null>;
   assetUrls: Record<string, string>;
   compact?: boolean;
+  /** Render Markdown `#` headings as `<h2>` styled like an h1, for previews embedded in a page that has its own h1. */
+  demoteH1?: boolean;
 }) {
-  const components = useMarkdownComponents(theme, assetUrls);
+  const baseComponents = useMarkdownComponents(theme, assetUrls);
+  const components = useMemo<Components>(
+    () =>
+      demoteH1
+        ? {
+            ...baseComponents,
+            h1(props) {
+              const { className, children, id } = props;
+              return <h2 id={id} className={className ? `${className} md-h1` : "md-h1"}>{children}</h2>;
+            },
+          }
+        : baseComponents,
+    [baseComponents, demoteH1],
+  );
   const budget = useMemo(() => analyzeMarkdownBudget(markdown), [markdown]);
   if (!markdown.trim()) {
     return (
