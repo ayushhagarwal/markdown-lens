@@ -1083,7 +1083,7 @@ export function MarkdownLensApp() {
             <BrandIcon className="h-6 w-6" priority />
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
-          <TopButton icon={PanelLeft} label="Documents" onClick={() => { if (focusMode) { leaveFocus(); setDocumentsOpen(true); return; } setDocumentsOpen((open) => !open); }} active={documentsOpen && !focusMode} expanded={documentsOpen && !focusMode} controls="workspace-pane-documents" className="hidden md:flex" />
+          <TopButton icon={PanelLeft} label="Documents" onClick={() => { if (focusMode) { leaveFocus(); setDocumentsOpen(true); return; } setDocumentsOpen((open) => !open); }} active={documentsOpen && !focusMode} expanded={documentsOpen && !focusMode} controls={ready ? "workspace-pane-documents" : undefined} className="hidden md:flex" />
           <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="sm:hidden" />
           <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="hidden sm:flex" />
           <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} disabled={!ready} emphasis className="max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
@@ -1521,7 +1521,7 @@ export function MarkdownLensApp() {
 
 function WorkspaceSkeleton() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col" aria-busy="true">
+    <main id="main" className="flex min-h-0 flex-1 flex-col" aria-busy="true">
       <p role="status" className="sr-only">Loading workspace</p>
       <div aria-hidden="true" className="flex min-h-0 flex-1">
         <div className="hidden w-[260px] shrink-0 border-r border-border p-3 lg:block">
@@ -1550,7 +1550,7 @@ function WorkspaceSkeleton() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 

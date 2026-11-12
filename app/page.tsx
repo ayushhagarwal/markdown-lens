@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
     types: {
+      "text/markdown": "/index.md",
       "text/plain": [
         { url: "/llms.txt", title: "Markdown Lens AI summary" },
         { url: "/llms-full.txt", title: "Markdown Lens full AI reference" },

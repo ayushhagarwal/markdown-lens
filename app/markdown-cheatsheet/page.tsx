@@ -5,6 +5,7 @@ import { ExampleCard } from "@/components/guide/example-card";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { pageMetadata } from "@/lib/seo";
+import { cheatsheetFaq, cheatsheetQuickReference, cheatsheetSections } from "@/lib/cheatsheet";
 import { modifiedFor, siteConfig } from "@/lib/site";
 
 const path = "/markdown-cheatsheet";
@@ -19,60 +20,6 @@ export const metadata: Metadata = pageMetadata({
   type: "article",
   absoluteTitle: true,
 });
-
-const quickReference = [
-  ["Heading", "# H1  ## H2  ### H3"],
-  ["Bold", "**bold text**"],
-  ["Italic", "*italic text*"],
-  ["Strikethrough", "~~deleted~~"],
-  ["Link", "[title](https://example.com)"],
-  ["Image", "![alt text](image.png)"],
-  ["Inline code", "`code`"],
-  ["Code block", "```js … ```"],
-  ["Blockquote", "> quoted text"],
-  ["Unordered list", "- item"],
-  ["Ordered list", "1. item"],
-  ["Task list", "- [ ] to do  - [x] done"],
-  ["Table", "| A | B |\\n| --- | --- |"],
-  ["Horizontal rule", "---"],
-  ["Footnote", "text[^1]  [^1]: note"],
-  ["Inline math", "$E = mc^2$"],
-  ["Block math", "$$ … $$"],
-  ["Escape a character", "\\*not italic\\*"],
-] as const;
-
-const faq = [
-  {
-    question: "What is a Markdown cheat sheet?",
-    answer:
-      "A Markdown cheat sheet is a one-page reference of Markdown syntax: the characters you type for headings, emphasis, lists, links, images, code, and tables. This page shows each pattern next to its rendered GitHub-style output so you can copy what you need.",
-  },
-  {
-    question: "Which Markdown flavor does this cheat sheet use?",
-    answer:
-      "GitHub-flavored Markdown (GFM). It covers the CommonMark basics plus GFM tables, task lists, strikethrough, autolinks, and footnotes. Math and Mermaid examples work in Markdown Lens and on GitHub, but not in every Markdown renderer.",
-  },
-  {
-    question: "How do I make a line break in Markdown?",
-    answer:
-      "End the line with a backslash or two trailing spaces, then continue on the next line. A blank line between lines starts a new paragraph instead.",
-  },
-  {
-    question: "How do I align columns in a Markdown table?",
-    answer:
-      "Add colons to the divider row: :--- aligns left, :---: centers, and ---: aligns right.",
-  },
-  {
-    question: "How do I write math or LaTeX in Markdown?",
-    answer:
-      "Wrap inline math in single dollar signs, like $a^2 + b^2 = c^2$, and put block equations between lines containing only $$. Markdown Lens renders both with KaTeX, which supports most common LaTeX math commands.",
-  },
-  {
-    question: "How do I show a literal asterisk, underscore, or pound sign?",
-    answer:
-      "Put a backslash in front of it, for example \\* or \\#. Markdown then prints the character instead of treating it as formatting.",
-  },
-] as const;
 
 export default function MarkdownCheatsheetPage() {
   const structuredData = [
@@ -108,7 +55,7 @@ export default function MarkdownCheatsheetPage() {
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      mainEntity: faq.map((item) => ({
+      mainEntity: cheatsheetFaq.map((item) => ({
         "@type": "Question",
         name: item.question,
         acceptedAnswer: { "@type": "Answer", text: item.answer },
@@ -174,6 +121,7 @@ export default function MarkdownCheatsheetPage() {
           />
           <div className="mt-6 overflow-x-auto rounded-xl border border-border/80">
             <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+              <caption className="sr-only">Markdown syntax quick reference: element and the syntax that creates it</caption>
               <thead className="bg-surface">
                 <tr>
                   <th scope="col" className="border-b border-border px-4 py-3 font-semibold">Element</th>
@@ -181,10 +129,10 @@ export default function MarkdownCheatsheetPage() {
                 </tr>
               </thead>
               <tbody>
-                {quickReference.map(([element, syntax]) => (
+                {cheatsheetQuickReference.map(([element, syntax]) => (
                   <tr key={element} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 font-medium">{element}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{syntax}</td>
+                    <td className="px-4 py-3"><code className="font-mono text-xs">{syntax}</code></td>
                   </tr>
                 ))}
               </tbody>
@@ -192,150 +140,25 @@ export default function MarkdownCheatsheetPage() {
           </div>
         </section>
 
-        <section className="mt-14" aria-labelledby="basics-heading">
-          <SectionHeading
-            id="basics-heading"
-            title="Headings, emphasis, and paragraphs"
-            description="Start with the building blocks for readable Markdown documents. Leave a blank line between paragraphs."
-          />
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard title="Headings" syntax={"# Heading 1\n## Heading 2\n### Heading 3\n#### Heading 4"} />
-            <ExampleCard title="Emphasis" syntax={"**Bold text**\n\n*Italic text*\n\n***Bold and italic***\n\n~~Strikethrough~~"} />
-            <ExampleCard
-              title="Blockquotes"
-              syntax={"> Markdown keeps plain text readable.\n>\n> > Nest a quote with a second marker."}
-            />
-            <ExampleCard title="Line breaks and rules" syntax={"First line\\\nSecond line, same paragraph\n\n---\n\nA new section after a horizontal rule."} />
-          </div>
-        </section>
-
-        <section className="mt-14" aria-labelledby="links-heading">
-          <SectionHeading
-            id="links-heading"
-            title="Links and images"
-            description="Square brackets hold the visible text; parentheses hold the URL. Images use the same pattern with a leading exclamation mark."
-          />
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard
-              title="Inline, reference, and auto links"
-              syntax={"[Markdown Lens](https://markdownlens.ayushdev.com)\n\nRead the [spec][gfm].\n\nhttps://github.com is linked automatically.\n\n[gfm]: https://github.github.com/gfm/"}
-            />
-            <ExampleCard
-              title="Images"
-              syntax={"![Markdown Lens icon](https://markdownlens.ayushdev.com/icon-192.png)\n\n![Alt text describes the image](image.png \"Optional title\")"}
-            />
-          </div>
-        </section>
-
-        <section className="mt-14" aria-labelledby="lists-heading">
-          <SectionHeading
-            id="lists-heading"
-            title="Lists and task lists"
-            description="Indent by two or more spaces to nest. Square brackets after a list marker create a checklist."
-          />
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard
-              title="Ordered and unordered lists"
-              syntax={"- First item\n- Second item\n  - Nested item\n\n1. Plan\n2. Write\n3. Review"}
-            />
-            <ExampleCard
-              title="Task lists"
-              syntax={"- [x] Draft the README\n- [ ] Add examples\n- [ ] Request review"}
-            />
-          </div>
-        </section>
-
-        <section className="mt-14" aria-labelledby="tables-heading">
-          <SectionHeading
-            id="tables-heading"
-            title="Tables"
-            description="Separate the header with dashes and columns with vertical bars. Colons in the divider row set alignment."
-          />
-          <div className="mt-6 grid gap-5">
-            <ExampleCard
-              title="Table with column alignment"
-              syntax={"| Left | Center | Right |\n| :--- | :---: | ---: |\n| Tables | Ready | 1 |\n| Mermaid | Ready | 2 |\n| Math | Ready | 3 |"}
-            />
-          </div>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            Have the data in a spreadsheet already? The{" "}
-            <Link href="/csv-to-markdown" className="text-accent underline-offset-4 hover:underline">CSV to Markdown table converter</Link>{" "}
-            and{" "}
-            <Link href="/excel-to-markdown" className="text-accent underline-offset-4 hover:underline">Excel to Markdown converter</Link>{" "}
-            build the table for you.
-          </p>
-        </section>
-
-        <section className="mt-14" aria-labelledby="code-heading">
-          <SectionHeading
-            id="code-heading"
-            title="Code"
-            description="Use single backticks for inline code and triple backticks for fenced blocks. Add a language name for syntax highlighting."
-          />
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard title="Inline code" syntax={"Run `npm run dev` to start the app."} />
-            <ExampleCard
-              title="Fenced code block"
-              syntax={'```ts\nconst greeting = "Hello, Markdown!";\nconsole.log(greeting);\n```'}
-            />
-          </div>
-        </section>
-
-        <section className="mt-14" aria-labelledby="more-heading">
-          <SectionHeading
-            id="more-heading"
-            title="Footnotes and escaping"
-            description="Footnotes collect references at the end of the document. A backslash prints a Markdown symbol literally."
-          />
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard title="Footnotes" syntax={"Markdown was created in 2004.[^1]\n\n[^1]: By John Gruber, with Aaron Swartz."} />
-            <ExampleCard title="Escaping characters" syntax={"\\*Not italic\\* and \\# not a heading.\n\nUse \\\\ for a literal backslash."} />
-          </div>
-        </section>
-
-        <section className="mt-14" aria-labelledby="math-heading">
-          <SectionHeading
-            id="math-heading"
-            title="Math and LaTeX"
-            description="Markdown Lens renders KaTeX-compatible math. Use single dollar signs inline and double dollar signs for display equations."
-          />
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard
-              title="Inline and block math"
-              syntax={"Inline: $E = mc^2$\n\nBlock:\n$$\n\\int_0^1 x^2\\,dx = \\frac{1}{3}\n$$"}
-            />
-            <ExampleCard
-              title="Fractions, sums, and Greek letters"
-              syntax={"$$\n\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}\n$$\n\n$\\alpha + \\beta \\le \\sqrt{x_1^2 + x_2^2}$"}
-            />
-            <ExampleCard
-              title="Matrices"
-              syntax={"$$\nA = \\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix}\n$$"}
-            />
-            <ExampleCard
-              title="Aligned equations"
-              syntax={"$$\n\\begin{aligned}\nf(x) &= (x + 1)^2 \\\\\n     &= x^2 + 2x + 1\n\\end{aligned}\n$$"}
-            />
-          </div>
-        </section>
-
-        <section className="mt-14" aria-labelledby="mermaid-heading">
-          <SectionHeading
-            id="mermaid-heading"
-            title="Mermaid diagrams"
-            description="A fenced block with the mermaid language becomes a diagram in Markdown Lens and on GitHub."
-          />
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <ExampleCard
-              title="Flowchart"
-              syntax={"```mermaid\nflowchart LR\n  A[Write] --> B[Preview]\n  B --> C[Publish]\n```"}
-            />
-            <ExampleCard
-              title="Sequence diagram"
-              syntax={"```mermaid\nsequenceDiagram\n  Writer->>Editor: Type Markdown\n  Editor-->>Writer: Live preview\n```"}
-            />
-          </div>
-        </section>
+        {cheatsheetSections.map((section) => (
+          <section key={section.id} className="mt-14" aria-labelledby={section.id}>
+            <SectionHeading id={section.id} title={section.title} description={section.description} />
+            <div className={`mt-6 grid gap-5 ${section.examples.length > 1 ? "md:grid-cols-2" : ""}`}>
+              {section.examples.map((example) => (
+                <ExampleCard key={example.title} title={example.title} syntax={example.syntax} />
+              ))}
+            </div>
+            {section.id === "tables-heading" ? (
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                Have the data in a spreadsheet already? The{" "}
+                <Link href="/csv-to-markdown" className="text-accent underline-offset-4 hover:underline">CSV to Markdown table converter</Link>{" "}
+                and{" "}
+                <Link href="/excel-to-markdown" className="text-accent underline-offset-4 hover:underline">Excel to Markdown converter</Link>{" "}
+                build the table for you.
+              </p>
+            ) : null}
+          </section>
+        ))}
 
         <section className="mt-14" aria-labelledby="faq-heading">
           <SectionHeading
@@ -344,7 +167,7 @@ export default function MarkdownCheatsheetPage() {
             description="Short answers to the questions people ask most when writing Markdown."
           />
           <div className="mt-6 divide-y divide-border border-y border-border">
-            {faq.map((item) => (
+            {cheatsheetFaq.map((item) => (
               <div key={item.question} className="py-5">
                 <h3 className="font-semibold">{item.question}</h3>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">{item.answer}</p>

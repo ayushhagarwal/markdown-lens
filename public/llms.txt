@@ -19,6 +19,12 @@
 - [Markdown Cheatsheet](https://markdownlens.ayushdev.com/markdown-cheatsheet): Examples of headings, lists, task lists, tables, code blocks, Mermaid diagrams, and math.
 - [Full Product Reference](https://markdownlens.ayushdev.com/llms-full.txt): Detailed capabilities, privacy behavior, supported syntax, and common questions.
 - [Open-source Repository](https://github.com/ayushhagarwal/markdown-lens): Source code, issues, license, and contribution information.
+- [About and Contact](https://markdownlens.ayushdev.com/about): Who builds Markdown Lens and how to report bugs, request features, or raise security issues.
+- [Privacy Policy](https://markdownlens.ayushdev.com/privacy): What is stored locally, what is never uploaded, and what the host processes.
+
+## Markdown versions
+
+Every page above is also available as plain Markdown: add `.md` to the path (for example https://markdownlens.ayushdev.com/pptx-to-markdown.md, or https://markdownlens.ayushdev.com/index.md for the homepage), or request the page with `Accept: text/markdown`. Instructions for coding agents are at https://markdownlens.ayushdev.com/AGENTS.md.
 
 ## Key facts
 

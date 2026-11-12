@@ -12,6 +12,7 @@ import {
   useState,
   type ComponentPropsWithoutRef,
   type ReactElement,
+  type ReactNode,
   type RefObject,
 } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
@@ -48,6 +49,7 @@ export function MarkdownPreview({
   assetUrls,
   compact = false,
   demoteH1 = false,
+  tableLabel,
 }: {
   markdown: string;
   theme: "light" | "dark";
@@ -56,20 +58,33 @@ export function MarkdownPreview({
   compact?: boolean;
   /** Render Markdown `#` headings as `<h2>` styled like an h1, for previews embedded in a page that has its own h1. */
   demoteH1?: boolean;
+  /** Accessible name for tables rendered inside an embedded example. */
+  tableLabel?: string;
 }) {
   const baseComponents = useMarkdownComponents(theme, assetUrls);
   const components = useMemo<Components>(
     () =>
-      demoteH1
+      demoteH1 || tableLabel
         ? {
             ...baseComponents,
-            h1(props) {
-              const { className, children, id } = props;
-              return <h2 id={id} className={className ? `${className} md-h1` : "md-h1"}>{children}</h2>;
-            },
+            ...(demoteH1
+              ? {
+                  h1(props: { className?: string; children?: ReactNode; id?: string }) {
+                    const { className, children, id } = props;
+                    return <h2 id={id} className={className ? `${className} md-h1` : "md-h1"}>{children}</h2>;
+                  },
+                }
+              : {}),
+            ...(tableLabel
+              ? {
+                  table(props: { children?: ReactNode }) {
+                    return <table aria-label={tableLabel}>{props.children}</table>;
+                  },
+                }
+              : {}),
           }
         : baseComponents,
-    [baseComponents, demoteH1],
+    [baseComponents, demoteH1, tableLabel],
   );
   const budget = useMemo(() => analyzeMarkdownBudget(markdown), [markdown]);
   if (!markdown.trim()) {
@@ -289,7 +304,7 @@ function extractText(value: React.ReactNode): string {
   if (typeof value === "string" || typeof value === "number") return String(value);
   if (Array.isArray(value)) return value.map(extractText).join("");
   if (value && typeof value === "object" && "props" in value) {
-    return extractText((value as ReactElement<{ children?: React.ReactNode }>).props.children);
+    return extractText((value as ReactElement<{ children?: ReactNode }>).props.children);
   }
   return "";
 }

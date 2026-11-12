@@ -35,7 +35,9 @@ export function pageMetadata({
   return {
     title: absoluteTitle ? { absolute: fullTitle } : title,
     description,
-    alternates: { canonical: path },
+    alternates: index
+      ? { canonical: path, types: { "text/markdown": path === "/" ? "/index.md" : `${path}.md` } }
+      : { canonical: path },
     robots: index
       ? undefined
       : {

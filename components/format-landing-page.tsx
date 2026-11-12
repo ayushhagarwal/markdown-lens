@@ -35,7 +35,7 @@ export type FormatLandingSection = {
   paragraphs?: readonly string[];
   list?: readonly string[];
   ordered?: boolean;
-  table?: { head: readonly string[]; rows: readonly (readonly string[])[] };
+  table?: { caption: string; head: readonly string[]; rows: readonly (readonly string[])[]; codeColumns?: readonly number[] };
   code?: string;
   links?: readonly { href: string; label: string }[];
 };
@@ -183,7 +183,7 @@ function SampleSection({ sample }: { sample: NonNullable<FormatLandingConfig["sa
           <p className="mt-3 font-mono text-sm font-semibold">{sample.fileName}</p>
           <ul className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
             {sample.sourceLines.map((line, index) => (
-              <li key={`${line}-${index}`} className="whitespace-pre-wrap break-words rounded-md bg-muted/70 px-3 py-2 font-mono text-xs">{line}</li>
+              <li key={`${line}-${index}`} className="whitespace-pre-wrap break-words rounded-md bg-muted/70 px-3 py-2"><code className="font-mono text-xs">{line}</code></li>
             ))}
           </ul>
         </div>
@@ -212,13 +212,18 @@ function GuideSection({ section }: { section: FormatLandingSection }) {
       {section.table ? (
         <div className="mt-5 overflow-x-auto border border-border">
           <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+            <caption className="sr-only">{section.table.caption}</caption>
             <thead className="bg-surface">
               <tr>{section.table.head.map((cell) => <th key={cell} scope="col" className="border-b border-border px-4 py-3 font-semibold">{cell}</th>)}</tr>
             </thead>
             <tbody>
               {section.table.rows.map((row) => (
                 <tr key={row.join("|")} className="border-b border-border last:border-0">
-                  {row.map((cell, index) => <td key={`${index}-${cell}`} className={`px-4 py-3 ${index === 1 ? "font-mono text-xs" : ""}`}>{cell}</td>)}
+                  {row.map((cell, index) => (
+                    <td key={`${index}-${cell}`} className="px-4 py-3">
+                      {(section.table?.codeColumns ?? [1]).includes(index) ? <code className="font-mono text-xs">{cell}</code> : cell}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>

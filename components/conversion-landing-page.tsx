@@ -371,7 +371,7 @@ function ConversionPreview({ config }: { config: ConversionLandingPageConfig }) 
               <div className="mt-5 space-y-3 text-xs leading-5 text-muted-foreground">
                 {config.sourceLines.map((line, index) => (
                   <div key={`${line}-${index}`} className="rounded-md bg-muted/70 px-3 py-2">
-                    {line}
+                    <code>{line}</code>
                   </div>
                 ))}
               </div>
@@ -383,12 +383,12 @@ function ConversionPreview({ config }: { config: ConversionLandingPageConfig }) 
             </p>
             <div className="mt-4">
               {config.markdownLines.map((line, index) => (
-                <p
+                <code
                   key={`${line}-${index}`}
-                  className={line.startsWith("#") ? "text-accent" : "text-foreground/80"}
+                  className={`block ${line.startsWith("#") ? "text-accent" : "text-foreground/80"}`}
                 >
                   {line || "\u00a0"}
-                </p>
+                </code>
               ))}
             </div>
             <span className="mt-3 block h-4 w-px bg-accent" aria-hidden />

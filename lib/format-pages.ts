@@ -39,6 +39,7 @@ export const formatPages = {
         heading: "How slides map to Markdown",
         paragraphs: ["The converter keeps the structure of the deck predictable, so you can find any slide in the output quickly."],
         table: {
+          caption: "How PowerPoint slide content maps to Markdown output",
           head: ["PowerPoint content", "Markdown output"],
           rows: [
             ["File name", "# Title (level-1 heading)"],
@@ -165,6 +166,8 @@ export const formatPages = {
       {
         heading: "How HTML elements map to Markdown",
         table: {
+          caption: "How HTML elements map to Markdown syntax",
+          codeColumns: [0, 1],
           head: ["HTML", "Markdown"],
           rows: [
             ["<h1> … <h6>", "# … ######"],
@@ -173,7 +176,7 @@ export const formatPages = {
             ["<ul>, <ol>", "- item, 1. item"],
             ["<pre><code>", "Fenced code block"],
             ["<table>", "GitHub-flavored Markdown table"],
-            ["<script>, <style>, <form>, <iframe>", "Removed"],
+            ["<script>, <style>, <form>, <iframe>", "(removed)"],
           ],
         },
       },

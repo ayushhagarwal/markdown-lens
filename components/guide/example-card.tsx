@@ -32,7 +32,7 @@ export function ExampleCard({
         </div>
         <div className="min-w-0 p-5">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preview</p>
-          <GuidePreview markdown={syntax} />
+          <GuidePreview markdown={syntax} title={title} />
         </div>
       </div>
     </article>
@@ -56,7 +56,7 @@ function OpenExampleButton({ title, markdown }: { title: string; markdown: strin
   );
 }
 
-function GuidePreview({ markdown }: { markdown: string }) {
+function GuidePreview({ markdown, title }: { markdown: string; title: string }) {
   const previewRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -68,5 +68,5 @@ function GuidePreview({ markdown }: { markdown: string }) {
     return () => observer.disconnect();
   }, []);
 
-  return <MarkdownPreview markdown={markdown} theme={theme} previewRef={previewRef} assetUrls={{}} compact demoteH1 />;
+  return <MarkdownPreview markdown={markdown} theme={theme} previewRef={previewRef} assetUrls={{}} compact demoteH1 tableLabel={`${title} preview`} />;
 }

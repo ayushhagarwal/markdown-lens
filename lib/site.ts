@@ -98,6 +98,8 @@ export const pageModified: Record<string, string> = {
   "/epub-to-markdown": "2026-11-12",
   "/image-to-markdown": "2026-11-12",
   "/zip-to-markdown": "2026-11-12",
+  "/about": "2026-11-12",
+  "/privacy": "2026-11-12",
 };
 
 export function modifiedFor(path: string) {
@@ -117,4 +119,6 @@ export const sitemapPaths = [
       priority: 0.8,
       changeFrequency: "monthly" as const,
     })),
+  { path: "/about", priority: 0.5, changeFrequency: "yearly" as const },
+  { path: "/privacy", priority: 0.4, changeFrequency: "yearly" as const },
 ];
