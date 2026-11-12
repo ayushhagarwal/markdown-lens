@@ -1,8 +1,12 @@
 import { describe, expect, test } from "vitest";
 import {
   STAR_CONVERSION_COUNT_KEY,
+  STAR_EXPORT_COUNT_KEY,
+  STAR_PROMPT_RESOLVED_KEY,
   STAR_PROMPT_SHOWN_KEY,
   recordConversionAndShouldAsk,
+  recordExportAndShouldAsk,
+  resolveStarPrompt,
 } from "@/lib/star-prompt";
 
 function storage() {
@@ -38,5 +42,77 @@ describe("GitHub star prompt timing", () => {
 
     expect(recordConversionAndShouldAsk(local)).toBe(false);
     expect(local.getItem(STAR_CONVERSION_COUNT_KEY)).toBe("1");
+  });
+});
+
+describe("GitHub star prompt after exports", () => {
+  test("asks on the third successful export, once", () => {
+    const local = storage();
+
+    expect(recordExportAndShouldAsk(local)).toBe(false);
+    expect(recordExportAndShouldAsk(local)).toBe(false);
+    expect(recordExportAndShouldAsk(local)).toBe(true);
+    expect(recordExportAndShouldAsk(local)).toBe(false);
+    expect(local.getItem(STAR_EXPORT_COUNT_KEY)).toBe("4");
+  });
+
+  test("does not ask after exports when the conversion prompt was already shown", () => {
+    const local = storage();
+    recordConversionAndShouldAsk(local);
+    expect(recordConversionAndShouldAsk(local)).toBe(true);
+
+    for (let index = 0; index < 5; index += 1) expect(recordExportAndShouldAsk(local)).toBe(false);
+  });
+
+  test("an export prompt also prevents a later conversion prompt", () => {
+    const local = storage();
+    recordExportAndShouldAsk(local);
+    recordExportAndShouldAsk(local);
+    expect(recordExportAndShouldAsk(local)).toBe(true);
+
+    recordConversionAndShouldAsk(local);
+    expect(recordConversionAndShouldAsk(local)).toBe(false);
+  });
+
+  test("an ineligible moment counts the action without spending the prompt", () => {
+    const local = storage();
+    recordExportAndShouldAsk(local);
+    recordExportAndShouldAsk(local);
+    expect(recordExportAndShouldAsk(local, { eligible: false })).toBe(false);
+    expect(local.getItem(STAR_PROMPT_SHOWN_KEY)).toBeNull();
+    expect(recordExportAndShouldAsk(local)).toBe(true);
+
+    const conversions = storage();
+    recordConversionAndShouldAsk(conversions);
+    expect(recordConversionAndShouldAsk(conversions, { eligible: false })).toBe(false);
+    expect(recordConversionAndShouldAsk(conversions)).toBe(true);
+  });
+});
+
+describe("resolved star prompt", () => {
+  test("never asks again once resolved", () => {
+    const local = storage();
+    resolveStarPrompt(local);
+    expect(local.getItem(STAR_PROMPT_RESOLVED_KEY)).toBe("1");
+
+    for (let index = 0; index < 5; index += 1) {
+      expect(recordConversionAndShouldAsk(local)).toBe(false);
+      expect(recordExportAndShouldAsk(local)).toBe(false);
+    }
+  });
+
+  test("tolerates storage that throws", () => {
+    const throwing = {
+      getItem: () => {
+        throw new Error("SecurityError");
+      },
+      setItem: () => {
+        throw new Error("SecurityError");
+      },
+    };
+
+    expect(recordConversionAndShouldAsk(throwing)).toBe(false);
+    expect(recordExportAndShouldAsk(throwing)).toBe(false);
+    expect(() => resolveStarPrompt(throwing)).not.toThrow();
   });
 });

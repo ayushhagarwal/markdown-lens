@@ -2,6 +2,32 @@
 
 All notable Markdown Lens changes are documented here.
 
+## v2.0.0 - 2026-11-12
+
+### Changed
+
+- Introduced a new visual design system with matching light and dark themes, shared tokens, and restyled cards, buttons, chips, and code blocks.
+- Redesigned the homepage, format converter pages, supported-formats page, Markdown cheat sheet, and the 404 recovery page around the new design system; the site header is now sticky and the mobile menu is a floating card.
+- Redesigned the editor: top bar, Documents and Outline rails, status bar, toasts, dialogs, and command palette.
+- Editor Markdown syntax colors now follow the theme accent instead of underlined (light) or coral (dark) headings.
+
+### Added
+
+- An optional, one-time GitHub star prompt after the second successful conversion or the third export; it never appears again once shown or dismissed.
+- GitHub star links in the site header, homepage open-source section, footer, and editor top bar.
+- Markdown versions of every public page, served at `.md` URLs or with `Accept: text/markdown`, plus `/AGENTS.md`.
+- `/about` and `/privacy` pages.
+
+### Accessibility
+
+- Fixed axe color-contrast and scrollable-region findings in the redesign; cheat sheet example previews render `# Heading` as a second-level heading so the page keeps a single `h1`.
+- Wide tables on converter pages and the cheat sheet are keyboard-focusable labelled regions.
+- Long toast and import-error messages wrap within the viewport on small screens.
+
+### Performance
+
+- Heavy editor, preview, and converter code stays lazily loaded; the service worker cache version is bumped for the new release.
+
 ## v0.9.4 - 2026-07-11
 
 ### Testing

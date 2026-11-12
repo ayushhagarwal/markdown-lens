@@ -3,8 +3,11 @@
 import { memo, useCallback, useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
+import { Prec } from "@codemirror/state";
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
+import { tags } from "@lezer/highlight";
 import { clipboardImageFiles } from "@/lib/clipboard-images";
 
 const MAX_COUNTED_MATCHES = 10_000;
@@ -17,6 +20,23 @@ const BASIC_SETUP = {
   autocompletion: false,
   searchKeymap: true,
 };
+
+/**
+ * Brand-aligned Markdown token colors. Uses theme CSS variables so one style
+ * serves light and dark mode, and runs at highest precedence so it wins over
+ * the base themes' heading underline (light) and coral headings (dark).
+ */
+const markdownHighlightStyle = HighlightStyle.define([
+  { tag: tags.heading, color: "hsl(var(--accent))", fontWeight: "700", textDecoration: "none" },
+  { tag: tags.strong, color: "hsl(var(--foreground))", fontWeight: "700" },
+  { tag: tags.emphasis, color: "hsl(var(--foreground))", fontStyle: "italic" },
+  { tag: tags.strikethrough, textDecoration: "line-through" },
+  { tag: [tags.link, tags.url], color: "hsl(var(--accent))", textDecoration: "none" },
+  { tag: [tags.monospace, tags.labelName], color: "hsl(var(--muted-foreground))" },
+  { tag: [tags.processingInstruction, tags.contentSeparator, tags.meta], color: "hsl(var(--muted-foreground))" },
+  { tag: tags.quote, color: "hsl(var(--muted-foreground))", fontStyle: "italic" },
+]);
+const markdownHighlighting = Prec.highest(syntaxHighlighting(markdownHighlightStyle));
 
 class SearchMatchStatus {
   private timer: number | null = null;
@@ -126,6 +146,7 @@ export const MarkdownEditor = memo(function MarkdownEditor({
   const extensions = useMemo(
     () => [
       markdownLanguage(),
+      markdownHighlighting,
       ...(lineWrap ? [EditorView.lineWrapping] : []),
       searchMatchStatus,
       EditorView.domEventHandlers({

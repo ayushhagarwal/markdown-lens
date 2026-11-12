@@ -73,27 +73,33 @@ export default function MarkdownCheatsheetPage() {
       />
       <SiteHeader />
       <main id="main">
-        <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
-        <section className="py-12 text-center sm:py-16">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-accent/25 bg-accent-soft text-accent">
-            <BookOpen className="h-7 w-7" aria-hidden />
-          </div>
-          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-accent">
-            Quick reference
-          </p>
-          <h1 className="mx-auto mt-3 max-w-3xl text-3xl font-semibold tracking-tight sm:text-5xl">
-            Markdown cheat sheet
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-            Markdown formats plain text with a few symbols: <code>#</code> for headings, <code>**</code> for bold,{" "}
-            <code>-</code> for lists, <code>[text](url)</code> for links, and backticks for code. Every example below
-            shows the syntax next to the GitHub-style result, rendered by the same engine as the editor.
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            By {siteConfig.author.name} · Published <time dateTime={published}>June 20, 2026</time> · Updated{" "}
-            <time dateTime={modified}>{formatDate(modified)}</time>
-          </p>
-          <nav aria-label="On this page" className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+        <div className="relative isolate">
+          <div className="backdrop-grid" aria-hidden />
+          <div className="backdrop-glow" aria-hidden />
+          <section className="relative z-10 mx-auto w-full max-w-4xl px-4 pb-10 pt-16 text-center sm:px-6 sm:pb-14 sm:pt-24 lg:px-8">
+            <span className="rise-in mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-panel text-accent shadow-soft">
+              <BookOpen className="h-6 w-6" aria-hidden />
+            </span>
+            <p className="eyebrow rise-in mt-6" style={{ "--i": 1 } as React.CSSProperties}>
+              Quick reference
+            </p>
+            <h1 className="display mx-auto mt-4 max-w-3xl text-4xl sm:text-5xl lg:text-6xl">
+              Markdown cheat sheet
+            </h1>
+            <p className="rise-in mx-auto mt-6 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8 [&_code]:rounded-md [&_code]:border [&_code]:border-border [&_code]:bg-panel [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-foreground" style={{ "--i": 2 } as React.CSSProperties}>
+              Markdown formats plain text with a few symbols: <code>#</code> for headings, <code>**</code> for bold,{" "}
+              <code>-</code> for lists, <code>[text](url)</code> for links, and backticks for code. Every example below
+              shows the syntax next to the GitHub-style result, rendered by the same engine as the editor.
+            </p>
+            <p className="rise-in mt-4 font-mono text-xs text-muted-foreground" style={{ "--i": 3 } as React.CSSProperties}>
+              By {siteConfig.author.name} · Published <time dateTime={published}>June 20, 2026</time> · Updated{" "}
+              <time dateTime={modified}>{formatDate(modified)}</time>
+            </p>
+          </section>
+        </div>
+
+        <nav aria-label="On this page" className="sticky top-16 z-20 border-y border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+          <div className="mx-auto flex w-full max-w-7xl gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] sm:px-6 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-8 [&::-webkit-scrollbar]:hidden">
             {[
               ["#quick-reference", "Quick reference"],
               ["#basics-heading", "Text"],
@@ -106,33 +112,34 @@ export default function MarkdownCheatsheetPage() {
               ["#mermaid-heading", "Mermaid"],
               ["#faq-heading", "FAQ"],
             ].map(([href, label]) => (
-              <a key={href} href={href} className="rounded-sm text-accent underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <a key={href} href={href} className="chip shrink-0 whitespace-nowrap transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                 {label}
               </a>
             ))}
-          </nav>
-        </section>
+          </div>
+        </nav>
 
-        <section id="quick-reference" aria-labelledby="quick-reference-heading" className="scroll-mt-20">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="quick-reference" aria-labelledby="quick-reference-heading" className="scroll-mt-24 pt-14 sm:pt-20">
           <SectionHeading
             id="quick-reference-heading"
             title="Markdown syntax quick reference"
             description="The most common Markdown elements on one screen. Scroll down for rendered examples of each."
           />
-          <div className="mt-6 overflow-x-auto rounded-xl border border-border/80">
+          <div role="region" aria-label="Markdown syntax quick reference table" tabIndex={0} className="card mt-8 overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <table className="w-full min-w-[480px] border-collapse text-left text-sm">
               <caption className="sr-only">Markdown syntax quick reference: element and the syntax that creates it</caption>
               <thead className="bg-surface">
                 <tr>
-                  <th scope="col" className="border-b border-border px-4 py-3 font-semibold">Element</th>
-                  <th scope="col" className="border-b border-border px-4 py-3 font-semibold">Markdown syntax</th>
+                  <th scope="col" className="border-b border-border px-5 py-3.5 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Element</th>
+                  <th scope="col" className="border-b border-border px-5 py-3.5 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Markdown syntax</th>
                 </tr>
               </thead>
               <tbody>
                 {cheatsheetQuickReference.map(([element, syntax]) => (
-                  <tr key={element} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3 font-medium">{element}</td>
-                    <td className="px-4 py-3"><code className="font-mono text-xs">{syntax}</code></td>
+                  <tr key={element} className="border-b border-border transition-colors last:border-0 hover:bg-muted/50">
+                    <td className="px-5 py-3 font-medium">{element}</td>
+                    <td className="px-5 py-3"><code className="rounded-md bg-muted px-2 py-1 font-mono text-xs text-foreground">{syntax}</code></td>
                   </tr>
                 ))}
               </tbody>
@@ -141,60 +148,66 @@ export default function MarkdownCheatsheetPage() {
         </section>
 
         {cheatsheetSections.map((section) => (
-          <section key={section.id} className="mt-14" aria-labelledby={section.id}>
+          <section key={section.id} className="defer-paint mt-20 sm:mt-24" aria-labelledby={section.id}>
             <SectionHeading id={section.id} title={section.title} description={section.description} />
-            <div className={`mt-6 grid gap-5 ${section.examples.length > 1 ? "md:grid-cols-2" : ""}`}>
+            <div className={`mt-8 grid gap-5 ${section.examples.length > 1 ? "md:grid-cols-2" : ""}`}>
               {section.examples.map((example) => (
                 <ExampleCard key={example.title} title={example.title} syntax={example.syntax} />
               ))}
             </div>
             {section.id === "tables-heading" ? (
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              <p className="mt-5 text-sm leading-6 text-muted-foreground">
                 Have the data in a spreadsheet already? The{" "}
-                <Link href="/csv-to-markdown" className="text-accent underline-offset-4 hover:underline">CSV to Markdown table converter</Link>{" "}
+                <Link href="/csv-to-markdown" className="link-underline">CSV to Markdown table converter</Link>{" "}
                 and{" "}
-                <Link href="/excel-to-markdown" className="text-accent underline-offset-4 hover:underline">Excel to Markdown converter</Link>{" "}
+                <Link href="/excel-to-markdown" className="link-underline">Excel to Markdown converter</Link>{" "}
                 build the table for you.
               </p>
             ) : null}
           </section>
         ))}
 
-        <section className="mt-14" aria-labelledby="faq-heading">
+        <section className="defer-paint mt-20 sm:mt-24" aria-labelledby="faq-heading">
           <SectionHeading
             id="faq-heading"
             title="Markdown syntax questions"
             description="Short answers to the questions people ask most when writing Markdown."
           />
-          <div className="mt-6 divide-y divide-border border-y border-border">
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
             {cheatsheetFaq.map((item) => (
-              <div key={item.question} className="py-5">
-                <h3 className="font-semibold">{item.question}</h3>
-                <p className="mt-2 max-w-3xl text-sm leading-7 text-muted-foreground">{item.answer}</p>
+              <div key={item.question} className="card reveal p-6">
+                <h3 className="font-semibold tracking-tight">{item.question}</h3>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.answer}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="my-14 rounded-xl border border-accent/25 bg-accent-soft/70 px-5 py-8 text-center sm:px-8">
-          <Eye className="mx-auto h-6 w-6 text-accent" aria-hidden />
-          <h2 className="mt-3 text-2xl font-bold">Try the syntax in the editor</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
-            Open any example above to edit it, or convert an existing document into Markdown.
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/editor" className="btn-primary h-10">
-              Open the Markdown editor
-            </Link>
-            <Link href="/pdf-to-markdown" className="btn-secondary h-10">
-              PDF to Markdown
-            </Link>
-            <Link href="/word-to-markdown" className="btn-secondary h-10">
-              Word to Markdown
-            </Link>
-            <Link href="/pptx-to-markdown" className="btn-secondary h-10">
-              PowerPoint to Markdown
-            </Link>
+        <section className="defer-paint relative isolate my-20 overflow-hidden rounded-3xl border border-border bg-panel px-5 py-14 text-center shadow-lift sm:my-24 sm:px-10 sm:py-16">
+          <div className="backdrop-grid" aria-hidden />
+          <div className="pointer-events-none absolute -bottom-40 left-1/2 -z-0 h-80 w-[min(40rem,120%)] -translate-x-1/2 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+          <div className="relative z-10">
+            <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+              <Eye className="h-5 w-5" aria-hidden />
+            </span>
+            <h2 className="heading mt-5 text-3xl sm:text-4xl">Try the syntax in the editor</h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+              Open any example above to edit it, or convert an existing document into Markdown.
+            </p>
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link href="/editor" className="btn-primary h-11">
+                Open the Markdown editor
+              </Link>
+              <Link href="/pdf-to-markdown" className="btn-secondary h-11">
+                PDF to Markdown
+              </Link>
+              <Link href="/word-to-markdown" className="btn-secondary h-11">
+                Word to Markdown
+              </Link>
+              <Link href="/pptx-to-markdown" className="btn-secondary h-11">
+                PowerPoint to Markdown
+              </Link>
+            </div>
           </div>
         </section>
         </div>
@@ -223,11 +236,11 @@ function SectionHeading({
   description: string;
 }) {
   return (
-    <div>
-      <h2 id={id} className="scroll-mt-20 text-2xl font-bold tracking-tight sm:text-3xl">
+    <div className="reveal max-w-2xl">
+      <h2 id={id} className="heading scroll-mt-24 text-3xl sm:text-4xl">
         {title}
       </h2>
-      <p className="mt-2 max-w-2xl leading-7 text-muted-foreground">{description}</p>
+      <p className="mt-3 leading-7 text-muted-foreground">{description}</p>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowUpRight, Check } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { pageMetadata } from "@/lib/seo";
@@ -66,20 +67,27 @@ export default function AboutPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <SiteHeader />
       <main id="main">
-        <article className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <h1 className="text-balance text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">About Markdown Lens</h1>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Markdown Lens is a free, open-source Markdown editor and document-to-Markdown converter that runs entirely in
-            your browser. It is built and maintained by{" "}
-            <a href={siteConfig.author.url} target="_blank" rel="noopener noreferrer" className="text-accent underline-offset-4 hover:underline">
-              {siteConfig.author.name}
-            </a>
-            .
-          </p>
+        <div className="relative isolate">
+          <div className="backdrop-grid" aria-hidden />
+          <div className="backdrop-glow" aria-hidden />
+          <header className="relative z-10 mx-auto w-full max-w-3xl px-4 pb-4 pt-16 sm:px-6 sm:pt-24 lg:px-8">
+            <p className="eyebrow rise-in">About</p>
+            <h1 className="display mt-5 text-4xl sm:text-5xl lg:text-6xl">About Markdown Lens</h1>
+            <p className="rise-in mt-6 text-lg leading-8 text-muted-foreground sm:text-xl sm:leading-9" style={{ "--i": 1 } as React.CSSProperties}>
+              Markdown Lens is a free, open-source Markdown editor and document-to-Markdown converter that runs entirely in
+              your browser. It is built and maintained by{" "}
+              <a href={siteConfig.author.url} target="_blank" rel="noopener noreferrer" className="link-underline">
+                {siteConfig.author.name}
+              </a>
+              .
+            </p>
+          </header>
+        </div>
 
-          <section className="mt-12">
-            <h2 className="text-2xl font-semibold tracking-tight">Why it exists</h2>
-            <p className="mt-4 leading-7 text-muted-foreground">
+        <article className="mx-auto w-full max-w-3xl px-4 pb-20 sm:px-6 sm:pb-28 lg:px-8">
+          <section className="mt-14 border-t border-border pt-10">
+            <h2 className="heading text-2xl sm:text-3xl">Why it exists</h2>
+            <p className="mt-4 leading-8 text-muted-foreground">
               Most online converters ask you to upload a document to someone else’s server before you get Markdown back.
               That is a poor fit for contracts, internal specs, and unpublished writing. Markdown Lens does the conversion
               on your device instead, then opens the result next to an editor and a GitHub-style preview so you can check
@@ -87,32 +95,47 @@ export default function AboutPage() {
             </p>
           </section>
 
-          <section className="mt-12">
-            <h2 className="text-2xl font-semibold tracking-tight">What it does</h2>
-            <ul className="mt-4 list-disc space-y-2 pl-5 leading-7 text-muted-foreground">
-              <li>Converts PDF, Word, PowerPoint, Excel, HTML, CSV, JSON, XML, EPUB, ZIP, and image files to Markdown.</li>
-              <li>Edits Markdown with a live preview that renders GitHub-flavored Markdown, Mermaid diagrams, and math.</li>
-              <li>Keeps documents in a local workspace and works offline once installed.</li>
+          <section className="mt-14 border-t border-border pt-10">
+            <h2 className="heading text-2xl sm:text-3xl">What it does</h2>
+            <ul className="mt-6 space-y-4 leading-7 text-muted-foreground">
+              <li className="flex items-start gap-3">
+                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><Check className="h-3 w-3" aria-hidden /></span>
+                <span>Converts PDF, Word, PowerPoint, Excel, HTML, CSV, JSON, XML, EPUB, ZIP, and image files to Markdown.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><Check className="h-3 w-3" aria-hidden /></span>
+                <span>Edits Markdown with a live preview that renders GitHub-flavored Markdown, Mermaid diagrams, and math.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><Check className="h-3 w-3" aria-hidden /></span>
+                <span>Keeps documents in a local workspace and works offline once installed.</span>
+              </li>
             </ul>
-            <p className="mt-4 text-sm">
-              <Link href="/supported-formats" className="font-medium text-accent underline-offset-4 hover:underline">See every supported format and its limits</Link>
-              {" · "}
-              <Link href="/privacy" className="font-medium text-accent underline-offset-4 hover:underline">Read the privacy policy</Link>
+            <p className="mt-6 flex flex-wrap gap-x-2 gap-y-2 text-sm">
+              <Link href="/supported-formats" className="link-underline">See every supported format and its limits</Link>
+              <span className="text-muted-foreground" aria-hidden>{" · "}</span>
+              <Link href="/privacy" className="link-underline">Read the privacy policy</Link>
             </p>
           </section>
 
-          <section id="contact" className="mt-12 scroll-mt-20" aria-labelledby="contact-heading">
-            <h2 id="contact-heading" className="text-2xl font-semibold tracking-tight">Contact</h2>
-            <p className="mt-4 leading-7 text-muted-foreground">
+          <section id="contact" className="mt-14 scroll-mt-20 border-t border-border pt-10" aria-labelledby="contact-heading">
+            <h2 id="contact-heading" className="heading text-2xl sm:text-3xl">Contact</h2>
+            <p className="mt-4 leading-8 text-muted-foreground">
               Markdown Lens is developed in the open on GitHub, and that is the best way to get in touch.
             </p>
-            <ul className="mt-6 divide-y divide-border border-y border-border">
+            <ul className="mt-8 grid gap-4 sm:grid-cols-2">
               {contactLinks.map((link) => (
-                <li key={link.href} className="py-4">
-                  <a href={link.href} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent underline-offset-4 hover:underline">
+                <li key={link.href} className="card card-interactive group relative flex flex-col p-6 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background">
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-3 font-semibold tracking-tight after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none"
+                  >
                     {link.label}
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden />
                   </a>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{link.description}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{link.description}</p>
                 </li>
               ))}
             </ul>

@@ -1,6 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { majorSyntaxMarkdown, malformedMermaidMarkdown } from "../fixtures/markdown";
 
+/**
+ * Writes Markdown into a fresh, empty document. Locator.fill() only selects the lines
+ * CodeMirror has rendered, so filling over the long welcome document on a short (mobile)
+ * viewport can leave its tail behind; an empty document makes the fill exact.
+ */
+async function replaceEditorContent(page: import("@playwright/test").Page, markdown: string) {
+  await page.getByRole("button", { name: "New document" }).first().click();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await expect(editor).not.toContainText("Welcome to Markdown Lens");
+  await editor.fill(markdown);
+}
+
 async function showPreviewOnMobile(page: import("@playwright/test").Page, projectName: string) {
   if (projectName === "mobile") {
     await page.getByRole("tab", { name: "Preview", exact: true }).click();
@@ -14,7 +26,7 @@ test("major Markdown syntax renders with semantic output", async ({ page }, test
   });
 
   await page.goto("/editor");
-  await page.locator('.cm-content[contenteditable="true"]:visible').first().fill(majorSyntaxMarkdown);
+  await replaceEditorContent(page, majorSyntaxMarkdown);
   await showPreviewOnMobile(page, testInfo.project.name);
 
   const preview = page.locator(".markdown-body:visible");
@@ -46,7 +58,7 @@ test("major Markdown syntax renders with semantic output", async ({ page }, test
 
 test("malformed Mermaid keeps the preview usable with an explicit fallback", async ({ page }, testInfo) => {
   await page.goto("/editor");
-  await page.locator('.cm-content[contenteditable="true"]:visible').first().fill(malformedMermaidMarkdown);
+  await replaceEditorContent(page, malformedMermaidMarkdown);
   await showPreviewOnMobile(page, testInfo.project.name);
 
   const preview = page.locator(".markdown-body:visible");
@@ -67,10 +79,7 @@ test("remote Markdown images require explicit per-image consent", async ({ page 
   });
 
   await page.goto("/editor");
-  await page
-    .locator('.cm-content[contenteditable="true"]:visible')
-    .first()
-    .fill("# Privacy check\n\n![Tracking pixel](https://attacker.invalid/pixel.png)");
+  await replaceEditorContent(page, "# Privacy check\n\n![Tracking pixel](https://attacker.invalid/pixel.png)");
   await showPreviewOnMobile(page, testInfo.project.name);
 
   const preview = page.locator(".markdown-body:visible");
@@ -88,6 +97,8 @@ test("remote Markdown images require explicit per-image consent", async ({ page 
 test("keyboard shortcuts open commands and create an independent draft", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop keyboard workflow");
   await page.goto("/editor");
+  // Shortcuts act on the workspace only after it has loaded from local storage.
+  await expect(page.getByRole("button", { name: "New document" }).first()).toBeEnabled();
 
   await page.keyboard.press("ControlOrMeta+K");
   const commandPalette = page.getByRole("dialog", { name: "Command palette" });

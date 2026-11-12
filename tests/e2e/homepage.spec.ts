@@ -1,19 +1,31 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test("homepage presents the local workspace clearly", async ({ page }) => {
+test("homepage presents the local workspace clearly", async ({ page }, testInfo) => {
   await page.goto("/");
   await expect(page).toHaveTitle("Free Local Markdown Editor and Document Converter | Markdown Lens");
   await expect(page.getByRole("heading", { level: 1, name: "A local Markdown editor that converts documents privately." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Open workspace" }).first()).toHaveAttribute("href", "/editor");
   await expect(page.getByRole("region", { name: "Sample conversion" })).toContainText("Sample handbook");
   await expect(page.getByRole("region", { name: "Sample conversion" })).toContainText("<!-- Page 1 -->");
-  await expect(page.locator("main").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveCount(0);
+  const mainStar = page.locator("main").getByRole("link", { name: "Star on GitHub: Markdown Lens (opens in a new tab)" });
+  await expect(mainStar).toHaveCount(1);
+  await expect(mainStar).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
+  await expect(mainStar).toHaveAttribute("target", "_blank");
   await expect(page.getByRole("button", { name: "Convert a file" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Try a sample PDF" })).toBeVisible();
   await expect(page.getByText("Or drop a PDF, Word file, or other supported document anywhere on this page.")).toBeVisible();
   await expect(page.getByLabel("Choose a file to convert")).toHaveAttribute("accept", expect.stringContaining(".pdf"));
-  await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" }).first()).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
+  if (testInfo.project.name === "mobile") {
+    // On small screens the header star link lives in the floating navigation menu.
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Star on GitHub: Markdown Lens (opens in a new tab)" })).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
+    await page.keyboard.press("Escape");
+  } else {
+    const headerStar = page.getByRole("banner").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" });
+    await expect(headerStar).toBeVisible();
+    await expect(headerStar).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
+  }
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveClass(/focus-visible:ring-2/);
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "If it helped, star the source. (opens in a new tab)" })).toBeVisible();
   await expect(page.getByRole("contentinfo").getByRole("link", { name: "Report a bug (opens in a new tab)" })).toBeVisible();
@@ -27,7 +39,7 @@ test("homepage presents the local workspace clearly", async ({ page }) => {
 
   const schemas = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(schemas.join(" ")).not.toContain("FAQPage");
-  expect(schemas.join(" ")).toContain('"softwareVersion":"0.9.4"');
+  expect(schemas.join(" ")).toContain('"softwareVersion":"2.0.0"');
 });
 
 test("trying the sample PDF opens it in the editor", async ({ page }, testInfo) => {
@@ -122,6 +134,8 @@ test("homepage follows system color scheme and preserves a saved light preferenc
 });
 
 test("@a11y homepage has no accessibility violations", async ({ page }) => {
+  // Scroll-reveal/entrance animations leave text at partial opacity mid-transition; audit the resting state.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
@@ -129,8 +143,10 @@ test("@a11y homepage has no accessibility violations", async ({ page }) => {
 
 test("cheatsheet preview matches the editor and opens an example", async ({ page }, testInfo) => {
   await page.goto("/markdown-cheatsheet");
-  await expect(page.getByRole("heading", { level: 1, name: "Heading 1" })).toBeVisible();
-  await expect(page.getByRole("group", { name: /Remote image blocked from example.com/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Markdown cheat sheet");
+  await expect(page.getByRole("heading", { level: 2, name: "Heading 1", exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: /Remote image blocked from markdownlens.ayushdev.com/ })).toBeVisible();
   await page.getByRole("button", { name: "Open this example: Headings" }).click();
   await expect(page).toHaveURL(/\/editor$/);
   await expect(page.locator('.cm-content[contenteditable="true"]:visible').first()).toContainText("Heading 1");
@@ -142,14 +158,18 @@ test("cheatsheet preview matches the editor and opens an example", async ({ page
 
 test("@a11y Markdown cheatsheet has no accessibility violations", async ({ page }) => {
   test.setTimeout(60_000);
+  // Scroll-reveal/entrance animations leave text at partial opacity mid-transition; audit the resting state.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/markdown-cheatsheet");
-  await expect(page.getByRole("heading", { level: 1, name: "Markdown cheatsheet" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Markdown cheat sheet" })).toBeVisible();
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
 });
 
 test("@a11y public converter pages have no accessibility violations", async ({ page }) => {
   test.setTimeout(120_000);
+  // Scroll-reveal/entrance animations leave text at partial opacity mid-transition; audit the resting state.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   for (const path of [
     "/supported-formats",
     "/pdf-to-markdown",
@@ -172,6 +192,8 @@ test("@a11y public converter pages have no accessibility violations", async ({ p
 });
 
 test("@a11y not-found recovery page has no accessibility violations", async ({ page }) => {
+  // Scroll-reveal/entrance animations leave text at partial opacity mid-transition; audit the resting state.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const response = await page.goto("/this-page-does-not-exist");
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { level: 1, name: "Page not found" })).toBeVisible();

@@ -15,23 +15,26 @@ export function ExampleCard({
   className?: string;
 }) {
   return (
-    <article className={`overflow-hidden rounded-xl border border-border/80 bg-panel shadow-panel ${className}`}>
-      <div className="flex items-center justify-between gap-3 border-b border-border/80 bg-surface px-5 py-3">
-        <h3 className="text-sm font-semibold">{title}</h3>
+    <article className={`window flex min-w-0 flex-col ${className}`}>
+      <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border bg-surface pl-4 pr-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="window-dots hidden sm:flex" aria-hidden><i /><i /><i /></span>
+          <h3 className="truncate text-sm font-semibold tracking-tight">{title}</h3>
+        </div>
         <OpenExampleButton title={title} markdown={syntax} />
       </div>
-      <div className="grid lg:grid-cols-2">
-        <div className="min-w-0 border-b border-border/80 p-5 lg:border-b-0 lg:border-r">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Markdown</p>
+      <div className="grid flex-1 lg:grid-cols-2">
+        <div className="min-w-0 border-b border-border bg-surface/60 p-4 sm:p-5 lg:border-b-0 lg:border-r">
+          <p className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Markdown</p>
           <pre
             tabIndex={0}
-            className="overflow-x-auto whitespace-pre-wrap break-words rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-sm leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="code-block whitespace-pre-wrap break-words text-[13px]"
           >
             <code>{syntax}</code>
           </pre>
         </div>
-        <div className="min-w-0 p-5">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preview</p>
+        <div className="min-w-0 p-4 sm:p-5">
+          <p className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-accent">Preview</p>
           <GuidePreview markdown={syntax} title={title} />
         </div>
       </div>
@@ -49,7 +52,7 @@ function OpenExampleButton({ title, markdown }: { title: string; markdown: strin
         router.push("/editor");
       }}
       aria-label={`Open this example: ${title}`}
-      className="inline-flex min-h-11 shrink-0 items-center rounded-md px-2 text-xs font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="-mr-2 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       Open this example
     </button>

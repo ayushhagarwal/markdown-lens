@@ -30,7 +30,7 @@ test("workspace loads and creates a local document", async ({ page }, testInfo) 
   test.skip(testInfo.project.name === "mobile", "desktop workspace interaction");
   await page.goto("/editor");
   await expect(page.getByRole("link", { name: "Markdown Lens home" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Star Markdown Lens on GitHub (opens in a new tab)" })).toHaveAttribute("href", "https://github.com/ayushhagarwal/markdown-lens");
   await expect(page.getByRole("button", { name: "Open or convert", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "New document" }).first().click();
   await expect(page.getByText("Untitled document")).toBeVisible();
@@ -41,6 +41,8 @@ test("preview blocks executable link and image URLs", async ({ page }) => {
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  // Wait until the new, empty document is active so the fill cannot land in the welcome draft.
+  await expect(editor).not.toContainText("Welcome to Markdown Lens");
   await editor.fill("[unsafe link](javascript:alert(1))\n\n![unsafe image](javascript:alert(2))");
   const preview = page.locator(".markdown-body");
   await expect(preview).toContainText("unsafe link");
@@ -52,6 +54,7 @@ test("preview labels blocked remote images and offers explicit loading", async (
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await expect(editor).not.toContainText("Welcome to Markdown Lens");
   await editor.fill("![Remote diagram](https://images.example.com/diagram.png)");
   if (testInfo.project.name === "mobile") {
     await page.getByRole("tab", { name: "Preview", exact: true }).click();
@@ -66,6 +69,7 @@ test("preview reports failed remote-image loads with retry", async ({ page }, te
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await expect(editor).not.toContainText("Welcome to Markdown Lens");
   await editor.fill("![Unavailable image](https://images.example.com/failed.png)");
   if (testInfo.project.name === "mobile") await page.getByRole("tab", { name: "Preview", exact: true }).click();
   const imageGroup = page.getByRole("group", { name: "Remote image blocked from images.example.com" });
@@ -79,6 +83,7 @@ test("preview keeps internal links in context and external links safe", async ({
   await page.goto("/editor");
   await page.getByRole("button", { name: "New document" }).first().click();
   const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await expect(editor).not.toContainText("Welcome to Markdown Lens");
   await editor.fill("[Jump to section](#section)\n\n[External docs](https://example.com/docs)\n\n[Protocol-relative](//example.com/docs)\n\n## Section");
   if (testInfo.project.name === "mobile") {
     await page.getByRole("tab", { name: "Preview", exact: true }).click();

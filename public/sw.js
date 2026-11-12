@@ -1,4 +1,4 @@
-const CACHE_VERSION = "0.9.4-1";
+const CACHE_VERSION = "2.0.0-1";
 const CACHE_PREFIX = "markdown-lens-";
 const SHELL_CACHE = `${CACHE_PREFIX}shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${CACHE_VERSION}`;

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Check, FileUp, LockKeyhole } from "lucide-react";
-import { GithubStarLink } from "@/components/github-star-link";
+import { ArrowRight, Check, LockKeyhole } from "lucide-react";
+import { Breadcrumb, DropTarget, FaqList, RelatedTools, SectionHeader, Steps } from "@/components/landing/parts";
 import { ConvertFileButton, LandingImportSurface } from "@/components/landing-import-surface";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -78,93 +78,72 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />
       <SiteHeader />
       <main id="main">
-        <nav className="mx-auto w-full max-w-7xl px-4 pt-6 text-sm text-muted-foreground sm:px-6 lg:px-8" aria-label="Breadcrumb">
-          <Link href="/" className="rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">Home</Link><span className="mx-2" aria-hidden="true">/</span><span aria-current="page">{config.title}</span>
-        </nav>
-        <section className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8 lg:py-24">
-          <div>
-            <h1 className="max-w-3xl text-balance text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">{config.title}</h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">{config.summary}</p>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">{config.description}</p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ConvertFileButton className="btn-primary">
-                Open or convert {config.extensions}
-                <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </ConvertFileButton>
-              <Link href="/supported-formats" className="btn-secondary">Compare formats</Link>
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">Or drop a file on this page. It stays in this browser.</p>
-            <p className="mt-5 flex items-center gap-2 text-sm text-muted-foreground"><LockKeyhole aria-hidden="true" className="h-4 w-4 text-accent" />Local browser processing. No document upload.</p>
+        <div className="relative isolate">
+          <div className="backdrop-grid" aria-hidden />
+          <div className="backdrop-glow" aria-hidden />
+          <div className="relative z-10">
+            <Breadcrumb current={config.title} />
+            <section className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8">
+              <div>
+                <p className="chip rise-in"><LockKeyhole aria-hidden="true" className="h-3.5 w-3.5 text-accent" />Free · runs in your browser</p>
+                <h1 className="display mt-6 max-w-3xl text-4xl sm:text-5xl lg:text-6xl">{config.title}</h1>
+                <p className="rise-in mt-6 max-w-2xl text-lg leading-8 text-muted-foreground" style={{ "--i": 1 } as React.CSSProperties}>{config.summary}</p>
+                <p className="rise-in mt-3 max-w-2xl text-sm leading-6 text-muted-foreground" style={{ "--i": 1 } as React.CSSProperties}>{config.description}</p>
+                <div className="rise-in mt-8 flex flex-col gap-3 sm:flex-row" style={{ "--i": 2 } as React.CSSProperties}>
+                  <ConvertFileButton className="btn-primary group">
+                    Open or convert {config.extensions}
+                    <ArrowRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </ConvertFileButton>
+                  <Link href="/supported-formats" className="btn-secondary">Compare formats</Link>
+                </div>
+                <p className="rise-in mt-4 text-sm text-muted-foreground" style={{ "--i": 3 } as React.CSSProperties}>Or drop a file on this page. It stays in this browser.</p>
+              </div>
+              <div className="rise-in" style={{ "--i": 2 } as React.CSSProperties}>
+                <DropTarget title="Drop a file here" hint={config.extensions}>
+                  <Steps steps={config.steps} />
+                </DropTarget>
+              </div>
+            </section>
           </div>
-          <div className="border border-border bg-panel p-6 sm:p-8">
-            <div className="flex items-center gap-3 border-b border-border pb-5"><FileUp aria-hidden="true" className="h-5 w-5 text-accent" /><div><p className="font-semibold">Drop a file here</p><p className="text-sm text-muted-foreground">{config.extensions}</p></div></div>
-            <ol className="mt-6 space-y-5">{config.steps.map((step, index) => <li key={step} className="flex gap-4 text-sm leading-6"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent">{index + 1}</span><span>{step}</span></li>)}</ol>
-          </div>
-        </section>
+        </div>
 
         {config.sample ? <SampleSection sample={config.sample} /> : null}
 
-        <section className="border-y border-border bg-surface">
-          <div className="mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8">
-            <div><h2 className="text-3xl font-semibold tracking-tight">What the converter preserves</h2><ul className="mt-7 space-y-4">{config.preserves.map((item) => <li key={item} className="flex items-start gap-3 text-sm leading-6"><Check aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-accent" />{item}</li>)}</ul></div>
-            <div><h2 className="text-3xl font-semibold tracking-tight">Limitations to review</h2><p className="mt-4 text-sm leading-6 text-muted-foreground">Markdown represents document structure, not every visual layout detail.</p><ul className="mt-6 divide-y divide-border border-y border-border">{config.limitations.map((item) => <li key={item} className="py-4 text-sm leading-6 text-muted-foreground">{item}</li>)}</ul></div>
+        <section className="defer-paint border-y border-border bg-surface">
+          <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:px-8">
+            <div className="card reveal p-6 sm:p-8">
+              <h2 className="heading text-2xl sm:text-3xl">What the converter preserves</h2>
+              <ul className="mt-7 space-y-4">
+                {config.preserves.map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-sm leading-6">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><Check aria-hidden="true" className="h-3 w-3" /></span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="card reveal p-6 sm:p-8">
+              <h2 className="heading text-2xl sm:text-3xl">Limitations to review</h2>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">Markdown represents document structure, not every visual layout detail.</p>
+              <ul className="mt-5 divide-y divide-border border-y border-border">
+                {config.limitations.map((item) => <li key={item} className="py-3.5 text-sm leading-6 text-muted-foreground">{item}</li>)}
+              </ul>
+            </div>
           </div>
         </section>
 
         {config.sections?.length ? (
-          <div className="mx-auto w-full max-w-4xl space-y-14 px-4 py-16 sm:px-6 lg:px-8">
+          <div className="defer-paint mx-auto w-full max-w-4xl space-y-16 px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
             {config.sections.map((section) => <GuideSection key={section.heading} section={section} />)}
           </div>
         ) : null}
 
-        <section className="mx-auto grid w-full max-w-7xl gap-8 border-t border-border px-4 py-16 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:px-8">
-          <h2 className="text-3xl font-semibold tracking-tight">Questions about {config.extensions}</h2>
-          <div className="divide-y divide-border border-y border-border">
-            {config.faq.map((item) => (
-              <details key={item.question} className="group py-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
-                  {item.question}
-                  <span className="text-xl font-light text-muted-foreground transition group-open:rotate-45" aria-hidden>
-                    +
-                  </span>
-                </summary>
-                <p className="pt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p>
-              </details>
-            ))}
-          </div>
+        <section className="defer-paint mx-auto grid w-full max-w-7xl gap-8 border-t border-border px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.7fr_1.3fr] lg:px-8">
+          <SectionHeader eyebrow="Quick answers" title={`Questions about ${config.extensions}`} />
+          <FaqList items={config.faq} />
         </section>
 
-        <section className="border-t border-border/75 bg-foreground text-background">
-          <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-            <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-              <h2 className="text-3xl font-semibold tracking-tight">Related Markdown tools</h2>
-              <div className="flex flex-col gap-3 self-start sm:flex-row md:self-auto">
-                <Link
-                  href="/editor"
-                  className="btn-primary h-11"
-                >
-                  Open the editor
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-                <GithubStarLink
-                  variant="button"
-                  className="h-11 border-background/30 bg-transparent text-background hover:bg-background/10 hover:text-background"
-                />
-              </div>
-            </div>
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {config.related.map((item) => (
-                <Link key={item.href} href={item.href} className="group rounded-xl border border-background/15 bg-background/5 p-5 transition hover:border-background/30 hover:bg-background/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                  <span className="flex items-center justify-between gap-3 font-semibold">
-                    {item.title}
-                    <ArrowRight aria-hidden="true" className="h-4 w-4 transition group-hover:translate-x-1" />
-                  </span>
-                  <span className="mt-2 block text-sm leading-6 text-background/65">{item.description}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
+        <RelatedTools related={config.related} />
       </main>
       <SiteFooter />
     </div>
@@ -174,22 +153,31 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
 
 function SampleSection({ sample }: { sample: NonNullable<FormatLandingConfig["sample"]> }) {
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8" aria-labelledby="sample-heading">
-      <h2 id="sample-heading" className="text-3xl font-semibold tracking-tight">{sample.heading}</h2>
-      {sample.note ? <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">{sample.note}</p> : null}
-      <div className="mt-8 grid overflow-hidden border border-border md:grid-cols-2">
-        <div className="border-b border-border bg-surface/55 p-5 md:border-b-0 md:border-r">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{sample.sourceLabel}</p>
-          <p className="mt-3 font-mono text-sm font-semibold">{sample.fileName}</p>
-          <ul className="mt-4 space-y-2 text-sm leading-6 text-muted-foreground">
+    <section className="mx-auto w-full max-w-7xl px-4 pb-20 sm:px-6 lg:px-8" aria-labelledby="sample-heading">
+      <div className="reveal max-w-3xl">
+        <p className="eyebrow">Real output</p>
+        <h2 id="sample-heading" className="heading mt-3 text-3xl sm:text-4xl">{sample.heading}</h2>
+        {sample.note ? <p className="mt-4 text-sm leading-6 text-muted-foreground">{sample.note}</p> : null}
+      </div>
+      <div className="reveal mt-10 grid gap-5 lg:grid-cols-2">
+        <div className="window">
+          <p className="window-bar text-xs font-medium text-muted-foreground">
+            <span className="window-dots" aria-hidden><i /><i /><i /></span>
+            <span className="font-mono">{sample.fileName}</span>
+            <span className="ml-auto">{sample.sourceLabel}</span>
+          </p>
+          <ul className="space-y-2 p-5">
             {sample.sourceLines.map((line, index) => (
-              <li key={`${line}-${index}`} className="whitespace-pre-wrap break-words rounded-md bg-muted/70 px-3 py-2"><code className="font-mono text-xs">{line}</code></li>
+              <li key={`${line}-${index}`} className="whitespace-pre-wrap break-words rounded-lg bg-muted/70 px-3 py-2 text-muted-foreground"><code className="font-mono text-xs">{line}</code></li>
             ))}
           </ul>
         </div>
-        <div className="min-w-0 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Markdown output</p>
-          <pre tabIndex={0} className="mt-3 overflow-x-auto rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-xs leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{sample.markdown}</code></pre>
+        <div className="window min-w-0">
+          <p className="window-bar text-xs font-medium text-muted-foreground">
+            <span className="window-dots" aria-hidden><i /><i /><i /></span>
+            Markdown output
+          </p>
+          <pre tabIndex={0} className="overflow-x-auto p-5 font-mono text-xs leading-6 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"><code>{sample.markdown}</code></pre>
         </div>
       </div>
     </section>
@@ -199,8 +187,8 @@ function SampleSection({ sample }: { sample: NonNullable<FormatLandingConfig["sa
 function GuideSection({ section }: { section: FormatLandingSection }) {
   const ListTag = section.ordered ? "ol" : "ul";
   return (
-    <section>
-      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{section.heading}</h2>
+    <section className="reveal">
+      <h2 className="heading text-2xl sm:text-3xl">{section.heading}</h2>
       {section.paragraphs?.map((paragraph) => (
         <p key={paragraph} className="mt-4 leading-7 text-muted-foreground">{paragraph}</p>
       ))}
@@ -210,7 +198,7 @@ function GuideSection({ section }: { section: FormatLandingSection }) {
         </ListTag>
       ) : null}
       {section.table ? (
-        <div className="mt-5 overflow-x-auto border border-border">
+        <div role="region" aria-label={section.table.caption} tabIndex={0} className="mt-6 overflow-x-auto rounded-xl border border-border bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <table className="w-full min-w-[480px] border-collapse text-left text-sm">
             <caption className="sr-only">{section.table.caption}</caption>
             <thead className="bg-surface">
@@ -231,12 +219,12 @@ function GuideSection({ section }: { section: FormatLandingSection }) {
         </div>
       ) : null}
       {section.code ? (
-        <pre tabIndex={0} className="mt-5 overflow-x-auto rounded-md border border-slate-700 bg-[#0d1117] p-4 font-mono text-xs leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"><code>{section.code}</code></pre>
+        <pre tabIndex={0} className="code-block mt-6"><code>{section.code}</code></pre>
       ) : null}
       {section.links?.length ? (
         <p className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
           {section.links.map((link) => (
-            <Link key={link.href} href={link.href} className="font-medium text-accent underline-offset-4 hover:underline">{link.label}</Link>
+            <Link key={link.href} href={link.href} className="link-underline">{link.label}</Link>
           ))}
         </p>
       ) : null}

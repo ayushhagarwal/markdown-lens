@@ -42,11 +42,13 @@ export function useFileDrag() {
 export function DropToConvertOverlay({ active }: { active: boolean }) {
   if (!active) return null;
   return (
-    <div className="pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-background/80 p-6 backdrop-blur-sm" role="status">
-      <div className="w-full max-w-md rounded-xl border border-dashed border-accent bg-panel px-8 py-10 text-center shadow-2xl">
-        <FileUp className="mx-auto h-8 w-8 text-accent" aria-hidden />
-        <p className="mt-4 text-lg font-semibold">Drop to convert</p>
-        <p className="mt-2 text-sm text-muted-foreground">The file stays in this browser.</p>
+    <div className="overlay-in pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-background/75 p-6 backdrop-blur-sm" role="status">
+      <div className="pop-in w-full max-w-md rounded-2xl border-2 border-dashed border-accent/60 bg-panel px-8 py-10 text-center shadow-lift">
+        <span aria-hidden="true" className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-accent">
+          <FileUp className="h-7 w-7" />
+        </span>
+        <p className="mt-5 text-lg font-semibold tracking-[-0.02em]">Drop to convert</p>
+        <p className="mt-1.5 text-sm text-muted-foreground">The file stays in this browser.</p>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   ArchiveRestore,
   BookOpen,
   Check,
+  CircleAlert,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -27,18 +28,22 @@ import {
   FilePlus2,
   FileText,
   FileUp,
-  HardDrive,
   History,
+  Inbox,
+  ListTree,
   Loader2,
   Moon,
   PanelLeft,
   Pencil,
   RotateCcw,
   Search,
+  SearchX,
   Share2,
   ShieldCheck,
+  Star,
   Sun,
   Trash2,
+  TriangleAlert,
   X,
 } from "lucide-react";
 import { DropToConvertOverlay, useFileDrag } from "@/components/file-drop-overlay";
@@ -54,6 +59,15 @@ import { createSamplePdfFile } from "@/lib/sample-pdf";
 import { buildStandaloneHtmlDocument } from "@/lib/standalone-html";
 import { cn } from "@/lib/utils";
 import { BrandIcon } from "@/components/brand-icon";
+import { GithubIcon } from "@/components/github-icon";
+import { Notice, type ToastTone } from "@/components/workspace/toast";
+import {
+  DialogShell,
+  dialogCancelButton,
+  dialogConfirmButton,
+  dialogDangerButton,
+} from "@/components/workspace/dialog-shell";
+import { recordConversionAndShouldAsk, recordExportAndShouldAsk, resolveStarPrompt } from "@/lib/star-prompt";
 import { siteConfig } from "@/lib/site";
 import {
   addDocument,
@@ -135,8 +149,11 @@ type ShareLinkPreview = {
 };
 type ToastNotice = {
   message: string;
+  tone?: ToastTone;
   actionLabel?: string;
   actionHref?: string;
+  /** Auto-dismiss delay in milliseconds (default 6000). */
+  duration?: number;
 };
 
 type BeforeInstallPromptEvent = Event & {
@@ -150,6 +167,41 @@ const FOCUS_KEY = "markdown-lens:focus";
 const FONT_SIZE_KEY = "markdown-lens:font-size";
 const WRAP_KEY = "markdown-lens:wrap";
 const EDITOR_FONT_SIZES = [13.5, 15, 17] as const;
+const STAR_TOAST_DURATION = 12_000;
+const STAR_AFTER_EXPORT_DELAY = 1_200;
+const STAR_CONVERSION_MESSAGE = "Converted on your device, nothing uploaded. If Markdown Lens saved you time, a star helps others find it.";
+const STAR_EXPORT_MESSAGE = "Nice, that's your third export. If Markdown Lens is useful, a star on GitHub helps others find it.";
+
+function starNotice(message: string): ToastNotice {
+  return { message, tone: "star", actionLabel: "Star on GitHub", actionHref: siteConfig.githubUrl, duration: STAR_TOAST_DURATION };
+}
+
+/** localStorage can throw on access (private mode, blocked site data). */
+function starStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function markStarPromptResolved() {
+  const storage = starStorage();
+  if (storage) resolveStarPrompt(storage);
+}
+
+/** Stable per-notice key so a replaced toast remounts and restarts its countdown. */
+const noticeKeys = new WeakMap<ToastNotice, number>();
+let nextNoticeKey = 0;
+function noticeKey(notice: ToastNotice) {
+  let key = noticeKeys.get(notice);
+  if (key === undefined) {
+    nextNoticeKey += 1;
+    key = nextNoticeKey;
+    noticeKeys.set(notice, key);
+  }
+  return key;
+}
 
 function isApplePlatform() {
   return (
@@ -228,6 +280,33 @@ export function MarkdownLensApp() {
   const { active: fileDragActive, reset: resetFileDrag, dragProps } = useFileDrag();
   const deferredMarkdown = useDeferredValue(markdown);
   const [modPrefix, setModPrefix] = useState("Ctrl+");
+  const noticeToneRef = useRef<ToastTone | undefined>(undefined);
+  const starTimers = useRef(new Set<number>());
+  const closeNotice = useCallback(() => setNotice(null), []);
+
+  useEffect(() => {
+    noticeToneRef.current = notice ? notice.tone ?? "info" : undefined;
+  }, [notice]);
+
+  useEffect(() => {
+    const timers = starTimers.current;
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, []);
+
+  /**
+   * Counts a successful export and, on the third one, follows the action's own
+   * success toast with a one-time GitHub star invitation.
+   */
+  const noteSuccessfulExport = useCallback(() => {
+    const timer = window.setTimeout(() => {
+      starTimers.current.delete(timer);
+      const storage = starStorage();
+      if (!storage) return;
+      if (!recordExportAndShouldAsk(storage, { eligible: noticeToneRef.current !== "error" })) return;
+      setNotice(starNotice(STAR_EXPORT_MESSAGE));
+    }, STAR_AFTER_EXPORT_DELAY);
+    starTimers.current.add(timer);
+  }, []);
   useEffect(() => {
     setModPrefix(commandModPrefix());
   }, []);
@@ -282,7 +361,7 @@ export function MarkdownLensApp() {
       return saved;
     } catch {
       setSaveState("error");
-      setNotice({ message: "This draft could not be saved. Export a workspace backup before leaving the page." });
+      setNotice({ message: "This draft could not be saved. Export a workspace backup before leaving the page.", tone: "error" });
       return null;
     }
   }, [activeDocument, markdown, ready]);
@@ -325,7 +404,7 @@ export function MarkdownLensApp() {
         const sharedFragment = inspectShareFragment(window.location.hash);
         setPendingShareFragment(sharedFragment);
       } catch (error) {
-        setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened." });
+        setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened.", tone: "error" });
         clearShareFragment();
       }
       if (cancelled) return;
@@ -377,7 +456,7 @@ export function MarkdownLensApp() {
         const sharedFragment = inspectShareFragment(window.location.hash);
         setPendingShareFragment(sharedFragment);
       } catch (error) {
-        setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened." });
+        setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened.", tone: "error" });
         clearShareFragment();
       }
     };
@@ -590,7 +669,7 @@ export function MarkdownLensApp() {
         setMarkdown(next?.markdown ?? "");
       }
       await refreshDocuments();
-      setNotice({ message: `“${document.title}” moved to Trash.` });
+      setNotice({ message: `“${document.title}” moved to Trash.`, tone: "info" });
     },
     [activeId, documents, persistActiveDraft, refreshDocuments],
   );
@@ -598,7 +677,7 @@ export function MarkdownLensApp() {
   const restoreFromTrash = useCallback(async (document: DocumentRecord) => {
     await restoreDocument(document.id);
     await refreshDocuments();
-    setNotice({ message: `“${document.title}” restored.` });
+    setNotice({ message: `“${document.title}” restored.`, tone: "success" });
   }, [refreshDocuments]);
 
   const deleteForever = useCallback((document: DocumentRecord) => {
@@ -672,6 +751,13 @@ export function MarkdownLensApp() {
           setMobilePane("preview");
         }
         setJobs((current) => current.map((job) => (job.id === id ? { ...job, state: "completed" } : job)));
+        const storage = starStorage();
+        if (storage) {
+          const warned = results.some((converted) => converted.warnings.length > 0);
+          if (recordConversionAndShouldAsk(storage, { eligible: !warned && noticeToneRef.current !== "error" })) {
+            setNotice(starNotice(STAR_CONVERSION_MESSAGE));
+          }
+        }
       } catch (error) {
         const cancelled = error instanceof ConverterError && error.code === "cancelled";
         setJobs((current) =>
@@ -713,15 +799,21 @@ export function MarkdownLensApp() {
   }
 
   function downloadMarkdown() {
-    if (!markdown.trim()) return;
+    if (!markdown.trim()) return false;
     downloadBlob(new Blob([markdown], { type: "text/markdown;charset=utf-8" }), `${toFileName(activeDocument?.title ?? getDocumentTitle(markdown))}.md`);
+    return true;
+  }
+
+  function downloadMarkdownExport() {
+    if (downloadMarkdown()) noteSuccessfulExport();
   }
 
   async function saveAndDownload() {
     const saved = await persistActiveDraft();
     if (!saved) return;
     if (markdown.trim()) downloadMarkdown();
-    setNotice({ message: markdown.trim() ? "Saved on this device. Downloaded a copy." : "Saved on this device." });
+    setNotice({ message: markdown.trim() ? "Saved on this device. Downloaded a copy." : "Saved on this device.", tone: "success" });
+    if (markdown.trim()) noteSuccessfulExport();
   }
 
   async function pasteImages(files: File[]) {
@@ -798,7 +890,7 @@ export function MarkdownLensApp() {
     setVersions(await recordDocumentVersion(activeDocument.id, markdown, Date.now(), { force: true }));
     setMarkdown(version.markdown);
     setVersionsOpen(false);
-    setNotice({ message: "Restored a local version. The current draft was kept in the version list." });
+    setNotice({ message: "Restored a local version. The current draft was kept in the version list.", tone: "success" });
   }
 
   async function exportHtml() {
@@ -808,11 +900,13 @@ export function MarkdownLensApp() {
       bodyHtml: await prepareStandaloneBodyHtml(previewRef.current),
     });
     downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${toFileName(activeDocument?.title ?? "document")}.html`);
+    noteSuccessfulExport();
   }
 
   async function copyMarkdown() {
     await navigator.clipboard.writeText(markdown);
-    setNotice({ message: "Markdown copied." });
+    setNotice({ message: "Markdown copied.", tone: "success" });
+    noteSuccessfulExport();
   }
 
   function prepareShareLink() {
@@ -820,7 +914,7 @@ export function MarkdownLensApp() {
     setExportOpen(false);
     if (!assessment.ok) {
       downloadMarkdown();
-      setNotice({ message: "This document is too large for a share link. Downloaded a Markdown file instead." });
+      setNotice({ message: "This document is too large for a share link. Downloaded a Markdown file instead.", tone: "info" });
       return;
     }
     const url = `${location.origin}${location.pathname}${assessment.fragment}`;
@@ -832,9 +926,10 @@ export function MarkdownLensApp() {
     try {
       await navigator.clipboard.writeText(shareLink.url);
       setShareLink(null);
-      setNotice({ message: "Share link copied. Anyone with the URL can read this document." });
+      setNotice({ message: "Share link copied. Anyone with the URL can read this document.", tone: "success" });
+      noteSuccessfulExport();
     } catch {
-      setNotice({ message: "The share link could not be copied. Check browser clipboard permissions." });
+      setNotice({ message: "The share link could not be copied. Check browser clipboard permissions.", tone: "error" });
     }
   }
 
@@ -847,7 +942,7 @@ export function MarkdownLensApp() {
       setPendingSharedMarkdown(sharedMarkdown);
     } catch (error) {
       setPendingShareFragment(null);
-      setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened." });
+      setNotice({ message: error instanceof Error ? error.message : "The shared document could not be opened.", tone: "error" });
       clearShareFragment();
     }
   }
@@ -872,9 +967,9 @@ export function MarkdownLensApp() {
       setMobilePane("editor");
       setPendingSharedMarkdown(null);
       clearShareFragment();
-      setNotice({ message: "Shared document opened as a new local document." });
+      setNotice({ message: "Shared document opened as a new local document.", tone: "success" });
     } catch {
-      setNotice({ message: "The shared document could not be saved locally." });
+      setNotice({ message: "The shared document could not be saved locally.", tone: "error" });
     }
   }
 
@@ -910,6 +1005,7 @@ export function MarkdownLensApp() {
       new Blob([zipSync(entries)], { type: "application/zip" }),
       `${toFileName(activeDocument.title)}-bundle.zip`,
     );
+    noteSuccessfulExport();
   }
 
   async function restoreWorkspace(file: File) {
@@ -917,9 +1013,9 @@ export function MarkdownLensApp() {
       const backup = await parseWorkspaceBackupFile(file);
       await importWorkspace(backup);
       await refreshDocuments();
-      setNotice({ message: "Workspace backup restored locally." });
+      setNotice({ message: "Workspace backup restored locally.", tone: "success" });
     } catch (error) {
-      setNotice({ message: error instanceof Error ? error.message : "The workspace backup could not be restored." });
+      setNotice({ message: error instanceof Error ? error.message : "The workspace backup could not be restored.", tone: "error" });
     }
   }
 
@@ -1024,8 +1120,17 @@ export function MarkdownLensApp() {
       { label: "Copy Markdown", action: () => void copyMarkdown() },
       { label: shareLinkTooLarge ? "Download .md instead of a share link" : "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
+      {
+        label: "Star Markdown Lens on GitHub",
+        action: () => {
+          window.open(siteConfig.githubUrl, "_blank", "noopener,noreferrer");
+          markStarPromptResolved();
+        },
+      },
     ];
   const visibleCommands = commands.filter((command) => command.label.toLowerCase().includes(commandSearch.toLowerCase()));
+
+  const warningState = saveState === "error" || workspaceStorage.mode === "memory";
 
   return (
     <div
@@ -1074,34 +1179,46 @@ export function MarkdownLensApp() {
       />
       </section>
 
-      <header className="flex h-[54px] shrink-0 items-center justify-between overflow-hidden border-b border-border bg-panel px-3 shadow-sm">
-        <a href="#main" className="sr-only left-4 top-4 z-[100] rounded-md bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lg focus-visible:not-sr-only focus-visible:fixed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <header className="relative z-40 flex h-14 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-border bg-background/85 px-3 backdrop-blur-xl">
+        <a href="#main" className="sr-only left-4 top-4 z-[100] rounded-lg bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lift focus-visible:not-sr-only focus-visible:fixed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           Skip to main content
         </a>
         <div className="flex min-w-0 items-center gap-1">
-          <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-2 flex items-center gap-2 rounded-md px-1.5 py-2 font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1.5 text-[15px] font-semibold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <BrandIcon className="h-6 w-6" priority />
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
+          <span aria-hidden="true" className="mr-1 hidden h-5 w-px bg-border sm:block" />
           <TopButton icon={PanelLeft} label="Documents" onClick={() => { if (focusMode) { leaveFocus(); setDocumentsOpen(true); return; } setDocumentsOpen((open) => !open); }} active={documentsOpen && !focusMode} expanded={documentsOpen && !focusMode} controls={ready ? "workspace-pane-documents" : undefined} className="hidden md:flex" />
           <IconButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="sm:hidden" />
           <TopButton icon={FilePlus2} label="New document" onClick={() => void createNewDocument()} disabled={!ready} className="hidden sm:flex" />
-          <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} disabled={!ready} emphasis className="max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
+          <TopButton icon={FileUp} label="Open or convert" onClick={() => fileInputRef.current?.click()} disabled={!ready} emphasis className="ml-1 max-[380px]:gap-0 max-[380px]:px-2" compactAtNarrow />
           <button
             type="button"
             onClick={() => setFormatGuideOpen(true)}
             aria-haspopup="dialog"
-            className="hidden rounded-md px-2 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline"
+            className="ml-0.5 hidden h-9 items-center rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
           >
             File types
           </button>
         </div>
-        <div className="flex items-center gap-1">
-          <span className={cn("hidden items-center gap-1.5 px-2 text-xs md:flex", saveState === "error" || workspaceStorage.mode === "memory" ? "text-amber-400" : "text-muted-foreground")}>
-            {saveState === "saving" ? <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> : saveState === "error" || workspaceStorage.mode === "memory" ? <HardDrive aria-hidden="true" className="h-3.5 w-3.5" /> : <ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-accent" />}
+        <div className="flex shrink-0 items-center gap-1">
+          <span
+            className={cn(
+              "mr-1 hidden h-7 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-medium md:inline-flex",
+              warningState
+                ? "border-amber-600/30 bg-amber-500/10 text-amber-800 dark:border-amber-300/25 dark:text-amber-200"
+                : "border-border bg-panel text-muted-foreground",
+            )}
+          >
+            {saveState === "saving" ? (
+              <Loader2 aria-hidden="true" className="h-3 w-3 animate-spin" />
+            ) : (
+              <span aria-hidden="true" className={cn("h-1.5 w-1.5 rounded-full", warningState ? "bg-amber-500" : "bg-accent")} />
+            )}
             {saveState === "saving" ? "Saving…" : saveState === "error" ? "Save failed" : workspaceStorage.mode === "memory" ? "Session only" : "Saved locally"}
           </span>
-          {!online ? <span role="status" aria-live="polite" aria-label="Offline. Changes remain on this device." className="px-1.5 text-[11px] text-amber-400 sm:px-2 sm:text-xs">Offline</span> : null}
+          {!online ? <span role="status" aria-live="polite" aria-label="Offline. Changes remain on this device." className="inline-flex h-7 items-center rounded-full border border-amber-600/30 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-800 dark:border-amber-300/25 dark:text-amber-200 sm:px-2.5">Offline</span> : null}
           {installPrompt ? (
             <button
               type="button"
@@ -1111,17 +1228,30 @@ export function MarkdownLensApp() {
                 await installPrompt.prompt();
                 const choice = await installPrompt.userChoice;
                 setInstallPrompt(null);
-                if (choice.outcome === "accepted") setNotice({ message: "Markdown Lens was installed." });
+                if (choice.outcome === "accepted") setNotice({ message: "Markdown Lens was installed.", tone: "success" });
               }}
-              className="flex h-9 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-3"
+              className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5"
             >
               <Download className="h-3.5 w-3.5" aria-hidden />
               <span className="hidden sm:inline">Install</span>
             </button>
           ) : null}
-          <button type="button" onClick={() => setCommandOpen(true)} aria-haspopup="dialog" className="hidden h-9 items-center gap-2 rounded-md border border-border px-3 text-xs text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex">
-            <Search className="h-3.5 w-3.5" /> <span>Commands</span><kbd>{modPrefix}K</kbd>
+          <button type="button" onClick={() => setCommandOpen(true)} aria-haspopup="dialog" className="mx-1 hidden h-9 w-44 items-center gap-2 rounded-lg border border-border bg-surface pl-2.5 pr-1.5 text-xs text-muted-foreground shadow-[inset_0_1px_1px_hsl(var(--shadow-color)/0.04)] transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex xl:w-56">
+            <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /> <span>Commands</span><kbd className="ml-auto">{modPrefix}K</kbd>
           </button>
+          <a
+            href={siteConfig.githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Star Markdown Lens on GitHub (opens in a new tab)"
+            title="Star Markdown Lens on GitHub"
+            onClick={markStarPromptResolved}
+            className="star-target hidden h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+          >
+            <GithubIcon className="h-4 w-4" aria-hidden />
+            <span className="hidden xl:inline">Star</span>
+            <Star aria-hidden="true" className="star-icon h-3.5 w-3.5" />
+          </a>
           <IconButton icon={theme === "dark" ? Sun : Moon} label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme} />
           <IconButton icon={Command} label="Open commands" hasPopup="dialog" onClick={() => setCommandOpen(true)} className="lg:hidden" />
         </div>
@@ -1129,8 +1259,8 @@ export function MarkdownLensApp() {
 
       {ready ? (
       <>
-      <div role="region" aria-label="Workspace pane navigation" className="lg:hidden">
-      <nav className="flex h-11 shrink-0 items-center border-b border-border px-2" role="tablist" aria-label="Workspace panes">
+      <div role="region" aria-label="Workspace pane navigation" className="shrink-0 border-b border-border bg-background px-2 py-1.5 lg:hidden">
+      <nav className="flex items-center gap-1 rounded-xl bg-muted p-1" role="tablist" aria-label="Workspace panes">
         {MOBILE_PANES.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -1152,11 +1282,11 @@ export function MarkdownLensApp() {
             }}
             data-pane={id}
             className={cn(
-              "flex min-h-11 flex-1 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs font-medium text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-              mobilePane === id && "bg-accent/10 text-accent",
+              "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              mobilePane === id && "bg-panel text-foreground shadow-soft",
             )}
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <Icon className={cn("h-3.5 w-3.5 shrink-0", mobilePane === id && "text-accent")} aria-hidden />
             {label}
           </button>
         ))}
@@ -1169,9 +1299,9 @@ export function MarkdownLensApp() {
           role={mobilePane === "documents" ? "tabpanel" : "complementary"}
           aria-labelledby={mobilePane === "documents" ? "workspace-pane-tab-documents" : undefined}
           className={cn(
-            "workspace-rail z-30 w-[260px] shrink-0 flex-col border-r border-border bg-background 2xl:w-[300px]",
+            "workspace-rail z-30 w-[260px] shrink-0 flex-col border-r border-border bg-surface 2xl:w-[300px]",
             railDisplay(documentsOpen && !focusMode, mobilePane === "documents"),
-            mobilePane === "documents" && "absolute inset-y-0 left-0 w-full max-w-[340px] shadow-2xl lg:static lg:w-[260px] lg:max-w-none lg:shadow-none 2xl:w-[300px]",
+            mobilePane === "documents" && "absolute inset-y-0 left-0 w-full max-w-[340px] shadow-lift lg:static lg:w-[260px] lg:max-w-none lg:shadow-none 2xl:w-[300px]",
           )}
           aria-label="Documents"
         >
@@ -1182,13 +1312,13 @@ export function MarkdownLensApp() {
               setMobilePane((pane) => (pane === "documents" ? "editor" : pane));
             }}
           />
-          <div className="border-b border-border p-2.5">
-            <label className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-xs text-muted-foreground focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-              <Search className="h-3.5 w-3.5" />
+          <div className="px-2.5 pb-2">
+            <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-panel px-2.5 text-xs text-muted-foreground transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
+              <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
               <input aria-label="Search documents" value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="Search documents" className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground" />
             </label>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
             {filteredDocuments.length ? (
               filteredDocuments.map((document) => (
                 <DocumentRow
@@ -1214,14 +1344,13 @@ export function MarkdownLensApp() {
               />
             )}
           </div>
-          <div className="border-t border-border p-2">
-            <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              {showTrash ? <BookOpen className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+          <div className="grid gap-1.5 border-t border-border p-2">
+            <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              {showTrash ? <BookOpen aria-hidden="true" className="h-3.5 w-3.5" /> : <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />}
               {showTrash ? "Back to documents" : "Trash"}
             </button>
-          </div>
-          <div className="border-t border-border p-2">
-            <button type="button" onClick={() => void importFiles([createSamplePdfFile()])} className="flex min-h-11 w-full items-center justify-center rounded-md border border-border px-2.5 text-xs font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button type="button" onClick={() => void importFiles([createSamplePdfFile()])} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-panel px-2.5 text-xs font-medium text-foreground shadow-soft transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <FileText aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
               Try a sample PDF
             </button>
           </div>
@@ -1246,7 +1375,7 @@ export function MarkdownLensApp() {
             </WorkspacePanel>
             <button
               type="button"
-              className="group flex cursor-col-resize items-center justify-center border-x border-border bg-background hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              className="group relative flex cursor-col-resize items-center justify-center border-x border-border bg-surface transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-accent/10"
               role="separator"
               aria-orientation="vertical"
               aria-label="Resize editor and preview"
@@ -1264,7 +1393,11 @@ export function MarkdownLensApp() {
                 updateSplitRatio(next);
               }}
             >
-              <span className="grid gap-0.5 opacity-50 group-hover:opacity-100" aria-hidden><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /><i className="h-0.5 w-0.5 rounded-full bg-current" /></span>
+              <span className="flex flex-col items-center gap-[3px] text-muted-foreground/55 transition-colors group-hover:text-accent group-focus-visible:text-accent group-active:text-accent" aria-hidden>
+                <i className="h-[3px] w-[3px] rounded-full bg-current" />
+                <i className="h-[3px] w-[3px] rounded-full bg-current" />
+                <i className="h-[3px] w-[3px] rounded-full bg-current" />
+              </span>
             </button>
             <WorkspacePanel label="Preview" icon={Eye} detail="GitHub-style output">
               <div
@@ -1323,9 +1456,9 @@ export function MarkdownLensApp() {
           role={mobilePane === "outline" ? "tabpanel" : "complementary"}
           aria-labelledby={mobilePane === "outline" ? "workspace-pane-tab-outline" : undefined}
           className={cn(
-            "workspace-rail z-30 w-[220px] shrink-0 flex-col border-l border-border bg-background 2xl:w-[260px]",
+            "workspace-rail z-30 w-[220px] shrink-0 flex-col border-l border-border bg-surface 2xl:w-[260px]",
             railDisplay(outlineOpen && !focusMode, mobilePane === "outline"),
-            mobilePane === "outline" && "absolute inset-y-0 right-0 w-full max-w-[320px] shadow-2xl lg:static lg:w-[220px] lg:max-w-none lg:shadow-none 2xl:w-[260px]",
+            mobilePane === "outline" && "absolute inset-y-0 right-0 w-full max-w-[320px] shadow-lift lg:static lg:w-[220px] lg:max-w-none lg:shadow-none 2xl:w-[260px]",
           )}
           aria-label="Outline"
         >
@@ -1336,66 +1469,71 @@ export function MarkdownLensApp() {
               setMobilePane((pane) => (pane === "outline" ? "editor" : pane));
             }}
           />
-          <nav className="min-h-0 flex-1 overflow-y-auto py-2" aria-label="Document outline">
+          <nav className="min-h-0 flex-1 overflow-y-auto pb-2 pr-2" aria-label="Document outline">
             {headings.length ? headings.map((heading) => (
-              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} aria-current={activeHeadingIdState === heading.id ? "location" : undefined} onClick={() => navigateToHeading(heading.id)} className={cn("flex w-full items-start gap-2 border-l-2 border-transparent px-4 py-2 text-left text-xs text-muted-foreground hover:border-accent hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", activeHeadingIdState === heading.id && "border-accent bg-muted text-foreground")} style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
+              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} aria-current={activeHeadingIdState === heading.id ? "location" : undefined} onClick={() => navigateToHeading(heading.id)} className={cn("flex w-full items-start gap-2 rounded-r-md border-l-2 border-transparent py-1.5 pr-2 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", activeHeadingIdState === heading.id && "border-accent bg-panel font-medium text-foreground shadow-soft hover:border-accent hover:bg-panel")} style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
                 <span aria-hidden className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
                 <span className="line-clamp-2 leading-4">{heading.text}</span>
               </button>
-            )) : <p className="px-5 py-10 text-center text-xs leading-5 text-muted-foreground">Add Markdown headings to build an outline.</p>}
+            )) : (
+              <EmptyState icon={ListTree} title="Add Markdown headings to build an outline." helper="Lines that start with # appear here." />
+            )}
           </nav>
           <div className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
-            <div className="flex items-center justify-between">
+            <div className="flex min-h-7 items-center justify-between">
               <span>{headings.length} heading{headings.length === 1 ? "" : "s"}</span>
-              {activeDocument?.conversion ? <button type="button" aria-haspopup="dialog" onClick={() => setReportOpen(true)} className="font-medium text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Conversion report</button> : null}
+              {activeDocument?.conversion ? <button type="button" aria-haspopup="dialog" onClick={() => setReportOpen(true)} className="rounded-md px-1.5 py-1 font-medium text-accent transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Conversion report</button> : null}
             </div>
           </div>
         </aside>
       </div>
 
-      <footer className="flex h-11 shrink-0 items-center justify-between gap-2 border-t border-border bg-background px-3 text-[11px] text-muted-foreground">
-        <div className="flex min-w-0 items-center gap-3">
+      <footer className="flex h-11 shrink-0 items-center justify-between gap-2 border-t border-border bg-surface px-2 text-[11px] text-muted-foreground sm:px-3">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
           {!documentsOpen ? <IconButton icon={ChevronRight} label="Show Documents" onClick={() => setDocumentsOpen(true)} compact /> : null}
           <span className="hidden items-center gap-1.5 2xl:flex"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5 text-accent" />All documents stay on this device.</span>
-          <span>Ln {cursor.line}, Col {cursor.column}</span>
+          <StatusDivider className="hidden 2xl:block" />
+          <span className="whitespace-nowrap font-mono tabular-nums">Ln {cursor.line}, Col {cursor.column}</span>
+          <StatusDivider className="hidden sm:block" />
           <span className="hidden sm:inline">UTF-8</span>
           <span className="hidden md:inline">Markdown</span>
-          <span className="hidden md:inline" aria-label={`${stats.words.toLocaleString()} words`}>
+          <span className="hidden tabular-nums md:inline" aria-label={`${stats.words.toLocaleString()} words`}>
             {stats.words.toLocaleString()} words
           </span>
-          <span className="hidden lg:inline" aria-label={`${stats.characters.toLocaleString()} characters`}>
+          <span className="hidden tabular-nums lg:inline" aria-label={`${stats.characters.toLocaleString()} characters`}>
             {stats.characters.toLocaleString()} chars
           </span>
           <span className="hidden lg:inline" aria-label={`${stats.minutes} minute estimated reading time`}>
             {stats.minutes} min read
           </span>
+          <StatusDivider />
           {splitRatio !== 50 ? (
             <button
               type="button"
               onClick={resetSplitRatio}
-              className="hidden h-7 items-center gap-1.5 rounded-md px-2 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
+              className={cn(statusChip, "hidden gap-1.5 lg:flex")}
             >
               <RotateCcw className="h-3 w-3" aria-hidden />
               Reset split
             </button>
           ) : null}
-          <button type="button" onClick={toggleFocus} aria-pressed={focusMode} className={cn("h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", focusMode && "bg-muted text-foreground")}>Focus</button>
-          <span className="hidden items-center sm:flex">
-            <button type="button" onClick={() => updateEditorFontSize(-1)} disabled={editorFontSize === EDITOR_FONT_SIZES[0]} aria-label="Decrease font size" className="h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">A−</button>
-            <button type="button" onClick={() => updateEditorFontSize(1)} disabled={editorFontSize === EDITOR_FONT_SIZES[EDITOR_FONT_SIZES.length - 1]} aria-label="Increase font size" className="h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">A+</button>
-            <button type="button" onClick={toggleLineWrap} aria-pressed={lineWrap} className={cn("h-7 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", lineWrap && "bg-muted text-foreground")}>Wrap</button>
+          <button type="button" onClick={toggleFocus} aria-pressed={focusMode} className={cn(statusChip, focusMode && statusChipPressed)}>Focus</button>
+          <span className="hidden items-center gap-0.5 sm:flex">
+            <button type="button" onClick={() => updateEditorFontSize(-1)} disabled={editorFontSize === EDITOR_FONT_SIZES[0]} aria-label="Decrease font size" className={statusChip}>A−</button>
+            <button type="button" onClick={() => updateEditorFontSize(1)} disabled={editorFontSize === EDITOR_FONT_SIZES[EDITOR_FONT_SIZES.length - 1]} aria-label="Increase font size" className={statusChip}>A+</button>
+            <button type="button" onClick={toggleLineWrap} aria-pressed={lineWrap} className={cn(statusChip, lineWrap && statusChipPressed)}>Wrap</button>
           </span>
-          <button type="button" onClick={() => setVersionsOpen(true)} aria-haspopup="dialog" className="inline-flex h-7 items-center gap-1 rounded-md px-2 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><History aria-hidden="true" className="h-3.5 w-3.5" />Versions</button>
-          <span role="status" className={cn("h-1.5 w-1.5 rounded-full", saveState === "saved" ? "bg-accent" : saveState === "saving" ? "bg-amber-400" : "bg-red-400")}>
+          <button type="button" onClick={() => setVersionsOpen(true)} aria-haspopup="dialog" className={cn(statusChip, "gap-1")}><History aria-hidden="true" className="h-3.5 w-3.5" />Versions</button>
+          <span role="status" className={cn("ml-1 h-1.5 w-1.5 shrink-0 rounded-full", saveState === "saved" ? "bg-accent" : saveState === "saving" ? "bg-amber-400" : "bg-danger")}>
             <span className="sr-only">{saveState}</span>
           </span>
         </div>
-        <div className="relative flex items-center gap-1">
-          <button ref={exportToggleRef} type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} aria-controls="export-options-menu" className="flex h-8 items-center gap-1.5 rounded-md border border-accent/55 px-3 font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            Export <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
+        <div className="relative flex shrink-0 items-center gap-1.5">
+          <button ref={exportToggleRef} type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} aria-controls="export-options-menu" className="flex h-7 items-center gap-1 rounded-lg bg-accent pl-3 pr-2 text-xs font-semibold text-accent-foreground shadow-soft transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface">
+            Export <ChevronDown aria-hidden="true" className={cn("h-3.5 w-3.5 transition-transform", exportOpen && "rotate-180")} />
           </button>
-          <div className="hidden h-8 overflow-hidden rounded-md border border-border xl:flex">
-            <QuickExport label=".md" onClick={downloadMarkdown} />
+          <div className="hidden h-7 overflow-hidden rounded-lg border border-border bg-panel xl:flex">
+            <QuickExport label=".md" onClick={downloadMarkdownExport} />
             <QuickExport label=".html" onClick={exportHtml} />
             <QuickExport label="Print" onClick={() => window.print()} />
             <QuickExport label="…" onClick={() => setExportOpen(true)} ariaLabel="More export options" />
@@ -1426,26 +1564,26 @@ export function MarkdownLensApp() {
                 const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (currentIndex + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
                 items[nextIndex]?.focus();
               }}
-              className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-72 gap-1 rounded-lg border border-border bg-panel p-1.5 shadow-xl"
+              className="pop-in absolute bottom-[calc(100%+0.625rem)] right-0 z-50 grid w-72 origin-bottom-right gap-1 rounded-xl border border-border bg-panel p-1.5 text-foreground shadow-lift"
             >
-              <div role="group" aria-label="This document" className="grid gap-1">
-                <p aria-hidden="true" className="px-2.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">This document</p>
+              <div role="group" aria-label="This document" className="grid gap-0.5">
+                <p aria-hidden="true" className={menuEyebrow}>This document</p>
                 <MenuAction icon={Clipboard} label="Copy Markdown" onClick={() => void copyMarkdown()} />
-                <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdown} />
+                <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdownExport} />
                 <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
                 {activeDocument?.assetIds.length ? <MenuAction icon={FileArchive} label="Export Markdown + assets" onClick={() => void exportDocumentBundle()} /> : null}
                 {shareLinkTooLarge ? (
                   <>
-                    <p className="px-2.5 py-1 text-[11px] leading-4 text-muted-foreground">This document is too large for a share link.</p>
-                    <MenuAction icon={Download} label="Download .md instead" onClick={downloadMarkdown} />
+                    <p className="mx-1 rounded-md bg-amber-500/10 px-2 py-1.5 text-[11px] leading-4 text-amber-900 dark:text-amber-100">This document is too large for a share link.</p>
+                    <MenuAction icon={Download} label="Download .md instead" onClick={downloadMarkdownExport} />
                   </>
                 ) : (
                   <MenuAction icon={Share2} label="Create share link" detail="Contains the full text. Pasting it publishes the document." hasPopup="dialog" onClick={prepareShareLink} />
                 )}
                 <MenuAction icon={FileText} label="Print / save PDF" onClick={() => window.print()} />
               </div>
-              <div role="group" aria-label="Workspace" className="mt-1 grid gap-1 border-t border-border pt-1">
-                <p aria-hidden="true" className="px-2.5 pt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Workspace</p>
+              <div role="group" aria-label="Workspace" className="mt-1 grid gap-0.5 border-t border-border pt-1">
+                <p aria-hidden="true" className={menuEyebrow}>Workspace</p>
                 <MenuAction icon={FileArchive} label="Export workspace backup" onClick={() => void downloadWorkspaceBackup()} />
                 <MenuAction icon={ArchiveRestore} label="Restore workspace backup" onClick={() => backupInputRef.current?.click()} />
               </div>
@@ -1461,15 +1599,20 @@ export function MarkdownLensApp() {
 
       {notice ? (
         <Notice
+          key={noticeKey(notice)}
           message={notice.message}
+          tone={notice.tone}
+          duration={notice.duration}
           actionLabel={notice.actionLabel}
           actionHref={notice.actionHref}
-          onClose={() => setNotice(null)}
+          onResolve={notice.tone === "star" ? markStarPromptResolved : undefined}
+          onClose={closeNotice}
         />
       ) : null}
       {workspaceStorage.mode === "memory" && !storageWarningDismissed ? (
         <Notice
           message={workspaceStorage.message}
+          tone="error"
           actionLabel="Export backup"
           onAction={() => {
             void downloadWorkspaceBackup();
@@ -1482,6 +1625,7 @@ export function MarkdownLensApp() {
       {applyServiceWorkerUpdate ? (
         <Notice
           message="A new Markdown Lens version is ready."
+          tone="info"
           actionLabel="Reload"
           onAction={() => {
             applyServiceWorkerUpdate();
@@ -1519,34 +1663,56 @@ export function MarkdownLensApp() {
   );
 }
 
+const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const statusChip = cn("inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-md px-2 transition-colors hover:bg-muted hover:text-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent", focusRing);
+const statusChipPressed = "bg-panel text-foreground shadow-soft hover:bg-panel";
+const menuEyebrow = "px-2.5 pb-0.5 pt-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground";
+
+function StatusDivider({ className }: { className?: string }) {
+  return <span aria-hidden="true" className={cn("mx-0.5 h-3.5 w-px shrink-0 bg-border", className)} />;
+}
+
+function EmptyState({ icon: Icon, title, helper, children }: { icon: typeof FileText; title: string; helper?: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center px-4 py-10 text-center">
+      <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full border border-border bg-panel text-muted-foreground shadow-soft">
+        <Icon className="h-4 w-4" />
+      </span>
+      <p className="mt-3 text-xs font-medium leading-5 text-foreground">{title}</p>
+      {helper ? <p className="mt-1 max-w-[16rem] text-[11px] leading-4 text-muted-foreground">{helper}</p> : null}
+      {children}
+    </div>
+  );
+}
+
 function WorkspaceSkeleton() {
   return (
     <main id="main" className="flex min-h-0 flex-1 flex-col" aria-busy="true">
       <p role="status" className="sr-only">Loading workspace</p>
       <div aria-hidden="true" className="flex min-h-0 flex-1">
-        <div className="hidden w-[260px] shrink-0 border-r border-border p-3 lg:block">
-          <div className="h-9 animate-pulse rounded-md bg-muted" />
+        <div className="hidden w-[260px] shrink-0 border-r border-border bg-surface p-3 lg:block">
+          <div className="skeleton h-9 rounded-lg" />
           <div className="mt-3 space-y-2">
-            <div className="h-10 animate-pulse rounded-md bg-muted" />
-            <div className="h-10 animate-pulse rounded-md bg-muted" />
-            <div className="h-10 animate-pulse rounded-md bg-muted" />
+            <div className="skeleton h-10 rounded-lg" />
+            <div className="skeleton h-10 rounded-lg" />
+            <div className="skeleton h-10 rounded-lg" />
           </div>
         </div>
-        <div className="grid min-w-0 flex-1 lg:grid-cols-2">
+        <div className="grid min-w-0 flex-1 bg-panel lg:grid-cols-2">
           <div className="border-border p-6 lg:border-r">
-            <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+            <div className="skeleton h-4 w-28" />
             <div className="mt-6 space-y-3">
-              <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-full animate-pulse rounded bg-muted" />
-              <div className="h-3 w-5/6 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
+              <div className="skeleton h-3 w-2/3" />
+              <div className="skeleton h-3 w-full" />
+              <div className="skeleton h-3 w-5/6" />
+              <div className="skeleton h-3 w-3/4" />
             </div>
           </div>
           <div className="hidden p-6 lg:block">
-            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-            <div className="mt-6 h-8 w-1/2 animate-pulse rounded bg-muted" />
-            <div className="mt-4 h-3 w-full animate-pulse rounded bg-muted" />
-            <div className="mt-3 h-3 w-4/5 animate-pulse rounded bg-muted" />
+            <div className="skeleton h-4 w-24" />
+            <div className="skeleton mt-6 h-8 w-1/2" />
+            <div className="skeleton mt-4 h-3 w-full" />
+            <div className="skeleton mt-3 h-3 w-4/5" />
           </div>
         </div>
       </div>
@@ -1556,88 +1722,65 @@ function WorkspaceSkeleton() {
 
 function DocumentListEmpty({ showTrash, query, onCreate, onOpen }: { showTrash: boolean; query: string; onCreate: () => void; onOpen: () => void }) {
   const state = documentListEmptyState(showTrash, query);
-  if (state === "trash") return <p className="px-3 py-10 text-center text-xs leading-5 text-muted-foreground">Trash is empty.</p>;
-  if (state === "search") return <p className="px-3 py-10 text-center text-xs leading-5 text-muted-foreground">No documents match this search.</p>;
+  if (state === "trash") return <EmptyState icon={Trash2} title="Trash is empty." helper="Documents you move to Trash wait here until you restore or delete them." />;
+  if (state === "search") return <EmptyState icon={SearchX} title="No documents match this search." helper="Try another word, or clear the search to see everything." />;
   return (
-    <div className="px-3 py-8 text-center">
-      <p className="text-xs leading-5 text-muted-foreground">No documents yet.</p>
-      <div className="mt-4 flex flex-col gap-2">
-        <button type="button" onClick={onCreate} className="flex min-h-11 items-center justify-center rounded-md bg-accent px-3 text-xs font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">New document</button>
-        <button type="button" onClick={onOpen} className="flex min-h-11 items-center justify-center rounded-md border border-border px-3 text-xs font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open or convert</button>
+    <EmptyState icon={Inbox} title="No documents yet." helper="Start writing, or convert a file. Everything stays on this device.">
+      <div className="mt-4 flex w-full flex-col gap-2">
+        <button type="button" onClick={onCreate} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-xs font-semibold text-accent-foreground shadow-soft transition-colors hover:bg-accent/90", focusRing)}><FilePlus2 aria-hidden="true" className="h-3.5 w-3.5" />New document</button>
+        <button type="button" onClick={onOpen} className={cn("flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-panel px-3 text-xs font-medium transition-colors hover:border-foreground/20", focusRing)}><FileUp aria-hidden="true" className="h-3.5 w-3.5" />Open or convert</button>
       </div>
+    </EmptyState>
+  );
+}
+
+function DialogHeader({ titleId, title, description, closeLabel, onClose }: { titleId: string; title: string; description?: React.ReactNode; closeLabel?: string; onClose?: () => void }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <h2 id={titleId} className="text-lg font-semibold tracking-[-0.02em]">{title}</h2>
+        {description ? <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}
+      </div>
+      {closeLabel && onClose ? <IconButton icon={X} label={closeLabel} onClick={onClose} className="-mr-2 -mt-1.5" /> : null}
     </div>
   );
 }
 
 function RenameDialog({ value, onChange, onSubmit, onClose }: { value: string; onChange: (value: string) => void; onSubmit: () => void; onClose: () => void }) {
-  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="rename-document-title" className="w-full max-w-md rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <h2 id="rename-document-title" className="text-lg font-semibold">Rename document</h2>
-        <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
-          <label htmlFor="rename-document-input" className="mt-4 block text-sm font-medium text-foreground">Document name</label>
-          <input id="rename-document-input" value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring" />
-          <div className="mt-5 flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
-            <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Save name</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <DialogShell onClose={onClose} labelledBy="rename-document-title" dismissOnBackdrop={false} layer={70} className="max-w-md p-6">
+      <h2 id="rename-document-title" className="text-lg font-semibold tracking-[-0.02em]">Rename document</h2>
+      <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
+        <label htmlFor="rename-document-input" className="mt-4 block text-sm font-medium text-foreground">Document name</label>
+        <input id="rename-document-input" value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30" />
+        <div className="mt-6 flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={dialogCancelButton}>Cancel</button>
+          <button type="submit" className={dialogConfirmButton}>Save name</button>
+        </div>
+      </form>
+    </DialogShell>
   );
 }
 
 function ConfirmDialog({ title, message, confirmLabel, onConfirm, onClose }: { title: string; message: string; confirmLabel: string; onConfirm: () => void; onClose: () => void }) {
-  const dialogRef = useDialogFocus(onClose);
+  const destructive = /delete/i.test(confirmLabel);
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
-      <div ref={dialogRef} role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message" className="w-full max-w-md rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <h2 id="confirm-dialog-title" className="text-lg font-semibold">{title}</h2>
-        <p id="confirm-dialog-message" className="mt-2 text-sm leading-6 text-muted-foreground">{message}</p>
-        <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
-          <button type="button" onClick={onConfirm} className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400">{confirmLabel}</button>
+    <DialogShell onClose={onClose} role="alertdialog" labelledBy="confirm-dialog-title" describedBy="confirm-dialog-message" dismissOnBackdrop={false} layer={70} className="max-w-md p-6">
+      <div className="flex items-start gap-3.5">
+        <span aria-hidden="true" className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full", destructive ? "bg-danger/10 text-danger" : "bg-accent-soft text-accent")}>
+          {destructive ? <TriangleAlert className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+        </span>
+        <div className="min-w-0">
+          <h2 id="confirm-dialog-title" className="text-lg font-semibold tracking-[-0.02em]">{title}</h2>
+          <p id="confirm-dialog-message" className="mt-1.5 text-sm leading-6 text-muted-foreground">{message}</p>
         </div>
       </div>
-    </div>
+      <div className="mt-6 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className={dialogCancelButton}>Cancel</button>
+        <button type="button" onClick={onConfirm} className={destructive ? dialogDangerButton : dialogConfirmButton}>{confirmLabel}</button>
+      </div>
+    </DialogShell>
   );
-}
-
-function useDialogFocus(onClose: () => void) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const previousFocus = document.activeElement as HTMLElement | null;
-    const focusable = () => Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])"));
-    requestAnimationFrame(() => focusable()[0]?.focus());
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const items = focusable();
-      if (!items.length) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      requestAnimationFrame(() => previousFocus?.focus());
-    };
-  }, [onClose]);
-  return dialogRef;
 }
 
 function SharedLinkConsentDialog({
@@ -1651,36 +1794,33 @@ function SharedLinkConsentDialog({
   onInspect: () => void;
   onClose: () => void;
 }) {
-  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="shared-link-consent-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="shared-link-consent-title" className="text-lg font-semibold">Inspect shared document?</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">The URL contains compressed, untrusted Markdown. It has not been decompressed or parsed. Your {existingDocumentCount === 1 ? "existing draft" : `${existingDocumentCount.toLocaleString()} existing drafts`} will not be replaced.</p>
-          </div>
-          <IconButton icon={X} label="Close shared link dialog" onClick={onClose} />
-        </div>
-        <dl className="mt-5 grid grid-cols-1 gap-px overflow-hidden border border-border bg-border text-sm">
-          <ReportFact label="Compressed size" value={`${preview.compressedCharacters.toLocaleString()} characters`} />
-        </dl>
-        <p className="mt-4 text-xs leading-5 text-muted-foreground">Inspection uses strict decompression output and work limits before showing any document details.</p>
-        <div className="mt-5 flex justify-end gap-2">
-      <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
-      <button type="button" onClick={onInspect} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Inspect safely</button>
-        </div>
+    <DialogShell onClose={onClose} labelledBy="shared-link-consent-title" className="max-w-lg p-6">
+      <DialogHeader
+        titleId="shared-link-consent-title"
+        title="Inspect shared document?"
+        description={<>The URL contains compressed, untrusted Markdown. It has not been decompressed or parsed. Your {existingDocumentCount === 1 ? "existing draft" : `${existingDocumentCount.toLocaleString()} existing drafts`} will not be replaced.</>}
+        closeLabel="Close shared link dialog"
+        onClose={onClose}
+      />
+      <dl className="mt-5 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-border bg-border text-sm">
+        <ReportFact label="Compressed size" value={`${preview.compressedCharacters.toLocaleString()} characters`} />
+      </dl>
+      <p className="mt-4 text-xs leading-5 text-muted-foreground">Inspection uses strict decompression output and work limits before showing any document details.</p>
+      <div className="mt-6 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className={dialogCancelButton}>Cancel</button>
+        <button type="button" onClick={onInspect} className={dialogConfirmButton}>Inspect safely</button>
       </div>
-    </div>
+    </DialogShell>
   );
 }
 
 function WorkspacePanel({ label, icon: Icon, detail, children }: { label: string; icon: typeof FileText; detail: string; children: React.ReactNode }) {
   return (
     <section className="flex h-full min-h-0 min-w-0 flex-col bg-panel" aria-label={label}>
-      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border bg-surface px-3">
-        <span className="flex items-center gap-2 text-xs font-semibold"><Icon className="h-3.5 w-3.5 text-accent" />{label}</span>
-        <span className="text-[11px] text-muted-foreground">{detail}</span>
+      <header className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-border bg-panel px-3.5">
+        <span className="flex items-center gap-2 text-xs font-semibold text-foreground"><Icon aria-hidden="true" className="h-3.5 w-3.5 text-accent" />{label}</span>
+        <span className="truncate font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{detail}</span>
       </header>
       <div className="min-h-0 flex-1">{children}</div>
     </section>
@@ -1694,6 +1834,7 @@ function DocumentRow({ document, query, active, trashed, onSelect, onRename, onD
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const snippet = documentMatchSnippet(document.markdown, query);
+  const current = active && !trashed;
   const actions = trashed
     ? [{ label: "Restore document", onClick: onRestore }, { label: "Delete permanently", onClick: onDeleteForever }]
     : [{ label: "Rename document", onClick: onRename }, { label: "Duplicate document", onClick: onDuplicate }, { label: "Move to Trash", onClick: onDelete }];
@@ -1725,26 +1866,30 @@ function DocumentRow({ document, query, active, trashed, onSelect, onRename, onD
     };
   }, [menuOpen]);
   return (
-    <div className={cn("mb-0.5 rounded-md border border-transparent", active && !trashed && "border-accent/45 bg-accent/10")}>
+    <div className={cn("relative mb-0.5 rounded-lg transition-colors", current ? "bg-panel shadow-soft" : "hover:bg-muted/70", menuOpen && !current && "bg-muted/70")}>
+      {current ? <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" /> : null}
       <div className="flex items-start">
-        <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 flex-col gap-1 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-          <span className="flex min-w-0 items-center gap-2.5">
-            <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono text-[9px] font-semibold tracking-wide text-muted-foreground">{format}</span>
-            <span className="min-w-0 flex-1 truncate text-xs">{document.title}</span>
-            {warnings > 0 ? <span className="shrink-0 text-[10px] font-medium text-amber-800 dark:text-amber-200" aria-label={`${warnings} conversion warning${warnings === 1 ? "" : "s"}`}>{warnings}</span> : null}
-            <span className={cn("shrink-0 text-[10px]", active && !trashed ? "text-foreground/80" : "text-muted-foreground")}>{relativeTime(document.updatedAt)}</span>
+        <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 flex-col gap-1 rounded-lg py-2 pl-3 pr-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+          <span className="flex min-h-7 min-w-0 items-center gap-2">
+            <span className={cn("shrink-0 rounded-[5px] border px-1 py-px font-mono text-[9px] font-semibold tracking-wide", current ? "border-accent/25 bg-accent-soft text-accent" : "border-border bg-panel text-muted-foreground")}>{format}</span>
+            <span className={cn("min-w-0 flex-1 truncate text-xs", current ? "font-medium text-foreground" : "text-foreground/90")}>{document.title}</span>
+            {warnings > 0 ? <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 text-[10px] font-medium text-amber-800 dark:text-amber-200" aria-label={`${warnings} conversion warning${warnings === 1 ? "" : "s"}`}>{warnings}</span> : null}
+            <span className={cn("shrink-0 text-[10px] tabular-nums", current ? "text-foreground/75" : "text-muted-foreground")}>{relativeTime(document.updatedAt)}</span>
           </span>
-          {snippet ? <span className="line-clamp-1 pl-6 text-[10px] text-muted-foreground">{snippet.prefix}<mark className="rounded-sm bg-amber-400/35 px-0.5 text-foreground">{snippet.match}</mark>{snippet.suffix}</span> : null}
+          {snippet ? <span className="line-clamp-1 pl-7 text-[10px] text-muted-foreground">{snippet.prefix}<mark className="rounded-sm bg-amber-400/35 px-0.5 text-foreground">{snippet.match}</mark>{snippet.suffix}</span> : null}
         </button>
-        <button ref={triggerRef} type="button" aria-label={`Actions for ${document.title}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} className="mr-0.5 mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button ref={triggerRef} type="button" aria-label={`Actions for ${document.title}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} className={cn("inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", menuOpen && "bg-muted text-foreground")}>
           <Ellipsis aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
       {menuOpen ? (
-        <div ref={menuRef} role="menu" aria-label={`Actions for ${document.title}`} className="grid gap-0.5 px-1 pb-1">
-          {actions.map((action) => (
-            <button key={action.label} type="button" role="menuitem" onClick={() => { setMenuOpen(false); action.onClick(); }} className="flex h-9 items-center rounded-md px-2.5 text-left text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{action.label}</button>
-          ))}
+        <div ref={menuRef} role="menu" aria-label={`Actions for ${document.title}`} className="pop-in relative z-10 mx-1.5 mb-1.5 grid origin-top gap-0.5 rounded-lg border border-border bg-panel p-1 text-foreground shadow-lift">
+          {actions.map((action) => {
+            const destructive = action.label === "Delete permanently" || action.label === "Move to Trash";
+            return (
+              <button key={action.label} type="button" role="menuitem" onClick={() => { setMenuOpen(false); action.onClick(); }} className={cn("flex h-9 items-center rounded-md px-2.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", destructive && "text-danger")}>{action.label}</button>
+            );
+          })}
         </div>
       ) : null}
     </div>
@@ -1752,42 +1897,34 @@ function DocumentRow({ document, query, active, trashed, onSelect, onRename, onD
 }
 
 function VersionsDialog({ versions, onRestore, onClose }: { versions: readonly DocumentVersion[]; onRestore: (version: DocumentVersion) => void; onClose: () => void }) {
-  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="versions-title" className="w-full max-w-md rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="versions-title" className="text-lg font-semibold">Local versions</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Up to four snapshots stay on this device.</p>
-          </div>
-          <IconButton icon={X} label="Close local versions" onClick={onClose} />
-        </div>
-        {versions.length ? (
-          <ul className="mt-5 max-h-64 space-y-1 overflow-y-auto" aria-label="Saved versions" tabIndex={0}>
-            {versions.map((version) => {
-              const label = versionTimeLabel(version.savedAt);
-              return (
-                <li key={version.id} className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
-                  <span className="text-sm">{label}</span>
-                  <button type="button" onClick={() => onRestore(version)} className="min-h-11 rounded-md px-2 text-xs font-medium text-accent hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Restore {label}</button>
-                </li>
-              );
-            })}
-          </ul>
-        ) : <p className="mt-5 text-sm text-muted-foreground">No earlier versions yet. Snapshots appear as you edit.</p>}
-      </div>
-    </div>
+    <DialogShell onClose={onClose} labelledBy="versions-title" className="max-w-md p-6">
+      <DialogHeader titleId="versions-title" title="Local versions" description="Up to four snapshots stay on this device." closeLabel="Close local versions" onClose={onClose} />
+      {versions.length ? (
+        <ul className="mt-5 max-h-64 space-y-1.5 overflow-y-auto rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Saved versions" tabIndex={0}>
+          {versions.map((version) => {
+            const label = versionTimeLabel(version.savedAt);
+            return (
+              <li key={version.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface py-1 pl-3.5 pr-1">
+                <span className="flex items-center gap-2 text-sm"><History aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />{label}</span>
+                <button type="button" onClick={() => onRestore(version)} className={cn("min-h-11 rounded-lg px-3 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft", focusRing)}>Restore {label}</button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : <p className="mt-5 rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">No earlier versions yet. Snapshots appear as you edit.</p>}
+    </DialogShell>
   );
 }
 
 function ConversionWarningBanner({ count, onReview, onDismiss }: { count: number; onReview: () => void; onDismiss: () => void }) {
   return (
-    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-700/25 bg-amber-500/10 px-3 py-1 text-amber-950 dark:text-amber-100">
-      <button type="button" onClick={onReview} className="min-h-11 min-w-0 flex-1 truncate text-left text-xs font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-700/25 bg-amber-500/10 px-3 py-0.5 text-amber-950 dark:border-amber-300/20 dark:text-amber-100">
+      <TriangleAlert aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-300" />
+      <button type="button" onClick={onReview} className="min-h-11 min-w-0 flex-1 truncate rounded-md text-left text-xs font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         {conversionWarningLabel(count)}
       </button>
-      <button type="button" onClick={onDismiss} className="min-h-11 shrink-0 rounded-md px-2 text-xs font-medium hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <button type="button" onClick={onDismiss} className="min-h-11 shrink-0 rounded-lg px-3 text-xs font-medium transition-colors hover:bg-amber-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         Dismiss
       </button>
     </div>
@@ -1796,32 +1933,43 @@ function ConversionWarningBanner({ count, onReview, onDismiss }: { count: number
 
 function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; onCancel: (id: string) => void; onRetry: (file: File) => void; onClear: () => void }) {
   if (!jobs.length) return (
-    <div className="m-2 border border-dashed border-border p-4 text-center text-xs text-muted-foreground" role="status">
-      <FileUp aria-hidden="true" className="mx-auto mb-2 h-4 w-4" />Drop supported files anywhere to import
+    <div className="mx-2 mb-2 flex flex-col items-center gap-2 rounded-xl border border-dashed border-border px-4 py-4 text-center text-[11px] leading-4 text-muted-foreground" role="status">
+      <span aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full bg-accent-soft text-accent"><FileUp className="h-3.5 w-3.5" /></span>
+      Drop supported files anywhere to import
     </div>
   );
   const finished = jobs.some((job) => job.state === "completed" || job.state === "failed" || job.state === "cancelled");
   return (
     <div className="border-t border-border p-2">
-      <ul className="max-h-48 space-y-1.5 overflow-y-auto" aria-label="Conversion jobs" tabIndex={0}>
+      <ul className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Conversion jobs" tabIndex={0}>
         {jobs.map((job) => {
           const percent = conversionProgressPercent(job.progress);
-          const status = job.error ?? job.progress?.message ?? jobStateLabel(job.state);
+          // A finished job reports its outcome, not the last progress message it happened to emit.
+          const status = job.error ?? (job.state === "running" ? job.progress?.message : undefined) ?? jobStateLabel(job.state);
           return (
-            <li key={job.id} className="border border-border bg-surface p-2.5">
+            <li key={job.id} className={cn("rounded-lg border bg-panel p-2.5", job.state === "failed" ? "border-danger/30" : "border-border")}>
               <div className="flex items-center gap-2 text-xs">
-                {job.state === "completed" ? <Check aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-accent" /> : <FileText aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-accent" />}
-                <span className="min-w-0 flex-1 truncate">{job.fileName}</span>
+                {job.state === "completed" ? (
+                  <span aria-hidden="true" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-accent-soft text-accent"><Check className="h-3 w-3" /></span>
+                ) : job.state === "failed" ? (
+                  <span aria-hidden="true" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-danger/10 text-danger"><CircleAlert className="h-3 w-3" /></span>
+                ) : job.state === "running" ? (
+                  <span aria-hidden="true" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-muted text-accent"><Loader2 className="h-3 w-3 animate-spin" /></span>
+                ) : (
+                  <span aria-hidden="true" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"><FileText className="h-3 w-3" /></span>
+                )}
+                <span className="min-w-0 flex-1 truncate font-medium">{job.fileName}</span>
                 {job.state === "running" || job.state === "queued" ? (
-                  <button type="button" onClick={() => onCancel(job.id)} aria-label={`Cancel conversion of ${job.fileName}`} className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <button type="button" onClick={() => onCancel(job.id)} aria-label={`Cancel conversion of ${job.fileName}`} className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                     <X aria-hidden="true" className="h-3.5 w-3.5" />
                   </button>
                 ) : null}
               </div>
               {job.state === "running" ? <ImportProgress fileName={job.fileName} percent={percent} /> : null}
-              <p className={cn("mt-2 line-clamp-2 text-[10px] text-muted-foreground", job.state === "failed" && "text-red-400")} role="status">{status}</p>
+              <p className={cn("mt-2 line-clamp-2 text-[10px] leading-4 text-muted-foreground", job.state === "failed" && "text-danger", job.state === "completed" && "text-accent")} role="status">{status}</p>
               {job.state === "failed" || job.state === "cancelled" ? (
-                <button type="button" onClick={() => onRetry(job.file)} aria-label={`Retry conversion of ${job.fileName}`} className="mt-1 min-h-11 rounded-md px-2 text-[10px] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => onRetry(job.file)} aria-label={`Retry conversion of ${job.fileName}`} className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <RotateCcw aria-hidden="true" className="h-3 w-3" />
                   Retry
                 </button>
               ) : null}
@@ -1829,9 +1977,9 @@ function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; o
           );
         })}
       </ul>
-      <div className="mt-2 flex items-center justify-between gap-2 px-1 text-[10px] text-muted-foreground">
+      <div className="mt-1 flex items-center justify-between gap-2 px-1 text-[10px] text-muted-foreground">
         <span>{jobs.length} file{jobs.length === 1 ? "" : "s"}</span>
-        <button type="button" onClick={onClear} disabled={!finished} className="min-h-11 rounded-md px-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40">Clear finished</button>
+        <button type="button" onClick={onClear} disabled={!finished} className="min-h-11 rounded-md px-2 font-medium transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent">Clear finished</button>
       </div>
     </div>
   );
@@ -1848,20 +1996,19 @@ function jobStateLabel(state: ImportJob["state"]) {
 function ImportProgress({ fileName, percent }: { fileName: string; percent: number | null }) {
   if (percent === null) {
     return (
-      <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${fileName}`} aria-busy="true">
-        <div className="import-progress-indeterminate h-full bg-accent" />
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={`Converting ${fileName}`} aria-busy="true">
+        <div className="import-progress-indeterminate h-full rounded-full bg-accent" />
       </div>
     );
   }
   return (
-    <div className="mt-2 h-1 overflow-hidden bg-muted" role="progressbar" aria-label={`Converting ${fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
-      <div className="h-full bg-accent transition-all" style={{ width: `${percent}%` }} />
+    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={`Converting ${fileName}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+      <div className="h-full origin-left rounded-full bg-accent transition-transform duration-300" style={{ transform: `scaleX(${percent / 100})` }} />
     </div>
   );
 }
 
 function CommandPalette({ search, onSearch, commands, onClose }: { search: string; onSearch: (value: string) => void; commands: Array<{ label: string; hint?: string; action: () => void }>; onClose: () => void }) {
-  const dialogRef = useDialogFocus(onClose);
   const [activeIndex, setActiveIndex] = useState(0);
   const selectedIndex = Math.min(activeIndex, Math.max(commands.length - 1, 0));
   const runCommand = (index: number) => {
@@ -1871,52 +2018,49 @@ function CommandPalette({ search, onSearch, commands, onClose }: { search: strin
     onClose();
   };
   return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/60 px-4 pt-[12vh] backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Command palette" className="w-full max-w-xl overflow-hidden rounded-lg border border-border bg-panel shadow-2xl">
-        <label className="flex h-12 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 text-accent" aria-hidden /><span className="sr-only">Search commands</span><input autoFocus value={search} onChange={(event) => { onSearch(event.target.value); setActiveIndex(0); }} aria-controls="command-palette-results" aria-activedescendant={commands[selectedIndex] ? `command-${selectedIndex}` : undefined} onKeyDown={(event) => { if (event.key === "Escape") onClose(); if (!commands.length) return; if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + commands.length) % commands.length); } if (event.key === "Home") { event.preventDefault(); setActiveIndex(0); } if (event.key === "End") { event.preventDefault(); setActiveIndex(commands.length - 1); } if (event.key === "Enter") { event.preventDefault(); runCommand(selectedIndex); } }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
-        <div id="command-palette-results" className="max-h-[50vh] overflow-y-auto p-1.5" role="listbox" aria-label="Commands">{commands.length ? commands.map((command, index) => <button key={command.label} id={`command-${index}`} type="button" role="option" aria-selected={index === selectedIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => runCommand(index)} className={cn("flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", index === selectedIndex && "bg-muted")}><span>{command.label}</span>{command.hint ? <kbd className="text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-8 text-center text-sm text-muted-foreground" role="status">No matching commands.</p>}</div>
+    <DialogShell onClose={onClose} label="Command palette" placement="top" className="max-w-xl overflow-hidden">
+      <label className="flex h-14 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 shrink-0 text-accent" aria-hidden /><span className="sr-only">Search commands</span><input autoFocus value={search} onChange={(event) => { onSearch(event.target.value); setActiveIndex(0); }} aria-controls="command-palette-results" aria-activedescendant={commands[selectedIndex] ? `command-${selectedIndex}` : undefined} onKeyDown={(event) => { if (event.key === "Escape") onClose(); if (!commands.length) return; if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + commands.length) % commands.length); } if (event.key === "Home") { event.preventDefault(); setActiveIndex(0); } if (event.key === "End") { event.preventDefault(); setActiveIndex(commands.length - 1); } if (event.key === "Enter") { event.preventDefault(); runCommand(selectedIndex); } }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground" /></label>
+      <div id="command-palette-results" className="max-h-[50vh] overflow-y-auto p-2" role="listbox" aria-label="Commands">{commands.length ? commands.map((command, index) => <button key={command.label} id={`command-${index}`} type="button" role="option" aria-selected={index === selectedIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => runCommand(index)} className={cn("flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", index === selectedIndex ? "bg-accent-soft text-accent" : "text-foreground")}><span className="flex min-w-0 items-center gap-2.5">{command.label === "Star Markdown Lens on GitHub" ? <Star aria-hidden="true" className="h-3.5 w-3.5 shrink-0 fill-current text-highlight" /> : null}<span className="truncate">{command.label}</span></span>{command.hint ? <kbd className="shrink-0 text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-10 text-center text-sm text-muted-foreground" role="status">No matching commands.</p>}</div>
+      <div aria-hidden="true" className="flex items-center gap-4 border-t border-border bg-surface px-4 py-2.5 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1.5"><kbd>↑</kbd><kbd>↓</kbd>to navigate</span>
+        <span className="flex items-center gap-1.5"><kbd>↵</kbd>to run</span>
+        <span className="ml-auto flex items-center gap-1.5"><kbd>esc</kbd>to close</span>
       </div>
-    </div>
+    </DialogShell>
   );
 }
 
 function FormatGuide({ onClose }: { onClose: () => void }) {
-  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="formats-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-4"><div><h2 id="formats-title" className="text-lg font-semibold">Local format support</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Files are processed in this browser. Nothing is uploaded.</p></div><IconButton icon={X} label="Close format guide" onClick={onClose} /></div>
-        <div className="mt-5 divide-y divide-border border-y border-border">{converterCapabilities.map((capability) => <div key={capability.label} className="grid grid-cols-[120px_1fr] gap-4 py-3 text-sm"><strong>{capability.label}</strong><span className="text-muted-foreground">{capability.extensions}</span></div>)}</div>
-        <p className="mt-4 text-xs leading-5 text-muted-foreground">Legacy DOC, PPT, and XLS files must be exported to their modern formats. PDF and Office layout is inferred and should be reviewed after conversion.</p>
-      </div>
-    </div>
+    <DialogShell onClose={onClose} labelledBy="formats-title" className="max-w-lg p-6">
+      <DialogHeader titleId="formats-title" title="Local format support" description="Files are processed in this browser. Nothing is uploaded." closeLabel="Close format guide" onClose={onClose} />
+      <div className="mt-5 divide-y divide-border overflow-hidden rounded-xl border border-border">{converterCapabilities.map((capability) => <div key={capability.label} className="grid grid-cols-[120px_1fr] gap-4 px-4 py-3 text-sm"><strong className="font-semibold">{capability.label}</strong><span className="text-muted-foreground">{capability.extensions}</span></div>)}</div>
+      <p className="mt-4 text-xs leading-5 text-muted-foreground">Legacy DOC, PPT, and XLS files must be exported to their modern formats. PDF and Office layout is inferred and should be reviewed after conversion.</p>
+    </DialogShell>
   );
 }
 
 function ConversionReportDialog({ document, onClose }: { document: DocumentRecord; onClose: () => void }) {
-  const dialogRef = useDialogFocus(onClose);
   const report = document.conversion!;
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="report-title" className="max-h-[80vh] w-full max-w-xl overflow-y-auto rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-4"><div><h2 id="report-title" className="text-lg font-semibold">Conversion report</h2><p className="mt-1 text-sm text-muted-foreground">{document.source?.name} · processed locally</p></div><IconButton icon={X} label="Close conversion report" onClick={onClose} /></div>
-        <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden border border-border bg-border text-sm">
-          <ReportFact label="Converter" value={report.converterId} />
-          <ReportFact label="OCR" value={report.usedOcr ? "Used locally" : "Not used"} />
-          {Object.entries(report.statistics).map(([label, value]) => <ReportFact key={label} label={label} value={String(value)} />)}
-        </dl>
-        <ReportList title="Warnings" items={report.warnings} empty="No conversion warnings." />
-        <ReportList title="Omitted content" items={report.omitted} empty="No omitted content was reported." />
-        <p className="mt-5 text-xs leading-5 text-muted-foreground">Document conversion is structural rather than visually lossless. Review complex tables, columns, diagrams, and embedded media before publishing.</p>
-        <p className="mt-3 text-xs leading-5 text-muted-foreground">
-          Source is public if you want to{" "}
-          <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Inspect or star Markdown Lens on GitHub (opens in a new tab)" className="rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            inspect or star it
-          </a>
-          .
-        </p>
-      </div>
-    </div>
+    <DialogShell onClose={onClose} labelledBy="report-title" className="max-h-[80vh] max-w-xl overflow-y-auto p-6">
+      <DialogHeader titleId="report-title" title="Conversion report" description={<>{document.source?.name} · processed locally</>} closeLabel="Close conversion report" onClose={onClose} />
+      <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border text-sm">
+        <ReportFact label="Converter" value={report.converterId} />
+        <ReportFact label="OCR" value={report.usedOcr ? "Used locally" : "Not used"} />
+        {Object.entries(report.statistics).map(([label, value]) => <ReportFact key={label} label={label} value={String(value)} />)}
+      </dl>
+      <ReportList title="Warnings" items={report.warnings} empty="No conversion warnings." />
+      <ReportList title="Omitted content" items={report.omitted} empty="No omitted content was reported." />
+      <p className="mt-5 text-xs leading-5 text-muted-foreground">Document conversion is structural rather than visually lossless. Review complex tables, columns, diagrams, and embedded media before publishing.</p>
+      <p className="mt-3 text-xs leading-5 text-muted-foreground">
+        Source is public if you want to{" "}
+        <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Inspect or star Markdown Lens on GitHub (opens in a new tab)" className="rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          inspect or star it
+        </a>
+        .
+      </p>
+    </DialogShell>
   );
 }
 
@@ -1929,33 +2073,25 @@ function ShareLinkDialog({
   onCopy: () => void;
   onClose: () => void;
 }) {
-  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="share-link-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="share-link-title" className="text-lg font-semibold">Create share link</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">The Markdown is compressed into the URL fragment and restored entirely in the browser.</p>
-          </div>
-          <IconButton icon={X} label="Close share link dialog" onClick={onClose} />
-        </div>
-        <div className="mt-5 rounded-md border border-amber-400/35 bg-amber-400/10 p-3 text-sm leading-6 text-amber-950 dark:text-amber-100">
-          This link contains the full text. Pasting it into a chat or email publishes the document. Anyone with this URL can read and copy the document. Encoding is not encryption—do not use this for secrets or confidential content.
-        </div>
-        <dl className="mt-4 border-y border-border py-3 text-sm">
-          <div className="flex items-center justify-between gap-4">
-            <dt className="text-muted-foreground">URL length</dt>
-            <dd className="font-mono">{preview.length.toLocaleString()} characters</dd>
-          </div>
-        </dl>
-        <p className="mt-4 text-xs leading-5 text-muted-foreground">The document stays after the <code>#</code> in the URL. Browsers do not include URL fragments in network requests.</p>
-        <div className="mt-5 flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
-        <button type="button" onClick={onCopy} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Copy share link</button>
-        </div>
+    <DialogShell onClose={onClose} labelledBy="share-link-title" className="max-w-lg p-6">
+      <DialogHeader titleId="share-link-title" title="Create share link" description="The Markdown is compressed into the URL fragment and restored entirely in the browser." closeLabel="Close share link dialog" onClose={onClose} />
+      <div className="mt-5 flex gap-3 rounded-xl border border-amber-600/30 bg-amber-500/10 p-3.5 text-sm leading-6 text-amber-950 dark:border-amber-300/25 dark:text-amber-100">
+        <TriangleAlert aria-hidden="true" className="mt-1 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-300" />
+        <span>This link contains the full text. Pasting it into a chat or email publishes the document. Anyone with this URL can read and copy the document. Encoding is not encryption—do not use this for secrets or confidential content.</span>
       </div>
-    </div>
+      <dl className="mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-sm">
+        <div className="flex items-center justify-between gap-4">
+          <dt className="text-muted-foreground">URL length</dt>
+          <dd className="font-mono">{preview.length.toLocaleString()} characters</dd>
+        </div>
+      </dl>
+      <p className="mt-4 text-xs leading-5 text-muted-foreground">The document stays after the <code>#</code> in the URL. Browsers do not include URL fragments in network requests.</p>
+      <div className="mt-6 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className={dialogCancelButton}>Cancel</button>
+        <button type="button" onClick={onCopy} className={dialogConfirmButton}>Copy share link</button>
+      </div>
+    </DialogShell>
   );
 }
 
@@ -1970,72 +2106,34 @@ function SharedDocumentDialog({
   onOpen: () => void;
   onClose: () => void;
 }) {
-  const dialogRef = useDialogFocus(onClose);
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="shared-document-title" className="w-full max-w-lg rounded-lg border border-border bg-panel p-5 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 id="shared-document-title" className="text-lg font-semibold">Open shared document?</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">This untrusted Markdown will be added as a new local document. Your {existingDocumentCount === 1 ? "existing draft" : `${existingDocumentCount.toLocaleString()} existing drafts`} will not be replaced.</p>
-          </div>
-          <IconButton icon={X} label="Close shared document dialog" onClick={onClose} />
-        </div>
-        <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden border border-border bg-border text-sm">
-          <ReportFact label="Title" value={getDocumentTitle(markdown)} />
-          <ReportFact label="Size" value={`${markdown.length.toLocaleString()} characters`} />
-        </dl>
-        <p className="mt-4 text-xs leading-5 text-muted-foreground">Only open links from people you trust. The existing safe Markdown renderer will treat the content as untrusted input.</p>
-        <div className="mt-5 flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cancel</button>
-        <button type="button" onClick={onOpen} className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Open as new document</button>
-        </div>
+    <DialogShell onClose={onClose} labelledBy="shared-document-title" className="max-w-lg p-6">
+      <DialogHeader
+        titleId="shared-document-title"
+        title="Open shared document?"
+        description={<>This untrusted Markdown will be added as a new local document. Your {existingDocumentCount === 1 ? "existing draft" : `${existingDocumentCount.toLocaleString()} existing drafts`} will not be replaced.</>}
+        closeLabel="Close shared document dialog"
+        onClose={onClose}
+      />
+      <dl className="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border text-sm">
+        <ReportFact label="Title" value={getDocumentTitle(markdown)} />
+        <ReportFact label="Size" value={`${markdown.length.toLocaleString()} characters`} />
+      </dl>
+      <p className="mt-4 text-xs leading-5 text-muted-foreground">Only open links from people you trust. The existing safe Markdown renderer will treat the content as untrusted input.</p>
+      <div className="mt-6 flex justify-end gap-2">
+        <button type="button" onClick={onClose} className={dialogCancelButton}>Cancel</button>
+        <button type="button" onClick={onOpen} className={dialogConfirmButton}>Open as new document</button>
       </div>
-    </div>
+    </DialogShell>
   );
 }
 
 function ReportFact({ label, value }: { label: string; value: string }) {
-  return <div className="bg-panel p-3"><dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-mono text-xs">{value}</dd></div>;
+  return <div className="bg-panel p-3"><dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-mono text-xs">{value}</dd></div>;
 }
 
 function ReportList({ title, items, empty }: { title: string; items: string[]; empty: string }) {
   return <section className="mt-5"><h3 className="text-sm font-semibold">{title}</h3>{items.length ? <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-muted-foreground">{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">{empty}</p>}</section>;
-}
-
-function Notice({
-  message,
-  onClose,
-  actionLabel,
-  onAction,
-  actionHref,
-  persistent = false,
-}: {
-  message: string;
-  onClose: () => void;
-  actionLabel?: string;
-  onAction?: () => void;
-  actionHref?: string;
-  persistent?: boolean;
-}) {
-  useEffect(() => {
-    if (persistent) return;
-    const timeout = window.setTimeout(onClose, 6000);
-    return () => window.clearTimeout(timeout);
-  }, [onClose, persistent]);
-  return (
-    <div role="status" aria-live="polite" className="fixed bottom-14 left-1/2 z-[90] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-md border border-border bg-panel px-4 py-3 text-xs shadow-xl">
-      <span>{message}</span>
-      {actionLabel && actionHref ? (
-        <a href={actionHref} target="_blank" rel="noopener noreferrer" aria-label={`${actionLabel} (opens in a new tab)`} onClick={onClose} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground">
-          {actionLabel}
-        </a>
-      ) : actionLabel && onAction ? (
-      <button type="button" onClick={onAction} className="rounded-md bg-accent px-2.5 py-1 font-medium text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{actionLabel}</button>
-      ) : null}
-      <button type="button" onClick={onClose} aria-label="Dismiss" className="rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="h-3.5 w-3.5" /></button>
-    </div>
-  );
 }
 
 function clearShareFragment() {
@@ -2074,23 +2172,23 @@ function railDisplay(desktopOpen: boolean, mobileOpen: boolean) {
 }
 
 function RailHeader({ label, onClose }: { label: string; onClose: () => void }) {
-  return <header className="flex h-11 shrink-0 items-center justify-between border-b border-border px-3"><span className="text-xs font-semibold">{label}</span><IconButton icon={X} label={`Hide ${label}`} onClick={onClose} compact /></header>;
+  return <header className="flex h-11 shrink-0 items-center justify-between pl-3.5 pr-0.5"><span className="font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">{label}</span><IconButton icon={X} label={`Hide ${label}`} onClick={onClose} compact /></header>;
 }
 
 function TopButton({ icon: Icon, label, onClick, emphasis, active, expanded, controls, className, compactAtNarrow, disabled }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; expanded?: boolean; controls?: string; className?: string; compactAtNarrow?: boolean; disabled?: boolean }) {
-  return <button type="button" onClick={onClick} disabled={disabled} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 text-xs font-medium text-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", emphasis && "border border-accent/55 text-accent hover:bg-accent/10", active && !emphasis && "bg-muted text-foreground", className)}><Icon aria-hidden="true" className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
+  return <button type="button" onClick={onClick} disabled={disabled} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-default disabled:opacity-50", emphasis ? "bg-accent font-semibold text-accent-foreground shadow-soft hover:bg-accent/90" : "text-muted-foreground hover:bg-muted hover:text-foreground", active && !emphasis && "bg-muted text-foreground", className)}><Icon aria-hidden="true" className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
 function IconButton({ icon: Icon, label, hasPopup, onClick, compact, className, disabled }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void; compact?: boolean; className?: string; disabled?: boolean }) {
-  return <button type="button" onClick={onClick} disabled={disabled} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className={compact ? "h-4 w-4" : "h-4 w-4"} /></button>;
+  return <button type="button" onClick={onClick} disabled={disabled} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className="h-4 w-4" /></button>;
 }
 
 function MenuAction({ icon: Icon, label, detail, hasPopup, onClick }: { icon: typeof FileText; label: string; detail?: string; hasPopup?: "dialog"; onClick: () => void }) {
   return (
-    <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={onClick} className={cn("flex w-full gap-2.5 rounded-md px-2.5 text-left text-xs text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", detail ? "items-start py-2" : "h-9 items-center")}>
-      <Icon aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground", detail && "mt-0.5")} />
+    <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={onClick} className={cn("group flex w-full gap-2.5 rounded-lg px-2.5 text-left text-xs text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", detail ? "items-start py-2" : "h-9 items-center")}>
+      <Icon aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-accent group-focus-visible:text-accent", detail && "mt-0.5")} />
       <span className="min-w-0">
-        <span className="block">{label}</span>
+        <span className="block font-medium">{label}</span>
         {detail ? <span className="mt-0.5 block text-[10px] leading-4 text-muted-foreground">{detail}</span> : null}
       </span>
     </button>
@@ -2098,11 +2196,11 @@ function MenuAction({ icon: Icon, label, detail, hasPopup, onClick }: { icon: ty
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
-  return <button type="button" onClick={onClick} aria-label={ariaLabel} className="min-w-12 border-r border-border px-2.5 font-mono text-[10px] text-muted-foreground last:border-r-0 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">{label}</button>;
+  return <button type="button" onClick={onClick} aria-label={ariaLabel} className="min-w-11 border-r border-border px-2.5 font-mono text-[10px] text-muted-foreground transition-colors last:border-r-0 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">{label}</button>;
 }
 
 function PanelLoading({ label }: { label: string }) {
-  return <div className="flex h-full items-center justify-center gap-2 text-xs text-muted-foreground"><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />{label}</div>;
+  return <div className="flex h-full items-center justify-center gap-2 text-xs text-muted-foreground"><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin text-accent" />{label}</div>;
 }
 
 function relativeTime(timestamp: number) {

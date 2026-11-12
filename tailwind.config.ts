@@ -23,6 +23,8 @@ const config: Config = {
         "accent-foreground": "hsl(var(--accent-foreground) / <alpha-value>)",
         "accent-soft": "hsl(var(--accent-soft) / <alpha-value>)",
         ring: "hsl(var(--ring) / <alpha-value>)",
+        highlight: "hsl(var(--highlight) / <alpha-value>)",
+        danger: "hsl(var(--danger) / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "Inter", "ui-sans-serif", "system-ui"],
@@ -30,7 +32,9 @@ const config: Config = {
       },
       boxShadow: {
         panel:
-          "0 1px 2px rgb(15 23 42 / 0.05), 0 20px 70px -48px rgb(15 23 42 / 0.55)",
+          "0 1px 2px hsl(var(--shadow-color) / 0.05), 0 20px 70px -48px hsl(var(--shadow-color) / 0.55)",
+        soft: "0 1px 2px hsl(var(--shadow-color) / 0.05), 0 12px 32px -18px hsl(var(--shadow-color) / 0.25)",
+        lift: "0 2px 4px hsl(var(--shadow-color) / 0.06), 0 30px 70px -30px hsl(var(--shadow-color) / 0.45)",
       },
     },
   },
