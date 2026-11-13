@@ -5,7 +5,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { markdown as markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { getSearchQuery, openSearchPanel, searchPanelOpen } from "@codemirror/search";
-import { Prec } from "@codemirror/state";
+import { Prec, type Extension } from "@codemirror/state";
 import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 import { clipboardImageFiles } from "@/lib/clipboard-images";
@@ -108,6 +108,13 @@ export type MarkdownEditorActions = {
   moveCursorToLine: (line: number) => void;
   insertText: (text: string) => void;
   scrollElement: () => HTMLElement;
+  /** The live CodeMirror view, for extensions' own commands (lint panel, etc.). */
+  view: () => EditorView;
+  cursorOffset: () => number;
+  /** Replaces a range as one undoable change and leaves the cursor after it. */
+  replaceRange: (from: number, to: number, text: string) => void;
+  /** Replaces the whole document as one undoable change, keeping the cursor near its line. */
+  replaceDocument: (text: string) => void;
 };
 
 export const MarkdownEditor = memo(function MarkdownEditor({
@@ -115,6 +122,7 @@ export const MarkdownEditor = memo(function MarkdownEditor({
   theme,
   fontSize,
   lineWrap,
+  extraExtensions,
   onChange,
   onCursorChange,
   onPasteImages,
@@ -124,6 +132,8 @@ export const MarkdownEditor = memo(function MarkdownEditor({
   theme: "light" | "dark";
   fontSize: number;
   lineWrap: boolean;
+  /** Additional CodeMirror extensions. Pass a stable array; a new identity reconfigures the editor. */
+  extraExtensions?: readonly Extension[];
   onChange: (value: string) => void;
   onCursorChange: (position: { line: number; column: number }) => void;
   onPasteImages: (files: File[]) => Promise<string[]>;
@@ -149,6 +159,7 @@ export const MarkdownEditor = memo(function MarkdownEditor({
       markdownHighlighting,
       ...(lineWrap ? [EditorView.lineWrapping] : []),
       searchMatchStatus,
+      ...(extraExtensions ?? []),
       EditorView.domEventHandlers({
         paste(event, view) {
           const files = clipboardImageFiles(event.clipboardData);
@@ -213,7 +224,7 @@ export const MarkdownEditor = memo(function MarkdownEditor({
         },
       }),
     ],
-    [fontSize, lineWrap],
+    [extraExtensions, fontSize, lineWrap],
   );
 
   return (
@@ -251,6 +262,25 @@ export const MarkdownEditor = memo(function MarkdownEditor({
             view.focus();
           },
           scrollElement: () => view.scrollDOM,
+          view: () => view,
+          cursorOffset: () => view.state.selection.main.head,
+          replaceRange(from, to, text) {
+            view.dispatch({
+              changes: { from, to, insert: text },
+              selection: { anchor: from + text.length },
+              scrollIntoView: true,
+            });
+            view.focus();
+          },
+          replaceDocument(text) {
+            const current = view.state.doc.toString();
+            if (current === text) return;
+            const lineNumber = view.state.doc.lineAt(view.state.selection.main.head).number;
+            view.dispatch({ changes: { from: 0, to: current.length, insert: text } });
+            const line = view.state.doc.line(Math.min(lineNumber, view.state.doc.lines));
+            view.dispatch({ selection: { anchor: line.from }, scrollIntoView: true });
+            view.focus();
+          },
         };
         const publish = () => {
           if (!view.scrollDOM.isConnected) return;
@@ -266,4 +296,4 @@ export const MarkdownEditor = memo(function MarkdownEditor({
       className="h-full overflow-hidden"
     />
   );
-}, (previous, next) => previous.value === next.value && previous.theme === next.theme && previous.fontSize === next.fontSize && previous.lineWrap === next.lineWrap);
+}, (previous, next) => previous.value === next.value && previous.theme === next.theme && previous.fontSize === next.fontSize && previous.lineWrap === next.lineWrap && previous.extraExtensions === next.extraExtensions);

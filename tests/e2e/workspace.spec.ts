@@ -499,6 +499,12 @@ test("editor and preview stay aligned and the outline follows the preview", asyn
 
 test("writing controls keep focus, type size, search hits, and local versions", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "desktop writing controls");
+  // Exercise the download fallback used by browsers without the File System Access API.
+  await page.addInitScript(() => {
+    delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker;
+    delete (window as { showOpenFilePicker?: unknown }).showOpenFilePicker;
+    delete (window as { showDirectoryPicker?: unknown }).showDirectoryPicker;
+  });
   await page.goto("/editor");
   const documents = page.getByRole("complementary", { name: "Documents" });
   await documents.getByLabel("Search documents").fill("real renderer");
@@ -610,7 +616,7 @@ test("share links require explicit consent and preserve existing local drafts", 
 test("export menu separates this document from the workspace", async ({ page }, testInfo) => {
   await page.goto("/editor");
   if (testInfo.project.name !== "mobile") {
-    await expect(page.getByRole("button", { name: "Print", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Print or save as PDF", exact: true })).toBeVisible();
   }
   await page.getByRole("button", { name: "Export", exact: true }).click();
   const menu = page.getByRole("menu", { name: "Export options" });
@@ -621,6 +627,47 @@ test("export menu separates this document from the workspace", async ({ page }, 
   await expect(workspaceGroup.getByRole("menuitem", { name: "Restore workspace backup" })).toBeVisible();
   await expect(documentGroup.getByRole("menuitem", { name: "Restore workspace backup" })).toHaveCount(0);
   await expect(workspaceGroup.getByRole("menuitem", { name: "Create share link" })).toHaveCount(0);
+});
+
+test("slash menu inserts a table, lint flags issues, and format fixes them", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop editor interaction");
+  await page.goto("/editor");
+  await page.getByRole("button", { name: "New document" }).first().click();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await editor.click();
+  await page.keyboard.type("#Title\n\n/tab");
+  await expect(page.getByRole("option", { name: /^Table/ }).first()).toBeVisible();
+  await page.keyboard.press("Enter");
+  const tableDialog = page.getByRole("dialog", { name: "Insert table" });
+  await expect(tableDialog).toBeVisible();
+  await tableDialog.getByRole("textbox").first().fill("Name");
+  await tableDialog.getByRole("button", { name: "Insert table" }).click();
+  await expect(page.getByRole("table").first()).toContainText("Name");
+
+  const issues = page.getByRole("button", { name: /Markdown issues?$/ });
+  await expect(issues).toHaveAccessibleName(/^[1-9]\d* Markdown issues?$/);
+  await issues.click();
+  const panel = page.getByRole("dialog", { name: "Markdown issues" });
+  await expect(panel).toContainText('Add a space after "#"');
+  await panel.getByRole("button", { name: "Format document" }).click();
+  await expect(editor).toContainText("# Title");
+  await expect(page.getByRole("heading", { name: "Title", level: 1 })).toBeVisible();
+});
+
+test("versions open a side-by-side comparison", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "mobile", "desktop dialog layout");
+  await page.goto("/editor");
+  await page.getByRole("button", { name: "New document" }).first().click();
+  const editor = page.locator('.cm-content[contenteditable="true"]:visible').first();
+  await editor.fill("# Version one");
+  await expect(page.getByText("Saved locally", { exact: true })).toBeVisible();
+  await editor.fill("# Version two");
+  await expect(page.getByRole("heading", { name: "Version two" })).toBeVisible();
+  await page.getByRole("button", { name: "Versions", exact: true }).click();
+  await page.getByRole("dialog", { name: "Local versions" }).getByRole("button", { name: /^Compare / }).click();
+  const compare = page.getByRole("dialog", { name: "Compare" });
+  await expect(compare).toContainText("# Version one");
+  await expect(compare).toContainText("# Version two");
 });
 
 test("a document that cannot fit in a share link offers a download", async ({ page }, testInfo) => {

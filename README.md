@@ -47,6 +47,12 @@ Markdown Lens exists to provide a simple, polished, browser-first Markdown viewe
 - Conversion jobs with progress, cancellation, warnings, statistics, and conversion reports
 - Privacy-preserving compressed share links stored only in the URL fragment
 - Installable offline-capable PWA with safe update handling
+- Open Markdown files and folders from disk and save back in place (Chrome, Edge and other browsers with the File System Access API; others fall back to downloads)
+- Markdown lint with inline diagnostics and quick fixes, plus one-click "Format document" (aligned tables, consistent lists, tidy spacing)
+- Visual table editor with paste from Excel, Google Sheets or Numbers
+- `/` slash menu for headings, lists, tables, code, Mermaid, math, callouts, footnotes and a table of contents
+- Side-by-side and unified diff between local versions, documents or pasted text, with patch copy
+- Export to Word (`.docx`), print-ready PDF with paper size, margins and page numbers, and copy as rich text for Docs, Gmail, Notion or Word
 - Copy raw Markdown
 - Download current content as a `.md` file
 - Print or save the preview as PDF
@@ -67,7 +73,11 @@ Markdown Lens supports the same shortcuts on macOS (`Cmd`) and Windows/Linux
 | Open or convert | `Cmd/Ctrl + O` |
 | New document | `Cmd/Ctrl + N` |
 | Find and replace | `Cmd/Ctrl + F` |
-| Download Markdown | `Cmd/Ctrl + S` |
+| Save (to the opened file, or download where unsupported) | `Cmd/Ctrl + S` |
+| Save as a new file | `Cmd/Ctrl + Shift + S` |
+| Open Markdown issues panel | `Cmd/Ctrl + Shift + M` |
+| Next Markdown issue | `F8` |
+| Insert block | `/` at the start of a line |
 
 ## Local-Only Privacy
 

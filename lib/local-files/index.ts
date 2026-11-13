@@ -1,0 +1,71 @@
+export { isFileSystemAccessSupported } from "@/lib/local-files/support";
+export {
+  LocalFileError,
+  isAbortError,
+  localFileErrorMessage,
+  toLocalFileError,
+  type LocalFileErrorCode,
+} from "@/lib/local-files/errors";
+export {
+  ensureAccess,
+  queryAccess,
+  requestAccess,
+  type AccessMode,
+  type AccessStatus,
+} from "@/lib/local-files/permissions";
+export {
+  MARKDOWN_FILE_EXTENSIONS,
+  isMarkdownFileName,
+  openLocalFiles,
+  readFileHandle,
+  saveTextAs,
+  statFileHandle,
+  suggestedFileName,
+  titleFromFileName,
+  writeFileHandle,
+  type LocalFileContents,
+  type LocalFileStat,
+  type OpenedLocalFile,
+  type SavedLocalFile,
+} from "@/lib/local-files/files";
+export {
+  DEFAULT_WALK_LIMITS,
+  findFolderFile,
+  isSkippedDirectory,
+  pickFolder,
+  walkFolder,
+  type FolderDirectoryNode,
+  type FolderFileNode,
+  type FolderNode,
+  type FolderTree,
+  type WalkFolderOptions,
+} from "@/lib/local-files/folder";
+export {
+  closeLocalFilesDatabase,
+  findLinkByHandle,
+  forgetFolder,
+  getLink,
+  getRememberedFolder,
+  hasUnsavedDiskChanges,
+  linkDocument,
+  listLinks,
+  pruneLinks,
+  rememberFolder,
+  textFingerprint,
+  unlinkDocument,
+  updateLinkSync,
+  type LocalFileLink,
+  type LocalFileSync,
+  type RememberedFolder,
+} from "@/lib/local-files/link-store";
+export {
+  checkDiskState,
+  decideSaveOutcome,
+  hasDiskChanged,
+  reloadLinkedDocument,
+  saveLinkedDocument,
+  type DiskState,
+  type ReloadLinkedResult,
+  type SaveLinkedResult,
+  type SaveOutcome,
+} from "@/lib/local-files/sync";

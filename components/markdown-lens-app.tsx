@@ -15,10 +15,12 @@ import {
   BookOpen,
   Check,
   CircleAlert,
+  CircleCheck,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clipboard,
+  ClipboardType,
   Command,
   Download,
   Ellipsis,
@@ -27,7 +29,12 @@ import {
   FileDown,
   FilePlus2,
   FileText,
+  FileType,
   FileUp,
+  FolderOpen,
+  GitCompareArrows,
+  Printer,
+  HardDrive,
   History,
   Inbox,
   ListTree,
@@ -115,10 +122,40 @@ import {
   type ShareFragmentPreview,
 } from "@/lib/share-state";
 import { ServiceWorkerRegister } from "@/components/workspace/service-worker-register";
+import { FolderPanel } from "@/components/workspace/folder-panel";
+import { useLocalFiles } from "@/components/workspace/use-local-files";
+import { slashMenuExtension } from "@/components/workspace/editor-slash-menu";
+import { fixAllMarkdownIssues, formatMarkdownDocument, markdownLintExtension } from "@/components/workspace/editor-lint";
+import { LintPanel } from "@/components/workspace/lint-panel";
+import type { MarkdownIssue } from "@/lib/markdown-lint";
+import type { DiffSource } from "@/components/workspace/diff-dialog";
+import { findTableAt, type TableModel } from "@/lib/markdown-table";
+import {
+  buildPrintDocument,
+  collectDocumentCss,
+  DEFAULT_PDF_SETTINGS,
+  normalizePdfSettings,
+  preparePrintBodyHtml,
+  printHtmlDocument,
+  type PdfSettings,
+} from "@/lib/export/print-pdf";
+import { copyRichText } from "@/lib/export/rich-text";
 
 const MarkdownEditor = dynamic(
   () => import("@/components/workspace/markdown-editor").then((module) => module.MarkdownEditor),
   { ssr: false, loading: () => <PanelLoading label="Loading editor" /> },
+);
+const TableEditorDialog = dynamic(
+  () => import("@/components/workspace/table-editor-dialog").then((module) => module.TableEditorDialog),
+  { ssr: false },
+);
+const DiffDialog = dynamic(
+  () => import("@/components/workspace/diff-dialog").then((module) => module.DiffDialog),
+  { ssr: false },
+);
+const PdfExportDialog = dynamic(
+  () => import("@/components/workspace/pdf-export-dialog").then((module) => module.PdfExportDialog),
+  { ssr: false },
 );
 const MarkdownPreview = dynamic(
   () => import("@/components/workspace/markdown-preview").then((module) => module.MarkdownPreview),
@@ -166,6 +203,10 @@ const SPLIT_KEY = "markdown-lens:split-ratio";
 const FOCUS_KEY = "markdown-lens:focus";
 const FONT_SIZE_KEY = "markdown-lens:font-size";
 const WRAP_KEY = "markdown-lens:wrap";
+const PDF_SETTINGS_KEY = "markdown-lens:pdf-settings";
+
+type TableEditorState = { mode: "insert" | "edit"; from: number; to: number; table?: TableModel };
+type DiffState = { leftId?: string; rightId?: string };
 const EDITOR_FONT_SIZES = [13.5, 15, 17] as const;
 const STAR_TOAST_DURATION = 12_000;
 const STAR_AFTER_EXPORT_DELAY = 1_200;
@@ -234,6 +275,15 @@ export function MarkdownLensApp() {
   const [lineWrap, setLineWrap] = useState(true);
   const [versions, setVersions] = useState<readonly DocumentVersion[]>([]);
   const [versionsOpen, setVersionsOpen] = useState(false);
+  const [tableEditor, setTableEditor] = useState<TableEditorState | null>(null);
+  const [diffState, setDiffState] = useState<DiffState | null>(null);
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const closeTableEditor = useCallback(() => setTableEditor(null), []);
+  const closeDiff = useCallback(() => setDiffState(null), []);
+  const closePdfDialog = useCallback(() => setPdfDialogOpen(false), []);
+  const [lintIssues, setLintIssues] = useState<MarkdownIssue[]>([]);
+  const [lintOpen, setLintOpen] = useState(false);
+  const closeLint = useCallback(() => setLintOpen(false), []);
   const [activeHeadingIdState, setActiveHeadingId] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<MobilePane>("editor");
   const [splitRatio, setSplitRatio] = useState(50);
@@ -267,6 +317,14 @@ export function MarkdownLensApp() {
   const abortControllers = useRef(new Map<string, AbortController>());
   const ocrResolution = useRef<((useOcr: boolean) => void) | null>(null);
   const editorActions = useRef<MarkdownEditorActions | null>(null);
+  const openTableEditorRef = useRef<() => void>(() => undefined);
+  const editorExtensions = useMemo(
+    () => [
+      slashMenuExtension({ onInsertTable: () => openTableEditorRef.current() }),
+      markdownLintExtension({ onIssues: setLintIssues }),
+    ],
+    [],
+  );
   const editorScrollRef = useRef<HTMLElement | null>(null);
   const previewScrollRef = useRef<HTMLElement | null>(null);
   const scrollHold = useRef(false);
@@ -566,7 +624,8 @@ export function MarkdownLensApp() {
         void createNewDocument();
       } else if (key === "s") {
         event.preventDefault();
-        void saveAndDownload();
+        if (event.shiftKey && localFiles.supported) void localFiles.save({ forceSaveAs: true });
+        else void saveDocumentToDisk();
       }
     };
     window.addEventListener("keydown", handleKeyboard);
@@ -619,6 +678,33 @@ export function MarkdownLensApp() {
   const refreshDocuments = useCallback(async () => {
     setDocuments(await listDocuments({ includeDeleted: true }));
   }, []);
+
+  const showLocalDocument = useCallback(async (document: DocumentRecord, isNew: boolean) => {
+    if (isNew) {
+      await addDocument(document);
+      setDocuments((current) => [document, ...current]);
+    } else if (document.deletedAt !== undefined) {
+      await restoreDocument(document.id);
+      await refreshDocuments();
+    } else {
+      setDocuments((current) => current.map((item) => (item.id === document.id ? document : item)));
+    }
+    setShowTrash(false);
+    setActiveId(document.id);
+    setMarkdown(document.markdown);
+    setMobilePane("editor");
+  }, [refreshDocuments]);
+
+  const localFiles = useLocalFiles({
+    ready,
+    documents,
+    activeDocumentId,
+    markdown,
+    persistActiveDraft,
+    showDocument: showLocalDocument,
+    replaceActiveMarkdown: setMarkdown,
+    notify: setNotice,
+  });
 
   const createNewDocument = useCallback(async () => {
     if (!readyRef.current) return;
@@ -687,9 +773,10 @@ export function MarkdownLensApp() {
   const confirmDeleteForever = useCallback(async () => {
     if (!deleteTarget) return;
     await permanentlyDeleteDocument(deleteTarget.id);
+    await localFiles.forgetDocument(deleteTarget.id);
     await refreshDocuments();
     setDeleteTarget(null);
-  }, [deleteTarget, refreshDocuments]);
+  }, [deleteTarget, localFiles, refreshDocuments]);
 
   const duplicate = useCallback(async (document: DocumentRecord) => {
     const current = document.id === activeId ? await persistActiveDraft() : document;
@@ -816,6 +903,15 @@ export function MarkdownLensApp() {
     if (markdown.trim()) noteSuccessfulExport();
   }
 
+  /** Cmd/Ctrl+S: write to the linked file where the browser allows it, otherwise download a copy. */
+  async function saveDocumentToDisk() {
+    if (!localFiles.supported) {
+      await saveAndDownload();
+      return;
+    }
+    if (await localFiles.save()) noteSuccessfulExport();
+  }
+
   async function pasteImages(files: File[]) {
     if (!activeDocument || !files.length) return [];
     const usedNames = new Set(Object.keys(assetUrls).map((name) => name.toLowerCase()));
@@ -907,6 +1003,113 @@ export function MarkdownLensApp() {
     await navigator.clipboard.writeText(markdown);
     setNotice({ message: "Markdown copied.", tone: "success" });
     noteSuccessfulExport();
+  }
+
+  /** Opens the table editor on the table under the cursor, or to insert a new one there. */
+  function openTableEditor() {
+    const actions = editorActions.current;
+    if (!actions) return;
+    const view = actions.view();
+    const selection = view.state.selection.main;
+    const range = findTableAt(view.state.doc.toString(), selection.head);
+    setTableEditor(range
+      ? { mode: "edit", from: range.from, to: range.to, table: range.table }
+      : { mode: "insert", from: selection.from, to: selection.to });
+  }
+  openTableEditorRef.current = openTableEditor;
+
+  function formatDocument() {
+    const view = editorActions.current?.view();
+    if (!view) return;
+    const changed = formatMarkdownDocument(view);
+    setNotice({ message: changed ? "Document formatted. Undo restores the previous text." : "Already formatted.", tone: changed ? "success" : "info" });
+  }
+
+  function fixAllIssues() {
+    const view = editorActions.current?.view();
+    if (!view) return;
+    const fixed = fixAllMarkdownIssues(view);
+    setNotice({ message: fixed ? `Fixed ${fixed} issue${fixed === 1 ? "" : "s"}. Undo restores the previous text.` : "Nothing to fix automatically.", tone: fixed ? "success" : "info" });
+  }
+
+  function revealIssue(issue: MarkdownIssue) {
+    const view = editorActions.current?.view();
+    setLintOpen(false);
+    setMobilePane("editor");
+    if (!view) return;
+    const end = Math.min(issue.to, view.state.doc.length);
+    view.dispatch({ selection: { anchor: Math.min(issue.from, end), head: end }, scrollIntoView: true });
+    view.focus();
+  }
+
+  function applyTable(tableMarkdown: string) {
+    const state = tableEditor;
+    const actions = editorActions.current;
+    setTableEditor(null);
+    if (!state || !actions) return;
+    const doc = actions.view().state.doc.toString();
+    if (state.mode === "edit") {
+      const current = findTableAt(doc, state.from);
+      if (!current || current.from !== state.from) {
+        setNotice({ message: "The table moved while you were editing. Nothing was replaced.", tone: "error" });
+        return;
+      }
+      actions.replaceRange(current.from, current.to, tableMarkdown);
+      return;
+    }
+    const before = doc.slice(0, state.from);
+    const after = doc.slice(state.to);
+    const prefix = !before || before.endsWith("\n\n") ? "" : before.endsWith("\n") ? "\n" : "\n\n";
+    const suffix = !after ? "\n" : after.startsWith("\n\n") ? "" : after.startsWith("\n") ? "\n" : "\n\n";
+    actions.replaceRange(state.from, state.to, `${prefix}${tableMarkdown}${suffix}`);
+  }
+
+  async function exportDocx() {
+    const title = activeDocument?.title ?? getDocumentTitle(markdown);
+    try {
+      const [{ markdownToDocx }, assets] = await Promise.all([
+        import("@/lib/export/markdown-to-docx"),
+        activeDocument ? getDocumentAssets(activeDocument.id, activeDocument.assetIds) : Promise.resolve([]),
+      ]);
+      const images: Record<string, { data: Uint8Array; mimeType: string }> = {};
+      for (const asset of assets) {
+        images[`assets/${asset.name}`] = { data: new Uint8Array(await asset.blob.arrayBuffer()), mimeType: asset.mimeType };
+      }
+      const pageSize = readPdfSettings().paperSize === "a4" ? "a4" : "letter";
+      downloadBlob(await markdownToDocx(markdown, { title, images, pageSize }), `${toFileName(title)}.docx`);
+      noteSuccessfulExport();
+    } catch {
+      setNotice({ message: "The Word document could not be created.", tone: "error" });
+    }
+  }
+
+  async function printPdf(settings: PdfSettings) {
+    setPdfDialogOpen(false);
+    writeLocalPreference(PDF_SETTINGS_KEY, JSON.stringify(settings));
+    if (!previewRef.current) return;
+    const title = activeDocument?.title ?? getDocumentTitle(markdown);
+    try {
+      const html = buildPrintDocument({
+        title,
+        bodyHtml: await preparePrintBodyHtml(previewRef.current),
+        settings,
+        extraCss: collectDocumentCss(),
+      });
+      await printHtmlDocument(html, { title });
+      noteSuccessfulExport();
+    } catch {
+      setNotice({ message: "The print dialog could not be opened.", tone: "error" });
+    }
+  }
+
+  function copyAsRichText() {
+    if (!previewRef.current) return;
+    copyRichText(previewRef.current, markdown).then(() => {
+      setNotice({ message: "Copied as rich text. Paste into Docs, Gmail, Notion or Word.", tone: "success" });
+      noteSuccessfulExport();
+    }, () => {
+      setNotice({ message: "Rich text could not be copied. Check browser clipboard permissions.", tone: "error" });
+    });
   }
 
   function prepareShareLink() {
@@ -1116,7 +1319,25 @@ export function MarkdownLensApp() {
       { label: "Show Outline", action: () => { leaveFocus(); setOutlineOpen(true); } },
       { label: "Reset editor and preview split", action: resetSplitRatio },
       { label: "Show local versions", action: () => setVersionsOpen(true) },
-      { label: "Save and download", hint: `${modPrefix}S`, action: () => void saveAndDownload() },
+      { label: "Compare with a version", action: () => setDiffState({ leftId: versions[0] ? `version:${versions[0].id}` : undefined, rightId: "current" }) },
+      { label: "Compare documents", action: () => setDiffState({ leftId: "current", rightId: documents.find((document) => document.id !== activeId && document.deletedAt === undefined) ? `doc:${documents.find((document) => document.id !== activeId && document.deletedAt === undefined)!.id}` : undefined }) },
+      { label: "Insert or edit table", action: openTableEditor },
+      { label: "Format document", action: formatDocument },
+      { label: "Fix all Markdown issues", action: fixAllIssues },
+      { label: "Show Markdown issues", action: () => setLintOpen(true) },
+      { label: "Export Word (.docx)", action: () => void exportDocx() },
+      { label: "Print / save as PDF", action: () => setPdfDialogOpen(true) },
+      { label: "Copy as rich text", action: copyAsRichText },
+      ...(localFiles.supported ? [
+        { label: "Open file from disk", action: () => void localFiles.openFiles() },
+        { label: "Open folder", action: () => void localFiles.openFolder() },
+        { label: localFiles.activeLink ? `Save to ${localFiles.activeLink.name}` : "Save to disk", hint: `${modPrefix}S`, action: () => void saveDocumentToDisk() },
+        { label: "Save as…", hint: `${modPrefix}⇧S`, action: () => void localFiles.save({ forceSaveAs: true }) },
+        ...(localFiles.activeLink && activeDocument ? [{ label: `Disconnect from ${localFiles.activeLink.name}`, action: () => void localFiles.detachDocument(activeDocument.id) }] : []),
+        { label: "Download a copy", action: () => void saveAndDownload() },
+      ] : [
+        { label: "Save and download", hint: `${modPrefix}S`, action: () => void saveAndDownload() },
+      ]),
       { label: "Copy Markdown", action: () => void copyMarkdown() },
       { label: shareLinkTooLarge ? "Download .md instead of a share link" : "Create share link", action: prepareShareLink },
       { label: "Export workspace backup", action: () => void downloadWorkspaceBackup() },
@@ -1129,6 +1350,19 @@ export function MarkdownLensApp() {
       },
     ];
   const visibleCommands = commands.filter((command) => command.label.toLowerCase().includes(commandSearch.toLowerCase()));
+
+  const diffSources: DiffSource[] = diffState ? [
+    { id: "current", label: "Current draft", detail: activeDocument?.title, text: markdown },
+    ...versions.map((version) => ({
+      id: `version:${version.id}`,
+      label: `Version · ${versionTimeLabel(version.savedAt)}`,
+      text: version.markdown,
+      restorable: true,
+    })),
+    ...documents
+      .filter((document) => document.id !== activeId && document.deletedAt === undefined)
+      .map((document) => ({ id: `doc:${document.id}`, label: document.title, detail: "Document", text: document.markdown })),
+  ] : [];
 
   const warningState = saveState === "error" || workspaceStorage.mode === "memory";
 
@@ -1344,7 +1578,33 @@ export function MarkdownLensApp() {
               />
             )}
           </div>
+          {localFiles.folder ? (
+            <FolderPanel
+              className="max-h-[40%] shrink-0 border-t border-border"
+              name={localFiles.folder.name}
+              nodes={localFiles.folder.nodes}
+              status={localFiles.folder.status}
+              truncated={localFiles.folder.truncated}
+              activePath={localFiles.activeLink?.folderPath ?? null}
+              onOpenFile={(path) => void localFiles.openFolderFile(path)}
+              onRefresh={() => void localFiles.refreshFolder()}
+              onClose={() => void localFiles.closeFolder()}
+              onGrantAccess={() => void localFiles.grantFolderAccess()}
+            />
+          ) : null}
           <div className="grid gap-1.5 border-t border-border p-2">
+            {localFiles.supported ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                <button type="button" onClick={() => void localFiles.openFiles()} className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-panel px-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <HardDrive aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
+                  Open file
+                </button>
+                <button type="button" onClick={() => void localFiles.openFolder()} className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-panel px-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <FolderOpen aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
+                  Open folder
+                </button>
+              </div>
+            ) : null}
             <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               {showTrash ? <BookOpen aria-hidden="true" className="h-3.5 w-3.5" /> : <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />}
               {showTrash ? "Back to documents" : "Trash"}
@@ -1371,7 +1631,7 @@ export function MarkdownLensApp() {
             style={{ gridTemplateColumns: `${splitRatio}fr 7px ${100 - splitRatio}fr` }}
           >
             <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
-              <MarkdownEditor value={markdown} theme={theme} fontSize={editorFontSize} lineWrap={lineWrap} onChange={updateMarkdown} onCursorChange={setCursor} onPasteImages={handlePasteImages} onReady={registerEditor} />
+              <MarkdownEditor value={markdown} theme={theme} fontSize={editorFontSize} lineWrap={lineWrap} extraExtensions={editorExtensions} onChange={updateMarkdown} onCursorChange={setCursor} onPasteImages={handlePasteImages} onReady={registerEditor} />
             </WorkspacePanel>
             <button
               type="button"
@@ -1426,7 +1686,7 @@ export function MarkdownLensApp() {
           >
             {mobilePane === "editor" ? (
               <WorkspacePanel label="Markdown" icon={FileText} detail="Local source">
-                <MarkdownEditor value={markdown} theme={theme} fontSize={editorFontSize} lineWrap={lineWrap} onChange={updateMarkdown} onCursorChange={setCursor} onPasteImages={handlePasteImages} onReady={registerEditor} />
+                <MarkdownEditor value={markdown} theme={theme} fontSize={editorFontSize} lineWrap={lineWrap} extraExtensions={editorExtensions} onChange={updateMarkdown} onCursorChange={setCursor} onPasteImages={handlePasteImages} onReady={registerEditor} />
               </WorkspacePanel>
             ) : (
               <WorkspacePanel label="Preview" icon={Eye} detail="GitHub-style output">
@@ -1506,6 +1766,18 @@ export function MarkdownLensApp() {
           <span className="hidden lg:inline" aria-label={`${stats.minutes} minute estimated reading time`}>
             {stats.minutes} min read
           </span>
+          <button
+            type="button"
+            onClick={() => setLintOpen(true)}
+            aria-haspopup="dialog"
+            aria-label={lintIssues.length ? `${lintIssues.length} Markdown issue${lintIssues.length === 1 ? "" : "s"}` : "No Markdown issues"}
+            className={cn(statusChip, "gap-1")}
+          >
+            {lintIssues.some((issue) => issue.severity === "error")
+              ? <CircleAlert aria-hidden="true" className="h-3.5 w-3.5 text-danger" />
+              : <CircleCheck aria-hidden="true" className="h-3.5 w-3.5 text-accent" />}
+            <span className="tabular-nums">{lintIssues.length ? lintIssues.length : "Lint"}</span>
+          </button>
           <StatusDivider />
           {splitRatio !== 50 ? (
             <button
@@ -1524,6 +1796,19 @@ export function MarkdownLensApp() {
             <button type="button" onClick={toggleLineWrap} aria-pressed={lineWrap} className={cn(statusChip, lineWrap && statusChipPressed)}>Wrap</button>
           </span>
           <button type="button" onClick={() => setVersionsOpen(true)} aria-haspopup="dialog" className={cn(statusChip, "gap-1")}><History aria-hidden="true" className="h-3.5 w-3.5" />Versions</button>
+          {localFiles.activeLink ? (
+            <button
+              type="button"
+              onClick={() => void saveDocumentToDisk()}
+              title={localFiles.diskDirty ? `Unsaved changes. Save to ${localFiles.activeLink.name} (${modPrefix}S)` : `Saved to ${localFiles.activeLink.name}`}
+              aria-label={localFiles.diskDirty ? `Save changes to ${localFiles.activeLink.name}` : `${localFiles.activeLink.name} is saved to disk`}
+              className={cn(statusChip, "hidden max-w-44 gap-1 md:inline-flex", localFiles.diskDirty && "text-foreground")}
+            >
+              <HardDrive aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{localFiles.activeLink.name}</span>
+              {localFiles.diskDirty ? <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> : null}
+            </button>
+          ) : null}
           <span role="status" className={cn("ml-1 h-1.5 w-1.5 shrink-0 rounded-full", saveState === "saved" ? "bg-accent" : saveState === "saving" ? "bg-amber-400" : "bg-danger")}>
             <span className="sr-only">{saveState}</span>
           </span>
@@ -1535,7 +1820,8 @@ export function MarkdownLensApp() {
           <div className="hidden h-7 overflow-hidden rounded-lg border border-border bg-panel xl:flex">
             <QuickExport label=".md" onClick={downloadMarkdownExport} />
             <QuickExport label=".html" onClick={exportHtml} />
-            <QuickExport label="Print" onClick={() => window.print()} />
+            <QuickExport label=".docx" onClick={() => void exportDocx()} />
+            <QuickExport label="PDF" onClick={() => setPdfDialogOpen(true)} ariaLabel="Print or save as PDF" />
             <QuickExport label="…" onClick={() => setExportOpen(true)} ariaLabel="More export options" />
           </div>
           {exportOpen ? (
@@ -1570,6 +1856,8 @@ export function MarkdownLensApp() {
                 <p aria-hidden="true" className={menuEyebrow}>This document</p>
                 <MenuAction icon={Clipboard} label="Copy Markdown" onClick={() => void copyMarkdown()} />
                 <MenuAction icon={Download} label="Download .md" onClick={downloadMarkdownExport} />
+                <MenuAction icon={ClipboardType} label="Copy as rich text" detail="Paste formatted text into Docs, Gmail, Notion or Word." onClick={copyAsRichText} />
+                <MenuAction icon={FileType} label="Export Word (.docx)" onClick={() => void exportDocx()} />
                 <MenuAction icon={FileDown} label="Export HTML" onClick={exportHtml} />
                 {activeDocument?.assetIds.length ? <MenuAction icon={FileArchive} label="Export Markdown + assets" onClick={() => void exportDocumentBundle()} /> : null}
                 {shareLinkTooLarge ? (
@@ -1580,7 +1868,7 @@ export function MarkdownLensApp() {
                 ) : (
                   <MenuAction icon={Share2} label="Create share link" detail="Contains the full text. Pasting it publishes the document." hasPopup="dialog" onClick={prepareShareLink} />
                 )}
-                <MenuAction icon={FileText} label="Print / save PDF" onClick={() => window.print()} />
+                <MenuAction icon={Printer} label="Print / save PDF" detail="Paper size, margins and page numbers." hasPopup="dialog" onClick={() => setPdfDialogOpen(true)} />
               </div>
               <div role="group" aria-label="Workspace" className="mt-1 grid gap-0.5 border-t border-border pt-1">
                 <p aria-hidden="true" className={menuEyebrow}>Workspace</p>
@@ -1638,7 +1926,44 @@ export function MarkdownLensApp() {
       {commandOpen ? <CommandPalette search={commandSearch} onSearch={setCommandSearch} commands={visibleCommands} onClose={() => { setCommandOpen(false); setCommandSearch(""); }} /> : null}
       {formatGuideOpen ? <FormatGuide onClose={() => setFormatGuideOpen(false)} /> : null}
       {reportOpen && activeDocument?.conversion ? <ConversionReportDialog document={activeDocument} onClose={() => setReportOpen(false)} /> : null}
-      {versionsOpen ? <VersionsDialog versions={versions} onRestore={(version) => void restoreVersion(version)} onClose={() => setVersionsOpen(false)} /> : null}
+      {versionsOpen ? (
+        <VersionsDialog
+          versions={versions}
+          onRestore={(version) => void restoreVersion(version)}
+          onCompare={(version) => {
+            setVersionsOpen(false);
+            setDiffState({ leftId: `version:${version.id}`, rightId: "current" });
+          }}
+          onClose={() => setVersionsOpen(false)}
+        />
+      ) : null}
+      {diffState ? (
+        <DiffDialog
+          sources={diffSources}
+          initialLeftId={diffState.leftId}
+          initialRightId={diffState.rightId}
+          onRestore={(source) => {
+            const version = versions.find((item) => `version:${item.id}` === source.id);
+            if (version) void restoreVersion(version);
+            setDiffState(null);
+          }}
+          onClose={closeDiff}
+        />
+      ) : null}
+      {tableEditor ? <TableEditorDialog mode={tableEditor.mode} initialTable={tableEditor.table} onApply={applyTable} onClose={closeTableEditor} /> : null}
+      {lintOpen ? (
+        <DialogShell onClose={closeLint} labelledBy="lint-title" className="flex max-h-[85vh] max-w-lg flex-col p-6">
+          <DialogHeader titleId="lint-title" title="Markdown issues" description="Checked in this browser as you type." closeLabel="Close Markdown issues" onClose={closeLint} />
+          <LintPanel
+            className="mt-4 min-h-0 flex-1 overflow-y-auto"
+            issues={lintIssues}
+            onSelect={revealIssue}
+            onFixAll={() => { setLintOpen(false); fixAllIssues(); }}
+            onFormat={() => { setLintOpen(false); formatDocument(); }}
+          />
+        </DialogShell>
+      ) : null}
+      {pdfDialogOpen ? <PdfExportDialog defaultSettings={readPdfSettings()} onPrint={(settings) => void printPdf(settings)} onClose={closePdfDialog} /> : null}
       {shareLink ? <ShareLinkDialog preview={shareLink} onCopy={() => void copyShareLink()} onClose={() => setShareLink(null)} /> : null}
       {pendingShareFragment !== null ? (
         <SharedLinkConsentDialog
@@ -1654,6 +1979,14 @@ export function MarkdownLensApp() {
           existingDocumentCount={documents.filter((document) => document.deletedAt === undefined).length}
           onOpen={() => void openSharedDocument()}
           onClose={dismissSharedDocument}
+        />
+      ) : null}
+      {localFiles.conflict ? (
+        <DiskConflictDialog
+          fileName={localFiles.conflict.link.name}
+          onOverwrite={() => void localFiles.resolveConflict("overwrite")}
+          onReload={() => void localFiles.resolveConflict("reload")}
+          onClose={() => void localFiles.resolveConflict("cancel")}
         />
       ) : null}
       {renameTarget ? <RenameDialog value={renameValue} onChange={setRenameValue} onSubmit={() => void submitRename()} onClose={() => setRenameTarget(null)} /> : null}
@@ -1783,6 +2116,23 @@ function ConfirmDialog({ title, message, confirmLabel, onConfirm, onClose }: { t
   );
 }
 
+function DiskConflictDialog({ fileName, onOverwrite, onReload, onClose }: { fileName: string; onOverwrite: () => void; onReload: () => void; onClose: () => void }) {
+  return (
+    <DialogShell onClose={onClose} role="alertdialog" labelledBy="disk-conflict-title" describedBy="disk-conflict-message" dismissOnBackdrop={false} className="max-w-md p-6">
+      <DialogHeader
+        titleId="disk-conflict-title"
+        title="File changed on disk"
+        description={<span id="disk-conflict-message">“{fileName}” was edited outside Markdown Lens after you opened it. Overwriting replaces those changes with this draft. Reloading replaces this draft with the file; the draft stays in Versions.</span>}
+      />
+      <div className="mt-6 flex flex-wrap justify-end gap-2">
+        <button type="button" onClick={onClose} className={dialogCancelButton}>Cancel</button>
+        <button type="button" onClick={onReload} className={dialogCancelButton}>Reload from disk</button>
+        <button type="button" onClick={onOverwrite} className={dialogDangerButton}>Overwrite file</button>
+      </div>
+    </DialogShell>
+  );
+}
+
 function SharedLinkConsentDialog({
   preview,
   existingDocumentCount,
@@ -1896,7 +2246,7 @@ function DocumentRow({ document, query, active, trashed, onSelect, onRename, onD
   );
 }
 
-function VersionsDialog({ versions, onRestore, onClose }: { versions: readonly DocumentVersion[]; onRestore: (version: DocumentVersion) => void; onClose: () => void }) {
+function VersionsDialog({ versions, onRestore, onCompare, onClose }: { versions: readonly DocumentVersion[]; onRestore: (version: DocumentVersion) => void; onCompare: (version: DocumentVersion) => void; onClose: () => void }) {
   return (
     <DialogShell onClose={onClose} labelledBy="versions-title" className="max-w-md p-6">
       <DialogHeader titleId="versions-title" title="Local versions" description="Up to four snapshots stay on this device." closeLabel="Close local versions" onClose={onClose} />
@@ -1907,7 +2257,10 @@ function VersionsDialog({ versions, onRestore, onClose }: { versions: readonly D
             return (
               <li key={version.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface py-1 pl-3.5 pr-1">
                 <span className="flex items-center gap-2 text-sm"><History aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />{label}</span>
-                <button type="button" onClick={() => onRestore(version)} className={cn("min-h-11 rounded-lg px-3 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft", focusRing)}>Restore {label}</button>
+                <span className="flex items-center">
+                  <button type="button" onClick={() => onCompare(version)} aria-label={`Compare ${label} with the current draft`} className={cn("inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground", focusRing)}><GitCompareArrows aria-hidden="true" className="h-3.5 w-3.5" />Compare</button>
+                  <button type="button" onClick={() => onRestore(version)} className={cn("min-h-11 rounded-lg px-3 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft", focusRing)}>Restore {label}</button>
+                </span>
               </li>
             );
           })}
@@ -2138,6 +2491,16 @@ function ReportList({ title, items, empty }: { title: string; items: string[]; e
 
 function clearShareFragment() {
   window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+}
+
+function readPdfSettings(): PdfSettings {
+  const raw = readLocalPreference(PDF_SETTINGS_KEY);
+  if (!raw) return DEFAULT_PDF_SETTINGS;
+  try {
+    return normalizePdfSettings(JSON.parse(raw));
+  } catch {
+    return DEFAULT_PDF_SETTINGS;
+  }
 }
 
 function readLocalPreference(key: string) {
