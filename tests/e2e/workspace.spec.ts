@@ -637,6 +637,8 @@ test("slash menu inserts a table, lint flags issues, and format fixes them", asy
   await editor.click();
   await page.keyboard.type("#Title\n\n/tab");
   await expect(page.getByRole("option", { name: /^Table/ }).first()).toBeVisible();
+  // CodeMirror ignores Enter for its completion interactionDelay (75ms) after the menu opens.
+  await page.waitForTimeout(150);
   await page.keyboard.press("Enter");
   const tableDialog = page.getByRole("dialog", { name: "Insert table" });
   await expect(tableDialog).toBeVisible();
