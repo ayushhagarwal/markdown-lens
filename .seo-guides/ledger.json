@@ -1,1 +1,174 @@
-{ "entries": [] }
+{
+  "entries": [
+    {
+      "date": "2026-11-10",
+      "action": "snippet-fix",
+      "slug": "pptx-to-markdown",
+      "url": "https://markdownlens.ayushdev.com/pptx-to-markdown",
+      "target_queries": [
+        "pptx to md",
+        "pptx to md converter",
+        "pptx to md file",
+        "convert pptx to md file"
+      ],
+      "baseline": {
+        "impressions": 150,
+        "clicks": null,
+        "position": 9.3,
+        "ctr": 0.013,
+        "window_days": 90,
+        "window_end": "2026-11-07",
+        "page": "/pptx-to-markdown"
+      },
+      "linked_from": [],
+      "cta_campaign": "",
+      "commit": "7bd501d",
+      "notes": "Backfilled 2026-11-15 from the commit message of 7bd501d (Search Console, Aug 10 - Nov 7 2026). Title gained '(MD)' and 'Free & Private'; new meta description; three FAQs added. Judge CTR at the same position around 2026-12-08."
+    },
+    {
+      "date": "2026-11-12",
+      "action": "strengthen-page",
+      "slug": "pptx-to-markdown",
+      "url": "https://markdownlens.ayushdev.com/pptx-to-markdown",
+      "target_queries": [
+        "pptx to markdown",
+        "convert pptx to markdown",
+        "pptx to markdown converter",
+        "pptx a markdown",
+        "pptx zu markdown",
+        "pptx to markdown online",
+        "powerpoint to markdown",
+        "powerpoint to markdown converter",
+        "powerpoint zu markdown",
+        "ppt to markdown",
+        "convert ppt to markdown",
+        "ppt to markdown converter",
+        "ppt to markdown online"
+      ],
+      "baseline": {
+        "impressions": 649,
+        "clicks": 5,
+        "position": 15.7,
+        "window_days": 90,
+        "window_end": "2026-11-12",
+        "page": "/pptx-to-markdown"
+      },
+      "linked_from": [],
+      "cta_campaign": "",
+      "commit": "9d9c2a9",
+      "notes": "Backfilled 2026-11-15. Baseline is the finder's 90-day window ending 2026-11-12 (the day of the change), restricted to the target queries. Answer-first summary, real output sample, how-to, slide mapping, .ppt and Google Slides guidance, more FAQs."
+    },
+    {
+      "date": "2026-11-12",
+      "action": "strengthen-page",
+      "slug": "markdown-cheatsheet",
+      "url": "https://markdownlens.ayushdev.com/markdown-cheatsheet",
+      "target_queries": [
+        "markdown cheat sheet",
+        "markdown math cheat sheet",
+        "cheat sheet markdown",
+        "markdown cheat",
+        "markdown format cheat sheet",
+        "markdown guide cheat sheet",
+        "markdown language cheat sheet",
+        "markdown syntax cheat sheet",
+        "vs code markdown cheat sheet",
+        "markdown formatting cheat sheet",
+        "markdown latex cheat sheet",
+        "markdown sheet",
+        "slack markdown cheat sheet",
+        "vscode markdown cheat sheet"
+      ],
+      "baseline": {
+        "impressions": 71,
+        "clicks": 0,
+        "position": 59.6,
+        "window_days": 90,
+        "window_end": "2026-11-12",
+        "page": "/markdown-cheatsheet"
+      },
+      "linked_from": [],
+      "cta_campaign": "",
+      "commit": "9d9c2a9",
+      "notes": "Backfilled 2026-11-15. Baseline is the finder's 90-day window ending 2026-11-12 (the day of the change), restricted to the target queries. Single H1, quick-reference table, new sections (links, footnotes, escaping, alignment, math, Mermaid), visible FAQs with FAQPage schema, new title."
+    },
+    {
+      "date": "2026-11-12",
+      "action": "strengthen-page",
+      "slug": "csv-to-markdown",
+      "url": "https://markdownlens.ayushdev.com/csv-to-markdown",
+      "target_queries": [
+        "csv to markdown table",
+        "csv to markdown",
+        "convert csv to markdown",
+        "convert tsv to markdown table",
+        "csv a markdown",
+        "csv to markdown table converter",
+        "markdown table generator from csv",
+        "markdown table to csv converter"
+      ],
+      "baseline": {
+        "impressions": 55,
+        "clicks": 0,
+        "position": 16.2,
+        "window_days": 90,
+        "window_end": "2026-11-12",
+        "page": "/csv-to-markdown"
+      },
+      "linked_from": [],
+      "cta_campaign": "",
+      "commit": "9d9c2a9",
+      "notes": "Backfilled 2026-11-15. Baseline is the finder's 90-day window ending 2026-11-12 (the day of the change), restricted to the target queries. Sample input/output, how-to section, query-matching H1, dedicated meta description, extra FAQs."
+    },
+    {
+      "date": "2026-11-12",
+      "action": "strengthen-page",
+      "slug": "json-to-markdown",
+      "url": "https://markdownlens.ayushdev.com/json-to-markdown",
+      "target_queries": [
+        "json to markdown",
+        "convert json to markdown",
+        "json to markdown converter",
+        "json to markdown table",
+        "json markdown",
+        "json to markdown python",
+        "python json to markdown"
+      ],
+      "baseline": {
+        "impressions": 43,
+        "clicks": 0,
+        "position": 16.2,
+        "window_days": 90,
+        "window_end": "2026-11-12",
+        "page": "/json-to-markdown"
+      },
+      "linked_from": [],
+      "cta_campaign": "",
+      "commit": "9d9c2a9",
+      "notes": "Backfilled 2026-11-15. Baseline is the finder's 90-day window ending 2026-11-12 (the day of the change), restricted to the target queries. Sample input/output, how-to section, query-matching H1, dedicated meta description, extra FAQs; explains the CSV route to tables."
+    },
+    {
+      "date": "2026-11-12",
+      "action": "strengthen-page",
+      "slug": "image-to-markdown",
+      "url": "https://markdownlens.ayushdev.com/image-to-markdown",
+      "target_queries": [
+        "bild zu markdown",
+        "pdf to markdown with local image links",
+        "image to markdown"
+      ],
+      "baseline": {
+        "impressions": 47,
+        "clicks": 0,
+        "position": 33.5,
+        "window_days": 90,
+        "window_end": "2026-11-12",
+        "page": "/image-to-markdown"
+      },
+      "linked_from": [],
+      "cta_campaign": "",
+      "commit": "9d9c2a9",
+      "notes": "Backfilled 2026-11-15. Baseline is the finder's 90-day window ending 2026-11-12 (the day of the change), restricted to the target queries. Sample input/output, how-to section, query-matching H1, dedicated meta description, extra FAQs."
+    }
+  ]
+}
