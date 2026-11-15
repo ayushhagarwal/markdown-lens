@@ -52,7 +52,7 @@
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
     "remark-parse": "^11.0.0",
-    "tailwind-merge": "^3.6.0",
+    "tailwind-merge": "^3.7.0",
     "tesseract.js": "^7.0.0",
     "turndown": "^7.2.4",
     "turndown-plugin-gfm": "^1.0.2",
