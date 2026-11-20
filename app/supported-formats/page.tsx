@@ -107,7 +107,7 @@ export default function SupportedFormatsPage() {
               <div className="card reveal p-6 sm:p-8">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent"><Eye aria-hidden="true" className="h-5 w-5" /></span>
                 <h2 className="heading mt-5 text-2xl">Designed for review</h2>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">Every conversion opens in the editable workspace with a rendered preview, document outline, warnings, statistics, and asset-aware export.</p>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">Every conversion opens in the editable workspace with a rendered preview, document outline, warnings, statistics, and asset-aware export, including <Link href="/markdown-to-word" className="link-underline">Markdown to Word (.docx) export</Link>.</p>
               </div>
               <div className="card reveal p-6 sm:p-8">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent"><CircleAlert aria-hidden="true" className="h-5 w-5" /></span>

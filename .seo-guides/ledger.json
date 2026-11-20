@@ -169,6 +169,43 @@
       "cta_campaign": "",
       "commit": "9d9c2a9",
       "notes": "Backfilled 2026-11-15. Baseline is the finder's 90-day window ending 2026-11-12 (the day of the change), restricted to the target queries. Sample input/output, how-to section, query-matching H1, dedicated meta description, extra FAQs."
+    },
+    {
+      "date": "2026-11-20",
+      "action": "new-guide",
+      "demand_led": true,
+      "slug": "markdown-to-word",
+      "url": "https://markdownlens.ayushdev.com/markdown-to-word",
+      "target_queries": [
+        "markdown to word",
+        "convert markdown to word",
+        "markdown to docx",
+        "md to docx",
+        "markdown to word converter",
+        "convert md to docx",
+        "md to word",
+        "markdown to word pandoc",
+        "markdown to word google docs",
+        "markdown to docx converter"
+      ],
+      "baseline": {
+        "impressions": 0,
+        "clicks": 0,
+        "position": null,
+        "window_days": 90,
+        "window_end": "2026-11-17",
+        "page": null
+      },
+      "intent_evidence": "Web search 2026-11-20 for 'markdown to word docx converter' and 'how to convert markdown to word': results are dedicated converter pages (CloudConvert md-to-docx, WPS Markdown to Word, Mathpix, iwl.me) plus Pandoc tutorials and how-to articles (Office Watch, The Windows Club). No existing page on this site covers Markdown -> Word; the app's DOCX exporter shipped in 6e4240e.",
+      "information_gain": "Element-by-element mapping and a sample read back from the real exporter output (lib/export/markdown-to-docx.ts), including limits: math as LaTeX source, Mermaid as code, footnotes as an end notes section, remote images not fetched, default page size A4.",
+      "linked_from": [
+        "/word-to-markdown",
+        "/supported-formats",
+        "/llms.txt"
+      ],
+      "cta_campaign": "",
+      "commit": null,
+      "notes": "First demand-led article. Finder streak 3, indexing gate 11/14 (79%). Expect 4-8 weeks before impressions."
     }
   ]
 }

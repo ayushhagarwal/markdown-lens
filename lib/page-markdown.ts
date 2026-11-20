@@ -13,7 +13,7 @@ import { supportedFormats } from "@/lib/supported-formats";
  * `Accept: text/markdown` (see the rewrites in next.config.ts).
  */
 
-const url = (path: string) => `${siteConfig.url}${path === "/" ? "" : path}`;
+const url = (path: string) => (/^https?:\/\//.test(path) ? path : `${siteConfig.url}${path === "/" ? "" : path}`);
 
 /** Fence a code sample with a run of backticks longer than any inside it. */
 function fence(language: string, content: string) {
@@ -63,8 +63,8 @@ function formatPageMarkdown(config: FormatLandingConfig) {
         `## ${config.sample.heading}`,
         `Input: \`${config.sample.fileName}\` (${config.sample.sourceLabel})`,
         config.sample.sourceLines.map((line) => `- \`${line.replace(/`/g, "'")}\``).join("\n"),
-        "Markdown output:",
-        fence("markdown", config.sample.markdown),
+        `${config.sample.outputLabel ?? "Markdown output"}:`,
+        fence(config.sample.outputLabel ? "text" : "markdown", config.sample.markdown),
         config.sample.note ?? "",
       ]
         .filter(Boolean)

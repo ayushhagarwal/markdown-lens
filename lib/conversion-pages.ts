@@ -271,8 +271,18 @@ export const wordPageConfig = {
       answer:
         "Embedded images are extracted as local document assets and can be exported with the Markdown bundle. Complex tables, columns, text boxes, merged cells, and precise page positioning may still require manual reconstruction because Markdown does not represent fixed page layout.",
     },
+    {
+      question: "Can I turn the Markdown back into a Word document?",
+      answer:
+        "Yes. After editing, choose Export → Export Word (.docx). Headings come back as Word heading styles, lists get Word numbering, and tables and stored images are included.",
+    },
   ],
   related: [
+    {
+      href: "/markdown-to-word",
+      title: "Markdown to Word converter",
+      description: "Export edited Markdown back to .docx with Word heading styles, lists, and tables.",
+    },
     {
       href: "/pdf-to-markdown",
       title: "PDF to Markdown converter",

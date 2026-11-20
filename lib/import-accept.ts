@@ -53,6 +53,11 @@ const landingImports = {
     fileLabel: "Choose an XML file to convert",
     rejectMessage: "Drop an .xml file to convert it on this page.",
   },
+  "/markdown-to-word": {
+    accept: ".md,.markdown,.txt",
+    fileLabel: "Choose a Markdown file to export",
+    rejectMessage: "Drop a .md file to open it, then export it as Word.",
+  },
   "/epub-to-markdown": {
     accept: ".epub",
     fileLabel: "Choose an EPUB file to convert",

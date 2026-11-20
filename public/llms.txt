@@ -14,6 +14,7 @@
 - [EPUB to Markdown Converter](https://markdownlens.ayushdev.com/epub-to-markdown): Convert unprotected EPUB chapters into one Markdown document.
 - [Image to Markdown](https://markdownlens.ayushdev.com/image-to-markdown): Import images with optional local English OCR.
 - [ZIP to Markdown Importer](https://markdownlens.ayushdev.com/zip-to-markdown): Convert supported files inside a local ZIP archive.
+- [Markdown to Word Converter](https://markdownlens.ayushdev.com/markdown-to-word): Export Markdown as a Word .docx locally, with heading styles, numbered lists, tables, and embedded images; compares Pandoc and Google Docs.
 - [Supported Formats](https://markdownlens.ayushdev.com/supported-formats): Compare PDF, DOCX, PPTX, XLSX, HTML, CSV, JSON, XML, EPUB, ZIP, image OCR, and Markdown workflows and limitations.
 - [Open the Markdown Editor](https://markdownlens.ayushdev.com/editor): Paste, edit, import, preview, copy, download, export, and print Markdown in a web browser.
 - [Markdown Cheatsheet](https://markdownlens.ayushdev.com/markdown-cheatsheet): Examples of headings, lists, task lists, tables, code blocks, Mermaid diagrams, and math.

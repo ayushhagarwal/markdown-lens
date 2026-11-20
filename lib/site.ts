@@ -33,6 +33,7 @@ export const siteConfig = {
     "Import images with optional local English OCR",
     "Convert text-based PDFs to Markdown locally",
     "Convert Word .docx files to Markdown locally",
+    "Export Markdown as a Word .docx with heading styles, numbered lists, and tables",
     "Export rendered Markdown as standalone HTML",
     "Print or save preview as PDF",
     "Local draft autosave with no account required",
@@ -86,8 +87,8 @@ export const moreApps = [
 export const pageModified: Record<string, string> = {
   "": "2026-11-12",
   "/pdf-to-markdown": "2026-11-12",
-  "/word-to-markdown": "2026-11-12",
-  "/supported-formats": "2026-11-12",
+  "/word-to-markdown": "2026-11-20",
+  "/supported-formats": "2026-11-20",
   "/markdown-cheatsheet": "2026-11-12",
   "/pptx-to-markdown": "2026-11-12",
   "/excel-to-markdown": "2026-11-12",
@@ -98,6 +99,7 @@ export const pageModified: Record<string, string> = {
   "/epub-to-markdown": "2026-11-12",
   "/image-to-markdown": "2026-11-12",
   "/zip-to-markdown": "2026-11-12",
+  "/markdown-to-word": "2026-11-20",
   "/about": "2026-11-12",
   "/privacy": "2026-11-12",
 };
@@ -112,6 +114,7 @@ export const sitemapPaths = [
   { path: "/word-to-markdown", priority: 0.9, changeFrequency: "monthly" as const },
   { path: "/supported-formats", priority: 0.9, changeFrequency: "monthly" as const },
   { path: "/markdown-cheatsheet", priority: 0.8, changeFrequency: "monthly" as const },
+  { path: "/markdown-to-word", priority: 0.8, changeFrequency: "monthly" as const },
   ...converterLinks
     .filter((link) => !["/pdf-to-markdown", "/word-to-markdown"].includes(link.href))
     .map((link) => ({

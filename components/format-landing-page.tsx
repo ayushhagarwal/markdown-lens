@@ -12,6 +12,12 @@ export type FormatLandingConfig = {
   summary: string;
   description: string;
   extensions: string;
+  /** Hero button text; defaults to "Open or convert {extensions}". */
+  ctaLabel?: string;
+  /** Line under "Limitations to review"; defaults to the Markdown-structure note for import pages. */
+  limitationsIntro?: string;
+  /** FAQ section title; defaults to "Questions about {extensions}". */
+  faqTitle?: string;
   preserves: readonly string[];
   limitations: readonly string[];
   steps: readonly string[];
@@ -24,6 +30,8 @@ export type FormatLandingConfig = {
     sourceLabel: string;
     sourceLines: readonly string[];
     markdown: string;
+    /** Output pane label; defaults to "Markdown output". */
+    outputLabel?: string;
     note?: string;
   };
   /** Extra how-to and reference sections rendered after the limitations. */
@@ -91,7 +99,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
                 <p className="rise-in mt-3 max-w-2xl text-sm leading-6 text-muted-foreground" style={{ "--i": 1 } as React.CSSProperties}>{config.description}</p>
                 <div className="rise-in mt-8 flex flex-col gap-3 sm:flex-row" style={{ "--i": 2 } as React.CSSProperties}>
                   <ConvertFileButton className="btn-primary group">
-                    Open or convert {config.extensions}
+                    {config.ctaLabel ?? `Open or convert ${config.extensions}`}
                     <ArrowRight aria-hidden="true" className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </ConvertFileButton>
                   <Link href="/supported-formats" className="btn-secondary">Compare formats</Link>
@@ -124,7 +132,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
             </div>
             <div className="card reveal p-6 sm:p-8">
               <h2 className="heading text-2xl sm:text-3xl">Limitations to review</h2>
-              <p className="mt-4 text-sm leading-6 text-muted-foreground">Markdown represents document structure, not every visual layout detail.</p>
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">{config.limitationsIntro ?? "Markdown represents document structure, not every visual layout detail."}</p>
               <ul className="mt-5 divide-y divide-border border-y border-border">
                 {config.limitations.map((item) => <li key={item} className="py-3.5 text-sm leading-6 text-muted-foreground">{item}</li>)}
               </ul>
@@ -139,7 +147,7 @@ export function FormatLandingPage({ config }: { config: FormatLandingConfig }) {
         ) : null}
 
         <section className="defer-paint mx-auto grid w-full max-w-7xl gap-8 border-t border-border px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.7fr_1.3fr] lg:px-8">
-          <SectionHeader eyebrow="Quick answers" title={`Questions about ${config.extensions}`} />
+          <SectionHeader eyebrow="Quick answers" title={config.faqTitle ?? `Questions about ${config.extensions}`} />
           <FaqList items={config.faq} />
         </section>
 
@@ -175,7 +183,7 @@ function SampleSection({ sample }: { sample: NonNullable<FormatLandingConfig["sa
         <div className="window min-w-0">
           <p className="window-bar text-xs font-medium text-muted-foreground">
             <span className="window-dots" aria-hidden><i /><i /><i /></span>
-            Markdown output
+            {sample.outputLabel ?? "Markdown output"}
           </p>
           <pre tabIndex={0} className="overflow-x-auto p-5 font-mono text-xs leading-6 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"><code>{sample.markdown}</code></pre>
         </div>
