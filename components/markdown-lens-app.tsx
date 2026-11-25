@@ -1417,11 +1417,11 @@ export function MarkdownLensApp() {
       </section>
 
       <header className="relative z-40 flex h-14 shrink-0 items-center justify-between gap-2 overflow-hidden border-b border-border bg-background/85 px-3 backdrop-blur-xl">
-        <a href="#main" className="sr-only left-4 top-4 z-[100] rounded-lg bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lift focus-visible:not-sr-only focus-visible:fixed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <a href="#main" className="sr-only left-4 top-4 z-100 rounded-lg bg-panel px-4 py-2 text-sm font-semibold text-foreground shadow-lift focus-visible:not-sr-only focus-visible:fixed focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
           Skip to main content
         </a>
         <div className="flex min-w-0 items-center gap-1">
-          <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1.5 text-[15px] font-semibold tracking-[-0.02em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Link href="/" prefetch={false} aria-label="Markdown Lens home" className="mr-1.5 flex items-center gap-2 rounded-lg px-1.5 py-1.5 text-[15px] font-semibold tracking-[-0.02em] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
             <BrandIcon className="h-6 w-6" priority />
             <span className="hidden sm:inline">Markdown Lens</span>
           </Link>
@@ -1434,7 +1434,7 @@ export function MarkdownLensApp() {
             type="button"
             onClick={() => setFormatGuideOpen(true)}
             aria-haspopup="dialog"
-            className="ml-0.5 hidden h-9 items-center rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
+            className="ml-0.5 hidden h-9 items-center rounded-lg px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
           >
             File types
           </button>
@@ -1467,13 +1467,13 @@ export function MarkdownLensApp() {
                 setInstallPrompt(null);
                 if (choice.outcome === "accepted") setNotice({ message: "Markdown Lens was installed.", tone: "success" });
               }}
-              className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5"
+              className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring sm:px-2.5"
             >
               <Download className="h-3.5 w-3.5" aria-hidden />
               <span className="hidden sm:inline">Install</span>
             </button>
           ) : null}
-          <button type="button" onClick={() => setCommandOpen(true)} aria-haspopup="dialog" className="mx-1 hidden h-9 w-44 items-center gap-2 rounded-lg border border-border bg-surface pl-2.5 pr-1.5 text-xs text-muted-foreground shadow-[inset_0_1px_1px_hsl(var(--shadow-color)/0.04)] transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex xl:w-56">
+          <button type="button" onClick={() => setCommandOpen(true)} aria-haspopup="dialog" className="mx-1 hidden h-9 w-44 items-center gap-2 rounded-lg border border-border bg-surface pl-2.5 pr-1.5 text-xs text-muted-foreground shadow-[inset_0_1px_1px_hsl(var(--shadow-color)/0.04)] transition-colors hover:border-foreground/20 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring lg:flex xl:w-56">
             <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0" /> <span>Commands</span><kbd className="ml-auto">{modPrefix}K</kbd>
           </button>
           <a
@@ -1483,7 +1483,7 @@ export function MarkdownLensApp() {
             aria-label="Star Markdown Lens on GitHub (opens in a new tab)"
             title="Star Markdown Lens on GitHub"
             onClick={markStarPromptResolved}
-            className="star-target hidden h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+            className="star-target hidden h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
           >
             <GithubIcon className="h-4 w-4" aria-hidden />
             <span className="hidden xl:inline">Star</span>
@@ -1519,7 +1519,7 @@ export function MarkdownLensApp() {
             }}
             data-pane={id}
             className={cn(
-              "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              "flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
               mobilePane === id && "bg-panel text-foreground shadow-soft",
             )}
           >
@@ -1552,7 +1552,7 @@ export function MarkdownLensApp() {
           <div className="px-2.5 pb-2">
             <label className="flex h-9 items-center gap-2 rounded-lg border border-border bg-panel px-2.5 text-xs text-muted-foreground transition-colors focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/25">
               <Search aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-              <input aria-label="Search documents" value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="Search documents" className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground" />
+              <input aria-label="Search documents" value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="Search documents" className="min-w-0 flex-1 bg-transparent text-foreground outline-hidden placeholder:text-muted-foreground" />
             </label>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
@@ -1598,21 +1598,21 @@ export function MarkdownLensApp() {
           <div className="grid gap-1.5 border-t border-border p-2">
             {localFiles.supported ? (
               <div className="grid grid-cols-2 gap-1.5">
-                <button type="button" onClick={() => void localFiles.openFiles()} className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-panel px-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => void localFiles.openFiles()} className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-panel px-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                   <HardDrive aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
                   Open file
                 </button>
-                <button type="button" onClick={() => void localFiles.openFolder()} className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-panel px-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => void localFiles.openFolder()} className="flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-panel px-2 text-xs font-medium text-foreground transition-colors hover:border-foreground/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                   <FolderOpen aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
                   Open folder
                 </button>
               </div>
             ) : null}
-            <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button type="button" onClick={() => setShowTrash((current) => !current)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
               {showTrash ? <BookOpen aria-hidden="true" className="h-3.5 w-3.5" /> : <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />}
               {showTrash ? "Back to documents" : "Trash"}
             </button>
-            <button type="button" onClick={() => void importFiles([createSamplePdfFile()])} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-panel px-2.5 text-xs font-medium text-foreground shadow-soft transition-colors hover:border-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button type="button" onClick={() => void importFiles([createSamplePdfFile()])} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-panel px-2.5 text-xs font-medium text-foreground shadow-soft transition-colors hover:border-foreground/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
               <FileText aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
               Try a sample PDF
             </button>
@@ -1638,7 +1638,7 @@ export function MarkdownLensApp() {
             </WorkspacePanel>
             <button
               type="button"
-              className="group relative flex cursor-col-resize items-center justify-center border-x border-border bg-surface transition-colors hover:bg-accent/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-accent/10"
+              className="group relative flex cursor-col-resize items-center justify-center border-x border-border bg-surface transition-colors hover:bg-accent/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring active:bg-accent/10"
               role="separator"
               aria-orientation="vertical"
               aria-label="Resize editor and preview"
@@ -1734,7 +1734,7 @@ export function MarkdownLensApp() {
           />
           <nav className="min-h-0 flex-1 overflow-y-auto pb-2 pr-2" aria-label="Document outline">
             {headings.length ? headings.map((heading) => (
-              <button key={`${heading.id}-${heading.line}`} type="button" aria-current={activeHeadingIdState === heading.id ? "location" : undefined} onClick={() => navigateToHeading(heading.id)} className={cn("flex w-full items-start gap-2 rounded-r-md border-l-2 border-transparent py-1.5 pr-2 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", activeHeadingIdState === heading.id && "border-accent bg-panel font-medium text-foreground shadow-soft hover:border-accent hover:bg-panel")} style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
+              <button key={`${heading.id}-${heading.line}`} type="button" aria-current={activeHeadingIdState === heading.id ? "location" : undefined} onClick={() => navigateToHeading(heading.id)} className={cn("flex w-full items-start gap-2 rounded-r-md border-l-2 border-transparent py-1.5 pr-2 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", activeHeadingIdState === heading.id && "border-accent bg-panel font-medium text-foreground shadow-soft hover:border-accent hover:bg-panel")} style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
                 <span aria-hidden className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
                 <span aria-hidden className="line-clamp-2 leading-4">{heading.text}</span>
                 <span className="sr-only">{`${heading.text}, heading level ${heading.level}`}</span>
@@ -1746,7 +1746,7 @@ export function MarkdownLensApp() {
           <div className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
             <div className="flex min-h-7 items-center justify-between">
               <span>{headings.length} heading{headings.length === 1 ? "" : "s"}</span>
-              {activeDocument?.conversion ? <button type="button" aria-haspopup="dialog" onClick={() => setReportOpen(true)} className="rounded-md px-1.5 py-1 font-medium text-accent transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Conversion report</button> : null}
+              {activeDocument?.conversion ? <button type="button" aria-haspopup="dialog" onClick={() => setReportOpen(true)} className="rounded-md px-1.5 py-1 font-medium text-accent transition-colors hover:bg-accent-soft focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">Conversion report</button> : null}
             </div>
           </div>
         </aside>
@@ -1818,7 +1818,7 @@ export function MarkdownLensApp() {
           </span>
         </div>
         <div className="relative flex shrink-0 items-center gap-1.5">
-          <button ref={exportToggleRef} type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} aria-controls="export-options-menu" className="flex h-7 items-center gap-1 rounded-lg bg-accent pl-3 pr-2 text-xs font-semibold text-accent-foreground shadow-soft transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface">
+          <button ref={exportToggleRef} type="button" onClick={() => setExportOpen((open) => !open)} aria-haspopup="menu" aria-expanded={exportOpen} aria-controls="export-options-menu" className="flex h-7 items-center gap-1 rounded-lg bg-accent pl-3 pr-2 text-xs font-semibold text-accent-foreground shadow-soft transition-colors hover:bg-accent/90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-surface">
             Export <ChevronDown aria-hidden="true" className={cn("h-3.5 w-3.5 transition-transform", exportOpen && "rotate-180")} />
           </button>
           <div className="hidden h-7 overflow-hidden rounded-lg border border-border bg-panel xl:flex">
@@ -2000,7 +2000,7 @@ export function MarkdownLensApp() {
   );
 }
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
 const statusChip = cn("inline-flex h-7 shrink-0 items-center whitespace-nowrap rounded-md px-2 transition-colors hover:bg-muted hover:text-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent", focusRing);
 const statusChipPressed = "bg-panel text-foreground shadow-soft hover:bg-panel";
 const menuEyebrow = "px-2.5 pb-0.5 pt-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground";
@@ -2089,7 +2089,7 @@ function RenameDialog({ value, onChange, onSubmit, onClose }: { value: string; o
       <h2 id="rename-document-title" className="text-lg font-semibold tracking-[-0.02em]">Rename document</h2>
       <form onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
         <label htmlFor="rename-document-input" className="mt-4 block text-sm font-medium text-foreground">Document name</label>
-        <input id="rename-document-input" value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30" />
+        <input id="rename-document-input" value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-hidden transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30" />
         <div className="mt-6 flex justify-end gap-2">
           <button type="button" onClick={onClose} className={dialogCancelButton}>Cancel</button>
           <button type="submit" className={dialogConfirmButton}>Save name</button>
@@ -2223,16 +2223,16 @@ function DocumentRow({ document, query, active, trashed, onSelect, onRename, onD
     <div className={cn("relative mb-0.5 rounded-lg transition-colors", current ? "bg-panel shadow-soft" : "hover:bg-muted/70", menuOpen && !current && "bg-muted/70")}>
       {current ? <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-accent" /> : null}
       <div className="flex items-start">
-        <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 flex-col gap-1 rounded-lg py-2 pl-3 pr-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+        <button type="button" onClick={onSelect} onDoubleClick={onRename} className="flex min-w-0 flex-1 flex-col gap-1 rounded-lg py-2 pl-3 pr-1 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
           <span className="flex min-h-7 min-w-0 items-center gap-2">
             <span className={cn("shrink-0 rounded-[5px] border px-1 py-px font-mono text-[9px] font-semibold tracking-wide", current ? "border-accent/25 bg-accent-soft text-accent" : "border-border bg-panel text-muted-foreground")}>{format}</span>
             <span className={cn("min-w-0 flex-1 truncate text-xs", current ? "font-medium text-foreground" : "text-foreground/90")}>{document.title}</span>
             {warnings > 0 ? <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 text-[10px] font-medium text-amber-800 dark:text-amber-200" aria-label={`${warnings} conversion warning${warnings === 1 ? "" : "s"}`}>{warnings}</span> : null}
             <span className={cn("shrink-0 text-[10px] tabular-nums", current ? "text-foreground/75" : "text-muted-foreground")}>{relativeTime(document.updatedAt)}</span>
           </span>
-          {snippet ? <span className="line-clamp-1 pl-7 text-[10px] text-muted-foreground">{snippet.prefix}<mark className="rounded-sm bg-amber-400/35 px-0.5 text-foreground">{snippet.match}</mark>{snippet.suffix}</span> : null}
+          {snippet ? <span className="line-clamp-1 pl-7 text-[10px] text-muted-foreground">{snippet.prefix}<mark className="rounded-xs bg-amber-400/35 px-0.5 text-foreground">{snippet.match}</mark>{snippet.suffix}</span> : null}
         </button>
-        <button ref={triggerRef} type="button" aria-label={`Actions for ${document.title}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} className={cn("inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", menuOpen && "bg-muted text-foreground")}>
+        <button ref={triggerRef} type="button" aria-label={`Actions for ${document.title}`} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)} className={cn("inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring", menuOpen && "bg-muted text-foreground")}>
           <Ellipsis aria-hidden="true" className="h-4 w-4" />
         </button>
       </div>
@@ -2241,7 +2241,7 @@ function DocumentRow({ document, query, active, trashed, onSelect, onRename, onD
           {actions.map((action) => {
             const destructive = action.label === "Delete permanently" || action.label === "Move to Trash";
             return (
-              <button key={action.label} type="button" role="menuitem" onClick={() => { setMenuOpen(false); action.onClick(); }} className={cn("flex h-9 items-center rounded-md px-2.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", destructive && "text-danger")}>{action.label}</button>
+              <button key={action.label} type="button" role="menuitem" onClick={() => { setMenuOpen(false); action.onClick(); }} className={cn("flex h-9 items-center rounded-md px-2.5 text-left text-xs transition-colors hover:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring", destructive && "text-danger")}>{action.label}</button>
             );
           })}
         </div>
@@ -2255,7 +2255,7 @@ function VersionsDialog({ versions, onRestore, onCompare, onClose }: { versions:
     <DialogShell onClose={onClose} labelledBy="versions-title" className="max-w-md p-6">
       <DialogHeader titleId="versions-title" title="Local versions" description="Up to four snapshots stay on this device." closeLabel="Close local versions" onClose={onClose} />
       {versions.length ? (
-        <ul className="mt-5 max-h-64 space-y-1.5 overflow-y-auto rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Saved versions" tabIndex={0}>
+        <ul className="mt-5 max-h-64 space-y-1.5 overflow-y-auto rounded-xl focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring" aria-label="Saved versions" tabIndex={0}>
           {versions.map((version) => {
             const label = versionTimeLabel(version.savedAt);
             return (
@@ -2278,10 +2278,10 @@ function ConversionWarningBanner({ count, onReview, onDismiss }: { count: number
   return (
     <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-700/25 bg-amber-500/10 px-3 py-0.5 text-amber-950 dark:border-amber-300/20 dark:text-amber-100">
       <TriangleAlert aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-amber-700 dark:text-amber-300" />
-      <button type="button" onClick={onReview} className="min-h-11 min-w-0 flex-1 truncate rounded-md text-left text-xs font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <button type="button" onClick={onReview} className="min-h-11 min-w-0 flex-1 truncate rounded-md text-left text-xs font-medium underline-offset-2 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
         {conversionWarningLabel(count)}
       </button>
-      <button type="button" onClick={onDismiss} className="min-h-11 shrink-0 rounded-lg px-3 text-xs font-medium transition-colors hover:bg-amber-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <button type="button" onClick={onDismiss} className="min-h-11 shrink-0 rounded-lg px-3 text-xs font-medium transition-colors hover:bg-amber-500/15 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
         Dismiss
       </button>
     </div>
@@ -2298,7 +2298,7 @@ function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; o
   const finished = jobs.some((job) => job.state === "completed" || job.state === "failed" || job.state === "cancelled");
   return (
     <div className="border-t border-border p-2">
-      <ul className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label="Conversion jobs" tabIndex={0}>
+      <ul className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring" aria-label="Conversion jobs" tabIndex={0}>
         {jobs.map((job) => {
           const percent = conversionProgressPercent(job.progress);
           // A finished job reports its outcome, not the last progress message it happened to emit.
@@ -2317,7 +2317,7 @@ function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; o
                 )}
                 <span className="min-w-0 flex-1 truncate font-medium">{job.fileName}</span>
                 {job.state === "running" || job.state === "queued" ? (
-                  <button type="button" onClick={() => onCancel(job.id)} aria-label={`Cancel conversion of ${job.fileName}`} className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <button type="button" onClick={() => onCancel(job.id)} aria-label={`Cancel conversion of ${job.fileName}`} className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                     <X aria-hidden="true" className="h-3.5 w-3.5" />
                   </button>
                 ) : null}
@@ -2325,7 +2325,7 @@ function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; o
               {job.state === "running" ? <ImportProgress fileName={job.fileName} percent={percent} /> : null}
               <p className={cn("mt-2 line-clamp-2 text-[10px] leading-4 text-muted-foreground", job.state === "failed" && "text-danger", job.state === "completed" && "text-accent")} role="status">{status}</p>
               {job.state === "failed" || job.state === "cancelled" ? (
-                <button type="button" onClick={() => onRetry(job.file)} aria-label={`Retry conversion of ${job.fileName}`} className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <button type="button" onClick={() => onRetry(job.file)} aria-label={`Retry conversion of ${job.fileName}`} className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                   <RotateCcw aria-hidden="true" className="h-3 w-3" />
                   Retry
                 </button>
@@ -2336,7 +2336,7 @@ function ImportJobs({ jobs, onCancel, onRetry, onClear }: { jobs: ImportJob[]; o
       </ul>
       <div className="mt-1 flex items-center justify-between gap-2 px-1 text-[10px] text-muted-foreground">
         <span>{jobs.length} file{jobs.length === 1 ? "" : "s"}</span>
-        <button type="button" onClick={onClear} disabled={!finished} className="min-h-11 rounded-md px-2 font-medium transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent">Clear finished</button>
+        <button type="button" onClick={onClear} disabled={!finished} className="min-h-11 rounded-md px-2 font-medium transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent">Clear finished</button>
       </div>
     </div>
   );
@@ -2376,8 +2376,8 @@ function CommandPalette({ search, onSearch, commands, onClose }: { search: strin
   };
   return (
     <DialogShell onClose={onClose} label="Command palette" placement="top" className="max-w-xl overflow-hidden">
-      <label className="flex h-14 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 shrink-0 text-accent" aria-hidden /><span className="sr-only">Search commands</span><input autoFocus value={search} onChange={(event) => { onSearch(event.target.value); setActiveIndex(0); }} aria-controls="command-palette-results" aria-activedescendant={commands[selectedIndex] ? `command-${selectedIndex}` : undefined} onKeyDown={(event) => { if (event.key === "Escape") onClose(); if (!commands.length) return; if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + commands.length) % commands.length); } if (event.key === "Home") { event.preventDefault(); setActiveIndex(0); } if (event.key === "End") { event.preventDefault(); setActiveIndex(commands.length - 1); } if (event.key === "Enter") { event.preventDefault(); runCommand(selectedIndex); } }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground" /></label>
-      <div id="command-palette-results" className="max-h-[50vh] overflow-y-auto p-2" role="listbox" aria-label="Commands">{commands.length ? commands.map((command, index) => <button key={command.label} id={`command-${index}`} type="button" role="option" aria-selected={index === selectedIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => runCommand(index)} className={cn("flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", index === selectedIndex ? "bg-accent-soft text-accent" : "text-foreground")}><span className="flex min-w-0 items-center gap-2.5">{command.label === "Star Markdown Lens on GitHub" ? <Star aria-hidden="true" className="h-3.5 w-3.5 shrink-0 fill-current text-highlight" /> : null}<span className="truncate">{command.label}</span></span>{command.hint ? <kbd className="shrink-0 text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-10 text-center text-sm text-muted-foreground" role="status">No matching commands.</p>}</div>
+      <label className="flex h-14 items-center gap-3 border-b border-border px-4"><Command className="h-4 w-4 shrink-0 text-accent" aria-hidden /><span className="sr-only">Search commands</span><input autoFocus value={search} onChange={(event) => { onSearch(event.target.value); setActiveIndex(0); }} aria-controls="command-palette-results" aria-activedescendant={commands[selectedIndex] ? `command-${selectedIndex}` : undefined} onKeyDown={(event) => { if (event.key === "Escape") onClose(); if (!commands.length) return; if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); setActiveIndex((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + commands.length) % commands.length); } if (event.key === "Home") { event.preventDefault(); setActiveIndex(0); } if (event.key === "End") { event.preventDefault(); setActiveIndex(commands.length - 1); } if (event.key === "Enter") { event.preventDefault(); runCommand(selectedIndex); } }} placeholder="Type a command…" className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-hidden placeholder:text-muted-foreground" /></label>
+      <div id="command-palette-results" className="max-h-[50vh] overflow-y-auto p-2" role="listbox" aria-label="Commands">{commands.length ? commands.map((command, index) => <button key={command.label} id={`command-${index}`} type="button" role="option" aria-selected={index === selectedIndex} onMouseEnter={() => setActiveIndex(index)} onClick={() => runCommand(index)} className={cn("flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring", index === selectedIndex ? "bg-accent-soft text-accent" : "text-foreground")}><span className="flex min-w-0 items-center gap-2.5">{command.label === "Star Markdown Lens on GitHub" ? <Star aria-hidden="true" className="h-3.5 w-3.5 shrink-0 fill-current text-highlight" /> : null}<span className="truncate">{command.label}</span></span>{command.hint ? <kbd className="shrink-0 text-xs text-muted-foreground">{command.hint}</kbd> : null}</button>) : <p className="px-3 py-10 text-center text-sm text-muted-foreground" role="status">No matching commands.</p>}</div>
       <div aria-hidden="true" className="flex items-center gap-4 border-t border-border bg-surface px-4 py-2.5 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5"><kbd>↑</kbd><kbd>↓</kbd>to navigate</span>
         <span className="flex items-center gap-1.5"><kbd>↵</kbd>to run</span>
@@ -2412,7 +2412,7 @@ function ConversionReportDialog({ document, onClose }: { document: DocumentRecor
       <p className="mt-5 text-xs leading-5 text-muted-foreground">Document conversion is structural rather than visually lossless. Review complex tables, columns, diagrams, and embedded media before publishing.</p>
       <p className="mt-3 text-xs leading-5 text-muted-foreground">
         Source is public if you want to{" "}
-        <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Inspect or star Markdown Lens on GitHub (opens in a new tab)" className="rounded-sm underline underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <a href={siteConfig.githubUrl} target="_blank" rel="noopener noreferrer" aria-label="Inspect or star Markdown Lens on GitHub (opens in a new tab)" className="rounded-xs underline underline-offset-2 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
           inspect or star it
         </a>
         .
@@ -2486,7 +2486,7 @@ function SharedDocumentDialog({
 }
 
 function ReportFact({ label, value }: { label: string; value: string }) {
-  return <div className="bg-panel p-3"><dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-mono text-xs">{value}</dd></div>;
+  return <div className="bg-panel p-3"><dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</dt><dd className="mt-1 wrap-break-word font-mono text-xs">{value}</dd></div>;
 }
 
 function ReportList({ title, items, empty }: { title: string; items: string[]; empty: string }) {
@@ -2543,16 +2543,16 @@ function RailHeader({ label, onClose }: { label: string; onClose: () => void }) 
 }
 
 function TopButton({ icon: Icon, label, onClick, emphasis, active, expanded, controls, className, compactAtNarrow, disabled }: { icon: typeof FileText; label: string; onClick: () => void; emphasis?: boolean; active?: boolean; expanded?: boolean; controls?: string; className?: string; compactAtNarrow?: boolean; disabled?: boolean }) {
-  return <button type="button" onClick={onClick} disabled={disabled} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-default disabled:opacity-50", emphasis ? "bg-accent font-semibold text-accent-foreground shadow-soft hover:bg-accent/90" : "text-muted-foreground hover:bg-muted hover:text-foreground", active && !emphasis && "bg-muted text-foreground", className)}><Icon aria-hidden="true" className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
+  return <button type="button" onClick={onClick} disabled={disabled} aria-label={compactAtNarrow ? label : undefined} aria-expanded={expanded} aria-controls={controls} className={cn("inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-default disabled:opacity-50", emphasis ? "bg-accent font-semibold text-accent-foreground shadow-soft hover:bg-accent/90" : "text-muted-foreground hover:bg-muted hover:text-foreground", active && !emphasis && "bg-muted text-foreground", className)}><Icon aria-hidden="true" className="h-3.5 w-3.5" /><span className={compactAtNarrow ? "max-[380px]:hidden" : undefined}>{label}</span></button>;
 }
 
 function IconButton({ icon: Icon, label, hasPopup, onClick, compact, className, disabled }: { icon: typeof FileText; label: string; hasPopup?: "dialog"; onClick: () => void; compact?: boolean; className?: string; disabled?: boolean }) {
-  return <button type="button" onClick={onClick} disabled={disabled} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className="h-4 w-4" /></button>;
+  return <button type="button" onClick={onClick} disabled={disabled} aria-label={label} aria-haspopup={hasPopup} title={label} className={cn("inline-flex shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50", compact ? "h-11 w-11" : "h-9 w-9", className)}><Icon aria-hidden="true" className="h-4 w-4" /></button>;
 }
 
 function MenuAction({ icon: Icon, label, detail, hasPopup, onClick }: { icon: typeof FileText; label: string; detail?: string; hasPopup?: "dialog"; onClick: () => void }) {
   return (
-    <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={onClick} className={cn("group flex w-full gap-2.5 rounded-lg px-2.5 text-left text-xs text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", detail ? "items-start py-2" : "h-9 items-center")}>
+    <button type="button" role="menuitem" tabIndex={-1} aria-haspopup={hasPopup} onClick={onClick} className={cn("group flex w-full gap-2.5 rounded-lg px-2.5 text-left text-xs text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring", detail ? "items-start py-2" : "h-9 items-center")}>
       <Icon aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-accent group-focus-visible:text-accent", detail && "mt-0.5")} />
       <span className="min-w-0">
         <span className="block font-medium">{label}</span>
@@ -2563,7 +2563,7 @@ function MenuAction({ icon: Icon, label, detail, hasPopup, onClick }: { icon: ty
 }
 
 function QuickExport({ label, onClick, ariaLabel }: { label: string; onClick: () => void; ariaLabel?: string }) {
-  return <button type="button" onClick={onClick} aria-label={ariaLabel} className="min-w-11 border-r border-border px-2.5 font-mono text-[10px] text-muted-foreground transition-colors last:border-r-0 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">{label}</button>;
+  return <button type="button" onClick={onClick} aria-label={ariaLabel} className="min-w-11 border-r border-border px-2.5 font-mono text-[10px] text-muted-foreground transition-colors last:border-r-0 hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">{label}</button>;
 }
 
 function PanelLoading({ label }: { label: string }) {

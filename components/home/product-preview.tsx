@@ -41,7 +41,7 @@ export function ProductPreview() {
     event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[data-preview-tab="${tab}"]`)?.focus();
   };
   const tabClass = (tab: PreviewTab) =>
-    `flex h-11 items-center justify-center gap-2 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${activeTab === tab ? "bg-panel text-foreground shadow-soft" : "text-muted-foreground"}`;
+    `flex h-11 items-center justify-center gap-2 rounded-lg text-sm font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring ${activeTab === tab ? "bg-panel text-foreground shadow-soft" : "text-muted-foreground"}`;
 
   return (
     <div className="relative min-w-0">

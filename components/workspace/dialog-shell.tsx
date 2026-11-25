@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-panel";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-panel";
 const dialogButtonBase = cn("inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg px-4 text-sm font-medium transition-colors", focusRing);
 
 export const dialogCancelButton = cn(dialogButtonBase, "text-muted-foreground hover:bg-muted hover:text-foreground");
@@ -79,8 +79,8 @@ export function DialogShell({
   return (
     <div
       className={cn(
-        "overlay-in fixed inset-0 flex justify-center bg-black/55 backdrop-blur-sm",
-        layer === 70 ? "z-[70]" : "z-[80]",
+        "overlay-in fixed inset-0 flex justify-center bg-black/55 backdrop-blur-xs",
+        layer === 70 ? "z-70" : "z-80",
         placement === "top" ? "items-start px-4 pt-[12vh]" : "items-center p-4",
       )}
       role={dismissOnBackdrop ? "presentation" : undefined}

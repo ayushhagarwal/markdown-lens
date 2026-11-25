@@ -98,8 +98,8 @@ export default function MarkdownCheatsheetPage() {
           </section>
         </div>
 
-        <nav aria-label="On this page" className="sticky top-16 z-20 border-y border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-          <div className="mx-auto flex w-full max-w-7xl gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] sm:px-6 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-8 [&::-webkit-scrollbar]:hidden">
+        <nav aria-label="On this page" className="sticky top-16 z-20 border-y border-border bg-background/85 backdrop-blur-sm supports-backdrop-filter:bg-background/70">
+          <div className="mx-auto flex w-full max-w-7xl gap-2 overflow-x-auto px-4 py-3 scrollbar-none sm:px-6 lg:flex-wrap lg:justify-center lg:overflow-visible lg:px-8 [&::-webkit-scrollbar]:hidden">
             {[
               ["#quick-reference", "Quick reference"],
               ["#basics-heading", "Text"],
@@ -112,7 +112,7 @@ export default function MarkdownCheatsheetPage() {
               ["#mermaid-heading", "Mermaid"],
               ["#faq-heading", "FAQ"],
             ].map(([href, label]) => (
-              <a key={href} href={href} className="chip shrink-0 whitespace-nowrap transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+              <a key={href} href={href} className="chip shrink-0 whitespace-nowrap transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                 {label}
               </a>
             ))}
@@ -126,7 +126,7 @@ export default function MarkdownCheatsheetPage() {
             title="Markdown syntax quick reference"
             description="The most common Markdown elements on one screen. Scroll down for rendered examples of each."
           />
-          <div role="region" aria-label="Markdown syntax quick reference table" tabIndex={0} className="card mt-8 overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <div role="region" aria-label="Markdown syntax quick reference table" tabIndex={0} className="card mt-8 overflow-x-auto focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
             <table className="w-full min-w-[480px] border-collapse text-left text-sm">
               <caption className="sr-only">Markdown syntax quick reference: element and the syntax that creates it</caption>
               <thead className="bg-surface">
@@ -185,7 +185,7 @@ export default function MarkdownCheatsheetPage() {
 
         <section className="defer-paint relative isolate my-20 overflow-hidden rounded-3xl border border-border bg-panel px-5 py-14 text-center shadow-lift sm:my-24 sm:px-10 sm:py-16">
           <div className="backdrop-grid" aria-hidden />
-          <div className="pointer-events-none absolute -bottom-40 left-1/2 -z-0 h-80 w-[min(40rem,120%)] -translate-x-1/2 rounded-full bg-accent/15 blur-3xl" aria-hidden />
+          <div className="pointer-events-none absolute -bottom-40 left-1/2 z-0 h-80 w-[min(40rem,120%)] -translate-x-1/2 rounded-full bg-accent/15 blur-3xl" aria-hidden />
           <div className="relative z-10">
             <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-accent-soft text-accent">
               <Eye className="h-5 w-5" aria-hidden />

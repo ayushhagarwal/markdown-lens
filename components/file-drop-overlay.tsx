@@ -42,7 +42,7 @@ export function useFileDrag() {
 export function DropToConvertOverlay({ active }: { active: boolean }) {
   if (!active) return null;
   return (
-    <div className="overlay-in pointer-events-none fixed inset-0 z-[90] flex items-center justify-center bg-background/75 p-6 backdrop-blur-sm" role="status">
+    <div className="overlay-in pointer-events-none fixed inset-0 z-90 flex items-center justify-center bg-background/75 p-6 backdrop-blur-xs" role="status">
       <div className="pop-in w-full max-w-md rounded-2xl border-2 border-dashed border-accent/60 bg-panel px-8 py-10 text-center shadow-lift">
         <span aria-hidden="true" className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-accent-soft text-accent">
           <FileUp className="h-7 w-7" />

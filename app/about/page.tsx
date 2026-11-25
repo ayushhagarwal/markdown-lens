@@ -130,7 +130,7 @@ export default function AboutPage() {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-between gap-3 font-semibold tracking-tight after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-none"
+                    className="flex items-center justify-between gap-3 font-semibold tracking-tight after:absolute after:inset-0 after:rounded-2xl after:content-[''] focus-visible:outline-hidden"
                   >
                     {link.label}
                     <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-accent" aria-hidden />

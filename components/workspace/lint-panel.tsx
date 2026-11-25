@@ -5,7 +5,7 @@ import { CircleAlert, CircleCheck, Info, TriangleAlert, WandSparkles, Wrench } f
 import type { MarkdownIssue, MarkdownIssueSeverity } from "@/lib/markdown-lint";
 import { cn } from "@/lib/utils";
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
 
 const groups: { severity: MarkdownIssueSeverity; label: string; icon: typeof Info; iconClass: string }[] = [
   { severity: "error", label: "Errors", icon: CircleAlert, iconClass: "text-danger" },
@@ -78,7 +78,7 @@ export const LintPanel = memo(function LintPanel({
                         className={cn("flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-surface", focusRing)}
                       >
                         <span className="w-12 shrink-0 font-mono tabular-nums text-muted-foreground">Ln {issue.line}</span>
-                        <span className="min-w-0 flex-1 break-words">{issue.message}</span>
+                        <span className="min-w-0 flex-1 wrap-break-word">{issue.message}</span>
                         {issue.fix ? <span className="shrink-0 text-[10px] font-medium text-accent">Fixable</span> : null}
                       </button>
                     </li>

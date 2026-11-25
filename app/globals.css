@@ -1,102 +1,315 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* ---------------------------------------------------------------------------
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-panel: hsl(var(--panel));
+  --color-panel-foreground: hsl(var(--panel-foreground));
+  --color-surface: hsl(var(--surface));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-soft: hsl(var(--accent-soft));
+  --color-ring: hsl(var(--ring));
+  --color-highlight: hsl(var(--highlight));
+  --color-danger: hsl(var(--danger));
+
+  /* Tailwind v3 line heights: fixed lengths, so children with a smaller font size
+     (text-[11px] labels) inherit the parent's line box rather than a ratio. */
+  --text-xs--line-height: 1rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+
+  --font-sans: var(--font-geist-sans), Inter, ui-sans-serif, system-ui;
+  --font-mono: var(--font-geist-mono), SFMono-Regular, Consolas, monospace;
+
+  --shadow-panel:
+    0 1px 2px hsl(var(--shadow-color) / 0.05),
+    0 20px 70px -48px hsl(var(--shadow-color) / 0.55);
+  --shadow-soft:
+    0 1px 2px hsl(var(--shadow-color) / 0.05),
+    0 12px 32px -18px hsl(var(--shadow-color) / 0.25);
+  --shadow-lift:
+    0 2px 4px hsl(var(--shadow-color) / 0.06),
+    0 30px 70px -30px hsl(var(--shadow-color) / 0.45);
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-sm font-semibold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+    transition:
+      transform 180ms var(--ease-out),
+      box-shadow 180ms var(--ease-out),
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease;
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
+    @apply h-12 bg-accent text-accent-foreground;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      0 1px 2px hsl(var(--shadow-color) / 0.2),
+      0 10px 28px -12px hsl(var(--accent) / 0.65);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.28),
+        0 2px 4px hsl(var(--shadow-color) / 0.2),
+        0 16px 36px -12px hsl(var(--accent) / 0.75);
+    }
+  }
+}
+
+@layer components {
+  .btn-secondary {
+    @apply relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-sm font-semibold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+    transition:
+      transform 180ms var(--ease-out),
+      box-shadow 180ms var(--ease-out),
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease;
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
+    @apply h-12 border border-border bg-panel text-foreground;
+    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06);
+
+    &:hover {
+      @apply border-foreground/25 bg-muted;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+@layer components {
+  .btn-ghost {
+    @apply relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-sm font-semibold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+    transition:
+      transform 180ms var(--ease-out),
+      box-shadow 180ms var(--ease-out),
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease;
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
+    @apply h-11 text-muted-foreground hover:bg-muted hover:text-foreground;
+  }
+}
+
+@layer components {
+  .btn-header {
+    @apply relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-sm font-semibold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
+    transition:
+      transform 180ms var(--ease-out),
+      box-shadow 180ms var(--ease-out),
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease;
+
+    &:active {
+      transform: translateY(0) scale(0.98);
+    }
+    @apply h-10 bg-foreground px-4 text-background hover:bg-foreground/85;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-border bg-panel;
+    box-shadow:
+      0 1px 2px hsl(var(--shadow-color) / 0.04),
+      0 24px 48px -32px hsl(var(--shadow-color) / 0.22);
+  }
+}
+
+@layer components {
+  .card-interactive {
+    transition:
+      transform 240ms var(--ease-out),
+      border-color 240ms ease,
+      box-shadow 240ms var(--ease-out);
+
+    &:hover {
+      @apply border-foreground/20;
+      transform: translateY(-3px);
+      box-shadow:
+        0 1px 2px hsl(var(--shadow-color) / 0.05),
+        0 32px 60px -30px hsl(var(--shadow-color) / 0.38);
+    }
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-accent;
+  }
+}
+
+@layer components {
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-panel px-3 py-1 text-xs font-medium text-muted-foreground;
+  }
+}
+
+@layer components {
+  .link-underline {
+    @apply rounded-xs font-medium text-accent underline decoration-accent/35 underline-offset-4 transition-colors hover:decoration-accent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}
+
+@layer components {
+  .display {
+    @apply text-balance font-semibold tracking-[-0.045em];
+    line-height: 1.02;
+  }
+}
+
+@layer components {
+  .heading {
+    @apply text-balance font-semibold tracking-[-0.035em];
+    line-height: 1.08;
+  }
+}
+
+@layer components {
+  .code-block {
+    @apply overflow-x-auto rounded-xl border border-white/10 bg-[#0b1014] p-4 font-mono text-xs leading-6 text-slate-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent;
+  }
+}
+
+@layer base {
+  /* ---------------------------------------------------------------------------
    Markdown Lens v2 design tokens
    Warm paper + ink in light mode, deep ink + mint in dark mode. One accent.
    --------------------------------------------------------------------------- */
-:root {
-  --background: 40 23% 97%;
-  --foreground: 200 22% 9%;
-  --border: 40 12% 86%;
-  --muted: 40 14% 92%;
-  --muted-foreground: 200 8% 37%;
-  --panel: 0 0% 100%;
-  --panel-foreground: 200 24% 10%;
-  --surface: 40 20% 95%;
-  --accent: 168 84% 20%;
-  --accent-foreground: 0 0% 100%;
-  --accent-soft: 164 56% 91%;
-  --ring: 168 76% 28%;
-  --highlight: 36 92% 42%;
-  --danger: 4 72% 44%;
-  --shadow-color: 200 30% 12%;
-  --grid-line: 200 20% 12% / 0.045;
-  --glow: 166 78% 40% / 0.16;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
-}
+  :root {
+    --background: 40 23% 97%;
+    --foreground: 200 22% 9%;
+    --border: 40 12% 86%;
+    --muted: 40 14% 92%;
+    --muted-foreground: 200 8% 37%;
+    --panel: 0 0% 100%;
+    --panel-foreground: 200 24% 10%;
+    --surface: 40 20% 95%;
+    --accent: 168 84% 20%;
+    --accent-foreground: 0 0% 100%;
+    --accent-soft: 164 56% 91%;
+    --ring: 168 76% 28%;
+    --highlight: 36 92% 42%;
+    --danger: 4 72% 44%;
+    --shadow-color: 200 30% 12%;
+    --grid-line: 200 20% 12% / 0.045;
+    --glow: 166 78% 40% / 0.16;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
 
-.dark {
-  --background: 195 16% 5%;
-  --foreground: 170 10% 94%;
-  --border: 190 9% 16%;
-  --muted: 190 10% 12%;
-  --muted-foreground: 185 6% 64%;
-  --panel: 195 14% 7%;
-  --panel-foreground: 170 12% 94%;
-  --surface: 195 13% 8.5%;
-  --accent: 162 70% 56%;
-  --accent-foreground: 195 40% 6%;
-  --accent-soft: 166 46% 12%;
-  --ring: 162 70% 48%;
-  --highlight: 42 96% 62%;
-  --danger: 4 86% 68%;
-  --shadow-color: 200 60% 2%;
-  --grid-line: 170 30% 90% / 0.04;
-  --glow: 162 80% 50% / 0.14;
-}
+  .dark {
+    --background: 195 16% 5%;
+    --foreground: 170 10% 94%;
+    --border: 190 9% 16%;
+    --muted: 190 10% 12%;
+    --muted-foreground: 185 6% 64%;
+    --panel: 195 14% 7%;
+    --panel-foreground: 170 12% 94%;
+    --surface: 195 13% 8.5%;
+    --accent: 162 70% 56%;
+    --accent-foreground: 195 40% 6%;
+    --accent-soft: 166 46% 12%;
+    --ring: 162 70% 48%;
+    --highlight: 42 96% 62%;
+    --danger: 4 86% 68%;
+    --shadow-color: 200 60% 2%;
+    --grid-line: 170 30% 90% / 0.04;
+    --glow: 162 80% 50% / 0.14;
+  }
 
-* {
-  box-sizing: border-box;
-}
+  * {
+    box-sizing: border-box;
+  }
 
-html {
-  min-width: 320px;
-  scroll-padding-top: 5rem;
-}
+  html {
+    min-width: 320px;
+    scroll-padding-top: 5rem;
+  }
 
-body {
-  margin: 0;
-  overflow-x: clip;
-  background: hsl(var(--background));
-  font-family: var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "ss01", "cv11";
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
+  body {
+    margin: 0;
+    overflow-x: clip;
+    background: hsl(var(--background));
+    font-family:
+      var(--font-geist-sans), Inter, ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: 'ss01', 'cv11';
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
 
-button,
-input,
-textarea {
-  font: inherit;
-}
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
 
-button,
-a,
-input {
-  -webkit-tap-highlight-color: transparent;
-}
+  button,
+  a,
+  input {
+    -webkit-tap-highlight-color: transparent;
+  }
 
-kbd {
-  border: 1px solid hsl(var(--border));
-  border-bottom-width: 2px;
-  border-radius: 0.35rem;
-  background: hsl(var(--surface));
-  padding: 0.08rem 0.36rem;
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 0.66rem;
-  color: hsl(var(--muted-foreground));
-}
+  kbd {
+    border: 1px solid hsl(var(--border));
+    border-bottom-width: 2px;
+    border-radius: 0.35rem;
+    background: hsl(var(--surface));
+    padding: 0.08rem 0.36rem;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 0.66rem;
+    color: hsl(var(--muted-foreground));
+  }
 
-::selection {
-  background: hsl(var(--accent) / 0.22);
+  ::selection {
+    background: hsl(var(--accent) / 0.22);
+  }
 }
 
 /* ---------------------------------------------------------------------------
-   Workspace (editor) shell
-   --------------------------------------------------------------------------- */
+ Workspace (editor) shell
+ --------------------------------------------------------------------------- */
+
 .workspace-shell {
   font-size: 0.875rem;
 }
@@ -140,93 +353,8 @@ kbd {
 }
 
 /* ---------------------------------------------------------------------------
-   Components
-   --------------------------------------------------------------------------- */
-@layer components {
-  .btn-primary,
-  .btn-secondary,
-  .btn-ghost,
-  .btn-header {
-    @apply relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl px-5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50;
-    transition: transform 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background-color 180ms ease, border-color 180ms ease, color 180ms ease;
-  }
-
-  .btn-primary:active,
-  .btn-secondary:active,
-  .btn-ghost:active,
-  .btn-header:active {
-    transform: translateY(0) scale(0.98);
-  }
-
-  .btn-primary {
-    @apply h-12 bg-accent text-accent-foreground;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 1px 2px hsl(var(--shadow-color) / 0.2), 0 10px 28px -12px hsl(var(--accent) / 0.65);
-  }
-
-  .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 2px 4px hsl(var(--shadow-color) / 0.2), 0 16px 36px -12px hsl(var(--accent) / 0.75);
-  }
-
-  .btn-secondary {
-    @apply h-12 border border-border bg-panel text-foreground;
-    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.06);
-  }
-
-  .btn-secondary:hover {
-    @apply border-foreground/25 bg-muted;
-    transform: translateY(-1px);
-  }
-
-  .btn-ghost {
-    @apply h-11 text-muted-foreground hover:bg-muted hover:text-foreground;
-  }
-
-  .btn-header {
-    @apply h-10 bg-foreground px-4 text-background hover:bg-foreground/85;
-  }
-
-  .card {
-    @apply rounded-2xl border border-border bg-panel;
-    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.04), 0 24px 48px -32px hsl(var(--shadow-color) / 0.22);
-  }
-
-  .card-interactive {
-    transition: transform 240ms var(--ease-out), border-color 240ms ease, box-shadow 240ms var(--ease-out);
-  }
-
-  .card-interactive:hover {
-    @apply border-foreground/20;
-    transform: translateY(-3px);
-    box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.05), 0 32px 60px -30px hsl(var(--shadow-color) / 0.38);
-  }
-
-  .eyebrow {
-    @apply inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-accent;
-  }
-
-  .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-border bg-panel px-3 py-1 text-xs font-medium text-muted-foreground;
-  }
-
-  .link-underline {
-    @apply rounded-sm font-medium text-accent underline decoration-accent/35 underline-offset-4 transition-colors hover:decoration-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
-  }
-
-  .display {
-    @apply text-balance font-semibold tracking-[-0.045em];
-    line-height: 1.02;
-  }
-
-  .heading {
-    @apply text-balance font-semibold tracking-[-0.035em];
-    line-height: 1.08;
-  }
-
-  .code-block {
-    @apply overflow-x-auto rounded-xl border border-white/10 bg-[#0b1014] p-4 font-mono text-xs leading-6 text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
-  }
-}
+ Components
+ --------------------------------------------------------------------------- */
 
 /* Window chrome used by product mock-ups. */
 .window {

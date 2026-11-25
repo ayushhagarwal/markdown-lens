@@ -40,7 +40,7 @@ export default function NotFound() {
           </div>
           <nav className="rise-in mt-10 flex flex-wrap justify-center gap-2" aria-label="Popular converters" style={{ "--i": 4 } as React.CSSProperties}>
             {converterLinks.slice(0, 6).map((link) => (
-              <Link key={link.href} href={link.href} className="chip transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+              <Link key={link.href} href={link.href} className="chip transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                 {link.label}
               </Link>
             ))}

@@ -176,7 +176,7 @@ function SampleSection({ sample }: { sample: NonNullable<FormatLandingConfig["sa
           </p>
           <ul className="space-y-2 p-5">
             {sample.sourceLines.map((line, index) => (
-              <li key={`${line}-${index}`} className="whitespace-pre-wrap break-words rounded-lg bg-muted/70 px-3 py-2 text-muted-foreground"><code className="font-mono text-xs">{line}</code></li>
+              <li key={`${line}-${index}`} className="whitespace-pre-wrap wrap-break-word rounded-lg bg-muted/70 px-3 py-2 text-muted-foreground"><code className="font-mono text-xs">{line}</code></li>
             ))}
           </ul>
         </div>
@@ -185,7 +185,7 @@ function SampleSection({ sample }: { sample: NonNullable<FormatLandingConfig["sa
             <span className="window-dots" aria-hidden><i /><i /><i /></span>
             {sample.outputLabel ?? "Markdown output"}
           </p>
-          <pre tabIndex={0} className="overflow-x-auto p-5 font-mono text-xs leading-6 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"><code>{sample.markdown}</code></pre>
+          <pre tabIndex={0} className="overflow-x-auto p-5 font-mono text-xs leading-6 text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"><code>{sample.markdown}</code></pre>
         </div>
       </div>
     </section>
@@ -206,7 +206,7 @@ function GuideSection({ section }: { section: FormatLandingSection }) {
         </ListTag>
       ) : null}
       {section.table ? (
-        <div role="region" aria-label={section.table.caption} tabIndex={0} className="mt-6 overflow-x-auto rounded-xl border border-border bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <div role="region" aria-label={section.table.caption} tabIndex={0} className="mt-6 overflow-x-auto rounded-xl border border-border bg-panel focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
           <table className="w-full min-w-[480px] border-collapse text-left text-sm">
             <caption className="sr-only">{section.table.caption}</caption>
             <thead className="bg-surface">

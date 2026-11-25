@@ -4,6 +4,16 @@ All notable Markdown Lens changes are documented here.
 
 ## Unreleased
 
+### Changed
+
+- Requires Node.js 26.13.1 (current LTS) and npm 11.20.
+- Upgraded to Tailwind CSS 4, ESLint 10, Vitest 5, jsdom 31, and Mermaid 12, and refreshed all other dependencies to their latest releases. The site renders the same as before.
+- Removed the unused `@tailwindcss/typography` plugin and `autoprefixer` (Tailwind 4 handles vendor prefixes).
+
+### Fixed
+
+- Outline entries, the lint status chip, and the font size buttons now include their visible text in their accessible names.
+
 ### Security
 
 - Imported and restored image assets are limited to raster types (PNG, JPEG, GIF, WebP, AVIF, BMP). SVG and other scriptable types from Word, PowerPoint, the clipboard, or workspace backups are no longer stored or exposed as same-origin `blob:` URLs, and existing stored SVG assets are no longer displayed.

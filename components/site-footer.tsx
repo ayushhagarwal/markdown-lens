@@ -4,7 +4,7 @@ import { BrandIcon } from "@/components/brand-icon";
 import { GithubStarLink } from "@/components/github-star-link";
 import { converterLinks, moreApps, siteConfig } from "@/lib/site";
 
-const footerLinkClassName = "rounded-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
+const footerLinkClassName = "rounded-xs transition-colors hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface";
 
 function ExternalFooterLink({ href, label, children }: { href: string; label: string; children: string }) {
   return (
@@ -20,7 +20,7 @@ export function SiteFooter() {
       <div className="mx-auto w-full max-w-7xl px-4 py-14 text-sm sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-[1.3fr_2fr]">
           <div className="max-w-sm">
-            <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg font-semibold tracking-tight focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
               <BrandIcon className="h-8 w-8" />
               Markdown Lens
             </Link>

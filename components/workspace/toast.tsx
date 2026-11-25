@@ -15,7 +15,7 @@ const toneStyles: Record<ToastTone, { icon: typeof Check; circle: string; iconCl
   star: { icon: Star, circle: "bg-highlight/15 text-highlight", iconClass: "fill-current", timer: "bg-highlight/80" },
 };
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
  * Compact toast card. Auto-dismissing toasts show a countdown bar; hovering or
@@ -81,13 +81,13 @@ export const Notice = memo(function Notice({
         if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
         setPaused(false);
       }}
-      className="toast fixed bottom-14 left-1/2 z-[90] w-max max-w-[min(30rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-panel text-xs text-foreground shadow-lift"
+      className="toast fixed bottom-14 left-1/2 z-90 w-max max-w-[min(30rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-panel text-xs text-foreground shadow-lift"
     >
       <div className="flex items-center gap-3 py-2.5 pl-2.5 pr-2">
         <span aria-hidden="true" className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full", style.circle)}>
           <Icon className={cn("h-3.5 w-3.5", style.iconClass)} />
         </span>
-        <span className="min-w-0 flex-1 leading-5 [overflow-wrap:anywhere]">{message}</span>
+        <span className="min-w-0 flex-1 leading-5 wrap-anywhere">{message}</span>
         {actionLabel && actionHref ? (
           <a
             href={actionHref}

@@ -28,7 +28,7 @@ export function ExampleCard({
           <p className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">Markdown</p>
           <pre
             tabIndex={0}
-            className="code-block whitespace-pre-wrap break-words text-[13px]"
+            className="code-block whitespace-pre-wrap wrap-break-word text-[13px]"
           >
             <code>{syntax}</code>
           </pre>
@@ -52,7 +52,7 @@ function OpenExampleButton({ title, markdown }: { title: string; markdown: strin
         router.push("/editor");
       }}
       aria-label={`Open this example: ${title}`}
-      className="-mr-2 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="-mr-2 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg px-2.5 text-xs font-semibold text-accent transition-colors hover:bg-accent-soft focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
       Open this example
     </button>

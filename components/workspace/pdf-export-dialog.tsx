@@ -14,7 +14,7 @@ import {
 } from "@/lib/export/print-pdf";
 import { cn } from "@/lib/utils";
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
 
 const PAPER_RATIOS: Record<PdfSettings["paperSize"], number> = { a4: 210 / 297, letter: 8.5 / 11, legal: 8.5 / 14 };
 const MARGIN_PREVIEW: Record<PdfSettings["margin"], string> = { narrow: "6%", normal: "10%", wide: "13% 16%" };
@@ -198,7 +198,7 @@ function Toggle({ id, label, checked, onChange }: { id: string; label: string; c
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className={cn("h-4 w-4 shrink-0 rounded border-border accent-[hsl(var(--accent))]", focusRing)}
+        className={cn("h-4 w-4 shrink-0 rounded-sm border-border accent-[hsl(var(--accent))]", focusRing)}
       />
       <label htmlFor={id} className="min-h-6 cursor-pointer text-sm leading-6">{label}</label>
     </div>
@@ -213,7 +213,7 @@ function PagePreview({ settings }: { settings: PdfSettings }) {
     <div aria-hidden="true" className="hidden w-36 flex-col items-center justify-start gap-2 sm:flex">
       <div className="flex h-44 w-36 items-center justify-center">
         <div
-          className="relative overflow-hidden rounded-sm border border-border bg-white shadow-soft transition-all"
+          className="relative overflow-hidden rounded-xs border border-border bg-white shadow-soft transition-all"
           style={aspect <= 36 / 44 ? { height: "100%", aspectRatio: String(aspect) } : { width: "100%", aspectRatio: String(aspect) }}
         >
           <div className="flex h-full flex-col gap-1" style={{ padding: MARGIN_PREVIEW[settings.margin] }}>

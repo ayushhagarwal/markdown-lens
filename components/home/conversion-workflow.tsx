@@ -35,7 +35,7 @@ export function ConversionWorkflow() {
               <span className="window-dots" aria-hidden><i /><i /><i /></span>
               sample-handbook.md
             </figcaption>
-            <pre tabIndex={0} className="min-h-72 overflow-x-auto whitespace-pre-wrap p-6 font-mono text-sm leading-7 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-8">{sampleHandbookMarkdown}</pre>
+            <pre tabIndex={0} className="min-h-72 overflow-x-auto whitespace-pre-wrap p-6 font-mono text-sm leading-7 text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-8">{sampleHandbookMarkdown}</pre>
           </figure>
         </div>
 
@@ -51,7 +51,7 @@ export function ConversionWorkflow() {
               {[false, true].map((duplicate) => (
                 <div key={String(duplicate)} className="flex gap-2 pr-2" aria-hidden={duplicate || undefined}>
                   {converterLinks.map((link) => (
-                    <Link key={link.href} href={link.href} tabIndex={duplicate ? -1 : undefined} className="chip whitespace-nowrap px-4 py-2 text-sm transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <Link key={link.href} href={link.href} tabIndex={duplicate ? -1 : undefined} className="chip whitespace-nowrap px-4 py-2 text-sm transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring">
                       {link.label} to Markdown
                     </Link>
                   ))}

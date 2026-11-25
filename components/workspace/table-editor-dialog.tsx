@@ -44,7 +44,7 @@ import {
 } from "@/lib/markdown-table";
 import { cn } from "@/lib/utils";
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
 const toolButton = cn(
   "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent",
   focusRing,
@@ -322,7 +322,7 @@ export function TableEditorDialog({
               if (text && replaceFromPaste(text)) event.preventDefault();
             }}
             placeholder="Paste here"
-            className="mt-2 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30"
+            className="mt-2 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-foreground outline-hidden transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30"
           />
           <div className="mt-2 flex items-center justify-between gap-3">
             {pasteError ? <p id="table-editor-paste-error" role="alert" className="text-xs text-danger">{pasteError}</p> : <span />}
@@ -340,7 +340,7 @@ export function TableEditorDialog({
                 const position = { row: 0, column };
                 const align = table.alignments[column];
                 return (
-                  <th key={column} scope="col" className={cn("sticky top-0 z-10 min-w-[9rem] border-b border-r border-border bg-surface p-0 font-semibold", activeColumn === column && "bg-accent-soft")}>
+                  <th key={column} scope="col" className={cn("sticky top-0 z-10 min-w-36 border-b border-r border-border bg-surface p-0 font-semibold", activeColumn === column && "bg-accent-soft")}>
                     <input
                       ref={(element) => { if (element) cellRefs.current.set(`0:${column}`, element); else cellRefs.current.delete(`0:${column}`); }}
                       value={header}
@@ -349,7 +349,7 @@ export function TableEditorDialog({
                       onChange={(event) => { const value = event.target.value; setTable((current) => setGridCell(current, 0, column, value)); }}
                       onKeyDown={(event) => moveFocus(event, position)}
                       onPaste={(event) => handleCellPaste(event, position)}
-                      className={cn("h-10 w-full min-w-[9rem] bg-transparent px-3 font-semibold text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground focus:bg-panel focus:ring-2 focus:ring-inset focus:ring-ring", align && ALIGNMENT_CLASS[align])}
+                      className={cn("h-10 w-full min-w-36 bg-transparent px-3 font-semibold text-foreground outline-hidden placeholder:font-normal placeholder:text-muted-foreground focus:bg-panel focus:ring-2 focus:ring-inset focus:ring-ring", align && ALIGNMENT_CLASS[align])}
                       placeholder={`Column ${column + 1}`}
                     />
                   </th>
@@ -362,7 +362,7 @@ export function TableEditorDialog({
               const gridRow = rowIndex + 1;
               return (
                 <tr key={rowIndex}>
-                  <th scope="row" className={cn("sticky left-0 z-[5] w-10 border-b border-r border-border bg-surface px-2 text-right font-mono text-[11px] font-normal tabular-nums text-muted-foreground", activeRow === gridRow && "bg-accent-soft text-accent")}>
+                  <th scope="row" className={cn("sticky left-0 z-5 w-10 border-b border-r border-border bg-surface px-2 text-right font-mono text-[11px] font-normal tabular-nums text-muted-foreground", activeRow === gridRow && "bg-accent-soft text-accent")}>
                     {gridRow}
                   </th>
                   {row.map((cell, column) => {
@@ -378,7 +378,7 @@ export function TableEditorDialog({
                           onChange={(event) => { const value = event.target.value; setTable((current) => setGridCell(current, gridRow, column, value)); }}
                           onKeyDown={(event) => moveFocus(event, position)}
                           onPaste={(event) => handleCellPaste(event, position)}
-                          className={cn("h-9 w-full min-w-[9rem] bg-transparent px-3 text-foreground outline-none focus:bg-accent-soft/40 focus:ring-2 focus:ring-inset focus:ring-ring", align && ALIGNMENT_CLASS[align])}
+                          className={cn("h-9 w-full min-w-36 bg-transparent px-3 text-foreground outline-hidden focus:bg-accent-soft/40 focus:ring-2 focus:ring-inset focus:ring-ring", align && ALIGNMENT_CLASS[align])}
                         />
                       </td>
                     );

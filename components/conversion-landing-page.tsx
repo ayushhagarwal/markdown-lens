@@ -305,7 +305,7 @@ function ConversionPreview({ config }: { config: ConversionLandingPageConfig }) 
               </div>
               <div className="mt-4 space-y-2 text-xs leading-5 text-muted-foreground">
                 {config.sourceLines.map((line, index) => (
-                  <div key={`${line}-${index}`} className="whitespace-pre-wrap break-words rounded-lg bg-muted/70 px-3 py-2">
+                  <div key={`${line}-${index}`} className="whitespace-pre-wrap wrap-break-word rounded-lg bg-muted/70 px-3 py-2">
                     <code className="font-mono">{line}</code>
                   </div>
                 ))}
@@ -320,7 +320,7 @@ function ConversionPreview({ config }: { config: ConversionLandingPageConfig }) 
               {config.markdownLines.map((line, index) => (
                 <code
                   key={`${line}-${index}`}
-                  className={`block whitespace-pre-wrap break-words ${line.startsWith("#") ? "font-semibold text-accent" : "text-foreground/80"}`}
+                  className={`block whitespace-pre-wrap wrap-break-word ${line.startsWith("#") ? "font-semibold text-accent" : "text-foreground/80"}`}
                 >
                   {line || "\u00a0"}
                 </code>

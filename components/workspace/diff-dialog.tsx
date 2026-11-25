@@ -38,11 +38,11 @@ const AUTO_RENDER_LIMIT = 3_000;
 const SCROLLBAR_MIN_CHARS = 60;
 const EMPTY_IDS: ReadonlySet<string> = new Set();
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
-const fieldClass = "h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring";
+const fieldClass = "h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-hidden transition-colors focus:border-ring focus:ring-2 focus:ring-ring/30";
 const toolButton = cn("inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent", focusRing);
 const pressedButton = "bg-accent-soft text-accent hover:bg-accent-soft hover:text-accent";
-const shiftedText = "[transform:translateX(calc(var(--diff-x,0px)*-1))]";
+const shiftedText = "transform-[translateX(calc(var(--diff-x,0px)*-1))]";
 
 function sourceOptionLabel(source: DiffSource) {
   return source.detail ? `${source.label} · ${source.detail}` : source.label;
@@ -281,7 +281,7 @@ export function DiffDialog({
               <span className="text-accent">+{stats.additions.toLocaleString()}</span>{" "}
               <span className="text-danger">−{stats.deletions.toLocaleString()}</span>
             </p>
-            <span className="min-w-[4.5rem] text-center text-xs tabular-nums text-muted-foreground" aria-hidden="true">
+            <span className="min-w-18 text-center text-xs tabular-nums text-muted-foreground" aria-hidden="true">
               {anchors.length ? `${activeIndex < 0 ? "–" : activeIndex + 1} of ${anchors.length}` : "No changes"}
             </span>
             <button type="button" onClick={() => goToChange(-1)} disabled={!anchors.length} aria-label="Previous change" title="Previous change" className={cn(toolButton, "w-9 px-0")}>
@@ -324,7 +324,7 @@ export function DiffDialog({
             rows={5}
             spellCheck={false}
             placeholder="Paste Markdown or plain text…"
-            className="mt-2 block max-h-48 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+            className="mt-2 block max-h-48 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs leading-5 text-foreground outline-hidden transition-colors placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
           />
           <div className="mt-3 flex justify-end gap-2">
             <button type="button" onClick={() => setPasteOpen(false)} className={dialogCancelButton}>Cancel</button>
@@ -419,7 +419,7 @@ export function DiffDialog({
   );
 }
 
-const headerCell = "sticky top-0 z-[1] h-8 border-b border-border bg-surface px-0 font-medium";
+const headerCell = "sticky top-0 z-1 h-8 border-b border-border bg-surface px-0 font-medium";
 
 function EmptyState({ title, detail }: { title: string; detail: string }) {
   return (
@@ -475,7 +475,7 @@ const DiffBody = memo(function DiffBody({
               tabIndex: -1,
               "aria-label": `Change ${changeIndex + 1} of ${anchors.length}`,
             };
-        const rowClass = cn("scroll-my-12 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-ring", changeIndex !== undefined && changeIndex === activeIndex && "outline outline-1 -outline-offset-1 outline-ring/60");
+        const rowClass = cn("scroll-my-12 focus:outline-solid focus:outline-2 focus:-outline-offset-2 focus:outline-ring", changeIndex !== undefined && changeIndex === activeIndex && "outline-solid outline-1 -outline-offset-1 outline-ring/60");
         return "left" in item ? (
           <tr key={index} className={rowClass} {...anchorProps}>
             <SplitCells cell={item.left} side="before" changed={item.type === "delete" || item.type === "modify"} shifted={shifted} />
@@ -531,16 +531,16 @@ function ChangeMark({ type, className }: { type: "insert" | "delete" | null; cla
 function TextCell({ text, segments, type, noNewlineAtEnd, shifted, className }: { text: string; segments?: DiffSegment[]; type: "insert" | "delete" | null; noNewlineAtEnd?: boolean; shifted: boolean; className?: string }) {
   return (
     <td className={cn("overflow-hidden px-2 align-top", className)}>
-      <span className={cn("inline-block whitespace-pre text-foreground [tab-size:4]", shifted && shiftedText)}>
+      <span className={cn("inline-block whitespace-pre text-foreground tab-4", shifted && shiftedText)}>
         {segments && type
           ? segments.map((segment, index) => {
               if (!segment.changed) return <span key={index}>{segment.text}</span>;
               return type === "insert"
-                ? <ins key={index} className="rounded-sm bg-accent/25 no-underline">{segment.text}</ins>
-                : <del key={index} className="rounded-sm bg-danger/25 no-underline">{segment.text}</del>;
+                ? <ins key={index} className="rounded-xs bg-accent/25 no-underline">{segment.text}</ins>
+                : <del key={index} className="rounded-xs bg-danger/25 no-underline">{segment.text}</del>;
             })
           : text || "​"}
-        {noNewlineAtEnd ? <span className="ml-2 rounded border border-border px-1 font-sans text-[10px] text-muted-foreground">No newline at end</span> : null}
+        {noNewlineAtEnd ? <span className="ml-2 rounded-sm border border-border px-1 font-sans text-[10px] text-muted-foreground">No newline at end</span> : null}
       </span>
     </td>
   );

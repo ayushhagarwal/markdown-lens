@@ -89,7 +89,7 @@ export default function SupportedFormatsPage() {
                 {supportedFormats.map(([format, extensions, workflow, limitation, href]) => (
                   <tr key={format} className="border-b border-border transition-colors last:border-0 hover:bg-muted/50">
                     <td className="px-5 py-4 font-medium">
-                      <Link href={href} className="rounded-sm underline decoration-border underline-offset-4 transition-colors hover:text-accent hover:decoration-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{format}</Link>
+                      <Link href={href} className="rounded-xs underline decoration-border underline-offset-4 transition-colors hover:text-accent hover:decoration-accent focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">{format}</Link>
                     </td>
                     <td className="px-5 py-4"><span className="rounded-md bg-accent-soft/60 px-2 py-1 font-mono text-[11px] text-accent">{extensions}</span></td>
                     <td className="px-5 py-4"><span className="inline-flex items-center gap-2.5"><span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent"><Check aria-hidden="true" className="h-3 w-3" /></span>{workflow}</span></td>

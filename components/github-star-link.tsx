@@ -4,11 +4,11 @@ import { GithubIcon } from "@/components/github-icon";
 import { siteConfig } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const variantClassName = {
   nav: cn("star-target inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-panel px-3 text-sm font-medium text-foreground shadow-soft transition-colors hover:border-foreground/25", focusRing),
-  text: cn("star-target inline-flex items-center gap-1.5 rounded-sm", focusRing),
+  text: cn("star-target inline-flex items-center gap-1.5 rounded-xs", focusRing),
   button: cn("star-target btn-secondary h-11", focusRing),
   cta: cn("star-target btn-secondary h-12 px-6 text-base", focusRing),
 } as const;

@@ -22,7 +22,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { converterLinks, siteConfig } from "@/lib/site";
 
-const chipLink = "chip transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const chipLink = "chip transition-colors hover:border-foreground/25 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export function Homepage() {
   return (
@@ -34,7 +34,7 @@ export function Homepage() {
             <div className="backdrop-grid" aria-hidden />
             <div className="backdrop-glow" aria-hidden />
             <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center text-center">
-              <p className="chip rise-in bg-panel/80 backdrop-blur">
+              <p className="chip rise-in bg-panel/80 backdrop-blur-sm">
                 <ShieldCheck className="h-3.5 w-3.5 text-accent" aria-hidden />
                 Free and open source · Nothing is uploaded
               </p>
@@ -140,8 +140,8 @@ export function Homepage() {
 
                 <FeatureCard className="md:col-span-2" icon={Command} title="Fast on the keyboard" body="A command palette, find and replace, and shortcuts for every common action.">
                   <p className="mt-8 flex items-center gap-2 text-sm text-muted-foreground" aria-hidden>
-                    <kbd className="!px-2 !py-1 !text-xs">⌘</kbd>
-                    <kbd className="!px-2 !py-1 !text-xs">K</kbd>
+                    <kbd className="px-2! py-1! text-xs!">⌘</kbd>
+                    <kbd className="px-2! py-1! text-xs!">K</kbd>
                     <span>opens every command</span>
                   </p>
                 </FeatureCard>
@@ -207,7 +207,7 @@ export function Homepage() {
 
           <section className="defer-paint px-5 pb-24 sm:px-8 lg:pb-32" aria-labelledby="open-source-title">
             <div className="reveal relative isolate mx-auto max-w-6xl overflow-hidden rounded-3xl border border-border bg-panel px-6 py-14 text-center shadow-lift sm:px-12 sm:py-20">
-              <div className="backdrop-glow !top-[-22rem]" aria-hidden />
+              <div className="backdrop-glow -top-88!" aria-hidden />
               <div className="relative z-10 mx-auto max-w-2xl">
                 <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-highlight/30 bg-highlight/10 text-highlight">
                   <Star className="h-6 w-6 fill-current" aria-hidden />

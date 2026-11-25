@@ -2,12 +2,12 @@ import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
 import { GithubStarLink } from "@/components/github-star-link";
 
-const focusRing = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+const focusRing = "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export function Breadcrumb({ current }: { current: string }) {
   return (
     <nav className="mx-auto w-full max-w-7xl px-4 pt-6 text-sm text-muted-foreground sm:px-6 lg:px-8" aria-label="Breadcrumb">
-      <Link href="/" className={`rounded-sm transition-colors hover:text-foreground ${focusRing}`}>Home</Link>
+      <Link href="/" className={`rounded-xs transition-colors hover:text-foreground ${focusRing}`}>Home</Link>
       <span className="mx-2 text-border" aria-hidden="true">/</span>
       <span aria-current="page" className="text-foreground">{current}</span>
     </nav>

@@ -59,11 +59,11 @@ export function LandingImportSurface({ path, children }: { path: string; childre
           {children}
           <DropToConvertOverlay active={active} />
           {rejectMessage ? (
-            <p role="status" className="toast fixed bottom-6 left-1/2 z-[90] flex w-[min(32rem,calc(100vw-2rem))] items-center gap-3 rounded-xl border border-border bg-panel py-2.5 pl-2.5 pr-4 text-sm text-foreground shadow-lift">
+            <p role="status" className="toast fixed bottom-6 left-1/2 z-90 flex w-[min(32rem,calc(100vw-2rem))] items-center gap-3 rounded-xl border border-border bg-panel py-2.5 pl-2.5 pr-4 text-sm text-foreground shadow-lift">
               <span aria-hidden="true" className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-danger/10 text-danger">
                 <CircleAlert className="h-3.5 w-3.5" />
               </span>
-              <span className="min-w-0 flex-1 leading-5 [overflow-wrap:anywhere]">{rejectMessage}</span>
+              <span className="min-w-0 flex-1 leading-5 wrap-anywhere">{rejectMessage}</span>
             </p>
           ) : null}
         </div>
