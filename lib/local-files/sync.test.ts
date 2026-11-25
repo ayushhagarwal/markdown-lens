@@ -63,7 +63,7 @@ describe("hasDiskChanged", () => {
   });
 });
 
-describe.sequential("linked documents on disk", () => {
+describe("linked documents on disk", () => {
   beforeEach(reset);
   afterAll(reset);
 

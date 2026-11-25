@@ -26,7 +26,7 @@ import { createDocumentRecord, type WorkspaceBackup } from "@/lib/workspace/type
 
 const DATABASE_NAME = "markdown-lens-workspace";
 
-describe.sequential("IndexedDB workspace", () => {
+describe("IndexedDB workspace", () => {
   beforeAll(async () => {
     await closeWorkspaceDatabase();
     await deleteDB(DATABASE_NAME);

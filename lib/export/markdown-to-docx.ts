@@ -76,7 +76,7 @@ export function buildDocxParts(markdown: string, options: MarkdownToDocxOptions)
 // ---------------------------------------------------------------------------
 // XML helpers
 
-const INVALID_XML_CHARACTERS = /[^\u0009\u000A\u000D -퟿-�\u{10000}-\u{10FFFF}]/gu;
+const INVALID_XML_CHARACTERS = /[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\u{10000}-\u{10FFFF}]/gu;
 
 /** Escapes text for XML 1.0 and removes characters XML cannot represent. */
 export function escapeXml(value: string) {

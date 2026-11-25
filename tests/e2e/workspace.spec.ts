@@ -490,7 +490,7 @@ test("editor and preview stay aligned and the outline follows the preview", asyn
   await expect(page.getByRole("button", { name: "Section 23, heading level 2" })).toBeVisible();
 
   await page.locator("#section-10").evaluate((element) => element.scrollIntoView({ block: "start" }));
-  await expect(page.locator('[aria-label="Document outline"] [aria-current="location"]')).toHaveAttribute("aria-label", /Section (9|10|11), heading level 2/);
+  await expect(page.locator('[aria-label="Document outline"] [aria-current="location"]')).toHaveAccessibleName(/Section (9|10|11), heading level 2/);
   await expect.poll(() => page.locator(".cm-scroller:visible").first().evaluate((element) => element.scrollTop)).toBeGreaterThan(40);
 
   await page.getByRole("heading", { name: "Section 10" }).click();

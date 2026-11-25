@@ -1734,9 +1734,10 @@ export function MarkdownLensApp() {
           />
           <nav className="min-h-0 flex-1 overflow-y-auto pb-2 pr-2" aria-label="Document outline">
             {headings.length ? headings.map((heading) => (
-              <button key={`${heading.id}-${heading.line}`} type="button" aria-label={`${heading.text}, heading level ${heading.level}`} aria-current={activeHeadingIdState === heading.id ? "location" : undefined} onClick={() => navigateToHeading(heading.id)} className={cn("flex w-full items-start gap-2 rounded-r-md border-l-2 border-transparent py-1.5 pr-2 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", activeHeadingIdState === heading.id && "border-accent bg-panel font-medium text-foreground shadow-soft hover:border-accent hover:bg-panel")} style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
+              <button key={`${heading.id}-${heading.line}`} type="button" aria-current={activeHeadingIdState === heading.id ? "location" : undefined} onClick={() => navigateToHeading(heading.id)} className={cn("flex w-full items-start gap-2 rounded-r-md border-l-2 border-transparent py-1.5 pr-2 text-left text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring", activeHeadingIdState === heading.id && "border-accent bg-panel font-medium text-foreground shadow-soft hover:border-accent hover:bg-panel")} style={{ paddingLeft: `${Math.min(32, 12 + heading.level * 4)}px` }}>
                 <span aria-hidden className="mt-px font-mono text-[10px] text-foreground/65">H{heading.level}</span>
-                <span className="line-clamp-2 leading-4">{heading.text}</span>
+                <span aria-hidden className="line-clamp-2 leading-4">{heading.text}</span>
+                <span className="sr-only">{`${heading.text}, heading level ${heading.level}`}</span>
               </button>
             )) : (
               <EmptyState icon={ListTree} title="Add Markdown headings to build an outline." helper="Lines that start with # appear here." />
@@ -1773,7 +1774,7 @@ export function MarkdownLensApp() {
             type="button"
             onClick={() => setLintOpen(true)}
             aria-haspopup="dialog"
-            aria-label={lintIssues.length ? `${lintIssues.length} Markdown issue${lintIssues.length === 1 ? "" : "s"}` : "No Markdown issues"}
+            aria-label={lintIssues.length ? `${lintIssues.length} Markdown issue${lintIssues.length === 1 ? "" : "s"}` : "Lint: no Markdown issues"}
             className={cn(statusChip, "gap-1")}
           >
             {lintIssues.some((issue) => issue.severity === "error")
@@ -1794,8 +1795,8 @@ export function MarkdownLensApp() {
           ) : null}
           <button type="button" onClick={toggleFocus} aria-pressed={focusMode} className={cn(statusChip, focusMode && statusChipPressed)}>Focus</button>
           <span className="hidden items-center gap-0.5 sm:flex">
-            <button type="button" onClick={() => updateEditorFontSize(-1)} disabled={editorFontSize === EDITOR_FONT_SIZES[0]} aria-label="Decrease font size" className={statusChip}>A−</button>
-            <button type="button" onClick={() => updateEditorFontSize(1)} disabled={editorFontSize === EDITOR_FONT_SIZES[EDITOR_FONT_SIZES.length - 1]} aria-label="Increase font size" className={statusChip}>A+</button>
+            <button type="button" onClick={() => updateEditorFontSize(-1)} disabled={editorFontSize === EDITOR_FONT_SIZES[0]} className={statusChip}><span aria-hidden="true">A−</span><span className="sr-only">Decrease font size</span></button>
+            <button type="button" onClick={() => updateEditorFontSize(1)} disabled={editorFontSize === EDITOR_FONT_SIZES[EDITOR_FONT_SIZES.length - 1]} className={statusChip}><span aria-hidden="true">A+</span><span className="sr-only">Increase font size</span></button>
             <button type="button" onClick={toggleLineWrap} aria-pressed={lineWrap} className={cn(statusChip, lineWrap && statusChipPressed)}>Wrap</button>
           </span>
           <button type="button" onClick={() => setVersionsOpen(true)} aria-haspopup="dialog" className={cn(statusChip, "gap-1")}><History aria-hidden="true" className="h-3.5 w-3.5" />Versions</button>

@@ -245,7 +245,9 @@ describe("performance", () => {
     const after = Array.from({ length: 20_000 }, (_, index) => `after ${index}`).join("\n");
     const started = performance.now();
     const stats = diffStats(diffLines(before, after));
-    expect(performance.now() - started).toBeLessThan(1_000);
+    // ~250 ms alone; the budget leaves room for a fully parallel test run while still
+    // catching a quadratic regression, which takes many seconds at 20,000 lines.
+    expect(performance.now() - started).toBeLessThan(2_000);
     expect(stats).toMatchObject({ additions: 20_000, deletions: 20_000 });
   });
 });

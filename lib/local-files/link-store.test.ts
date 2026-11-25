@@ -25,7 +25,7 @@ async function reset() {
   await deleteDB(DATABASE_NAME);
 }
 
-describe.sequential("local file link store", () => {
+describe("local file link store", () => {
   beforeEach(reset);
   afterAll(async () => {
     vi.unstubAllGlobals();
