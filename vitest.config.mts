@@ -12,6 +12,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Node 25+ ships its own localStorage global, which shadows jsdom's.
+    execArgv: ["--no-experimental-webstorage"],
     include: ["lib/**/*.test.ts"],
     coverage: {
       reporter: ["text", "json-summary"],

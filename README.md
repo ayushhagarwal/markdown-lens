@@ -117,7 +117,7 @@ Markdown Lens also converts `.docx` Word documents up to 100 MB into editable Gi
 
 Clone the repository, install dependencies, and start the development server:
 
-Node.js 22.22.2 or newer is required. If you use a Node version manager, the
+Node.js 26.13.1 or newer is required. If you use a Node version manager, the
 repository's `.nvmrc` selects the tested minimum version.
 
 ```bash

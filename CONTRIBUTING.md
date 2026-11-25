@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Use Node.js 22.22.2 or newer (the repository includes an `.nvmrc` for version managers), then open [http://localhost:3000](http://localhost:3000).
+Use Node.js 26.13.1 or newer (the repository includes an `.nvmrc` for version managers), then open [http://localhost:3000](http://localhost:3000).
 
 Before opening a pull request, run:
 
