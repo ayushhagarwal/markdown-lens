@@ -72,4 +72,17 @@ describe("mermaid preview security", () => {
     expect(sanitized).toContain("<text>Label</text>");
     expect(sanitized).toContain("fill: #fff");
   });
+
+  test("removes SVG animation elements that could rewrite links", () => {
+    const svg = [
+      '<svg xmlns="http://www.w3.org/2000/svg">',
+      '<a><set attributeName="href" to="javascript:alert(1)" />',
+      '<animate attributeName="href" values="javascript:alert(1)" /><text>Label</text></a>',
+      "</svg>",
+    ].join("");
+    const sanitized = sanitizeMermaidSvg(svg);
+    expect(sanitized).not.toMatch(/<(?:set|animate)\b/i);
+    expect(sanitized).not.toMatch(/javascript:/i);
+    expect(sanitized).toContain("<text>Label</text>");
+  });
 });

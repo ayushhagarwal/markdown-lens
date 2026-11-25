@@ -1,3 +1,4 @@
+import { safeImageMimeTypeFromName } from "@/lib/asset-mime";
 import { XMLParser } from "fast-xml-parser";
 import { strFromU8 } from "fflate";
 import type { LocalConverter } from "@/lib/converters/types";
@@ -162,6 +163,8 @@ export const presentationConverter: LocalConverter = {
     }
     const mediaEntries = Object.entries(archive)
       .filter(([path]) => path.startsWith("ppt/media/") && !path.endsWith("/"))
+      // SVG would be scriptable behind a same-origin blob URL; other media is stored as JPEG-typed bytes.
+      .filter(([path]) => !/\.svgz?$/i.test(path))
     const totalAssetBytes = mediaEntries.reduce((total, [, bytes]) => total + bytes.byteLength, 0);
     if (
       mediaEntries.length > context.limits.maxAssets ||
@@ -350,8 +353,7 @@ function resolveArchivePath(base: string, relative: string) {
 }
 
 function mediaType(path: string) {
-  const extension = path.split(".").pop()?.toLowerCase();
-  return extension === "png" ? "image/png" : extension === "svg" ? "image/svg+xml" : "image/jpeg";
+  return safeImageMimeTypeFromName(path) ?? "image/jpeg";
 }
 
 function copyBytes(bytes: Uint8Array) {

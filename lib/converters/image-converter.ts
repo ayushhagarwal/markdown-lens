@@ -1,3 +1,4 @@
+import { isSafeImageAssetMimeType, normalizeMimeType, safeImageMimeTypeFromName } from "@/lib/asset-mime";
 import type { ConversionLimits, LocalConverter } from "@/lib/converters/types";
 import { ConverterError } from "@/lib/converters/error";
 import {
@@ -27,6 +28,10 @@ export const imageConverter: LocalConverter = {
     if (file.size > context.limits.maxAssetBytes) {
       throw new ConverterError("resource-limit", "This image is too large to decode safely.");
     }
+    const mimeType = isSafeImageAssetMimeType(file.type)
+      ? normalizeMimeType(file.type)
+      : safeImageMimeTypeFromName(file.name);
+    if (!mimeType) throw new ConverterError("unsupported", "This image type is not supported.");
     const dimensions = await imageDimensions(file, context.limits);
     const title = titleFromFile(file);
     let extractedText = "";
@@ -76,7 +81,15 @@ export const imageConverter: LocalConverter = {
       detectedFormat: file.type || "image",
       title,
       markdown: `${markdown}\n`,
-      assets: [{ name: imageName, mimeType: file.type, blob: file, altText: title, sourceLocation: file.name }],
+      assets: [
+        {
+          name: imageName,
+          mimeType,
+          blob: file.type === mimeType ? file : new Blob([file], { type: mimeType }),
+          altText: title,
+          sourceLocation: file.name,
+        },
+      ],
       warnings: options.ocr && !extractedText ? ["OCR did not find readable English text in this image."] : [],
       statistics: { width: dimensions.width, height: dimensions.height },
       usedOcr: Boolean(options.ocr),

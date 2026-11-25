@@ -38,6 +38,7 @@ Markdown Lens should remain safe by default:
 - Keep Markdown content local to the browser unless a future feature clearly explains otherwise and requires user action.
 - Never extract archive entries to filesystem paths; enforce entry-count and expanded-size limits before conversion.
 - Treat converted HTML, SVG, links, document metadata, filenames, and OCR output as untrusted input.
+- Store and display only raster image assets (PNG, JPEG, GIF, WebP, AVIF, BMP). Never expose SVG, HTML, or other scriptable types as same-origin `blob:` URLs.
 - Keep share payloads in URL fragments. Do not place document content in query parameters, paths, analytics, or logs.
 - Do not describe URL compression as encryption; anyone with the complete share URL can read its contents.
 - Store OCR language data and workers on the same origin, and never send image or document bytes to an OCR service.

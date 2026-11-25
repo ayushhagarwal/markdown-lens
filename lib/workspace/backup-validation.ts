@@ -1,3 +1,4 @@
+import { isSafeImageAssetMimeType, normalizeMimeType } from "@/lib/asset-mime";
 import type {
   ConversionReport,
   DocumentRecord,
@@ -241,6 +242,9 @@ function validateBackupAsset(value: unknown, path: string) {
     path,
   );
   const mimeType = expectString(asset.mimeType, `${path}.mimeType`, 1, MAX_SHORT_TEXT_LENGTH);
+  if (!isSafeImageAssetMimeType(mimeType) || mimeType !== normalizeMimeType(mimeType)) {
+    throw invalid(`${path}.mimeType must be a PNG, JPEG, GIF, WebP, AVIF, or BMP image type.`);
+  }
   const dataUrl = expectString(
     asset.dataUrl,
     `${path}.dataUrl`,

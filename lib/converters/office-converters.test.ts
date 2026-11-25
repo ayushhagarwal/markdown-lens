@@ -68,6 +68,21 @@ describe("Office converters", () => {
     expect(result.assets[0]?.name).toBe("photo-.png-x-javascript-alert-1");
   });
 
+  test("does not store presentation SVG media as assets", async () => {
+    const bytes = zipSync({
+      "ppt/slides/slide1.xml": strToU8(`<p:sld><a:t>Launch</a:t></p:sld>`),
+      "ppt/media/logo.svg": strToU8('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'),
+      "ppt/media/photo.png": strToU8("image-bytes"),
+    });
+    const file = new NodeFile([bytes], "deck.pptx", {
+      type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    }) as unknown as File;
+
+    const result = await presentationConverter.convert(file, {}, context);
+    expect(result.assets.map((asset) => asset.mimeType)).toEqual(["image/png"]);
+    expect(result.assets.some((asset) => /svg/i.test(asset.name))).toBe(false);
+  });
+
   test("accepts Excel's last column and rejects malformed or out-of-range references", () => {
     expect(parseCellReference("XFD1")).toEqual({ column: 16_383, row: 1 });
     for (const reference of ["XFE1", "ZZZZZ1", "A0", "A-1", "A+1", "a1", "A", "1"]) {

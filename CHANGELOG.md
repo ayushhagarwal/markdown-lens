@@ -2,6 +2,16 @@
 
 All notable Markdown Lens changes are documented here.
 
+## Unreleased
+
+### Security
+
+- Imported and restored image assets are limited to raster types (PNG, JPEG, GIF, WebP, AVIF, BMP). SVG and other scriptable types from Word, PowerPoint, the clipboard, or workspace backups are no longer stored or exposed as same-origin `blob:` URLs, and existing stored SVG assets are no longer displayed.
+- The Content Security Policy now limits `connect-src` to the app's own origin.
+- Mermaid SVG output strips SVG animation elements (`animate`, `set`, and related) that could rewrite links.
+- Updated `fast-xml-parser` and pinned patched `katex`, `minimatch`, `postcss-selector-parser`, and `zod`; `npm audit` reports no known vulnerabilities.
+- CI runs with a read-only `GITHUB_TOKEN`.
+
 ## v2.0.0 - 2026-11-12
 
 ### Changed

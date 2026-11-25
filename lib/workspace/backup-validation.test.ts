@@ -33,9 +33,9 @@ describe("workspace backup validation", () => {
         {
           id: "asset-valid",
           documentId: document.id,
-          name: "hello.txt",
-          mimeType: "text/plain",
-          dataUrl: "data:text/plain;base64,aGVsbG8=",
+          name: "hello.png",
+          mimeType: "image/png",
+          dataUrl: "data:image/png;base64,aGVsbG8=",
         },
       ],
     });
@@ -67,14 +67,41 @@ describe("workspace backup validation", () => {
           {
             id: "asset-invalid",
             documentId: document.id,
-            name: "invalid.txt",
-            mimeType: "text/plain",
-            dataUrl: "data:text/plain;base64,not-valid!",
+            name: "invalid.png",
+            mimeType: "image/png",
+            dataUrl: "data:image/png;base64,not-valid!",
           },
         ],
       }),
     ).toThrow("Base64");
   });
+
+  test.each(["image/svg+xml", "text/html", "application/xhtml+xml", "IMAGE/PNG"])(
+    "rejects asset MIME type %s that is not a safe raster image",
+    (mimeType) => {
+      const document = {
+        ...createDocumentRecord({ title: "Scriptable", markdown: "![x](assets/x)" }),
+        assetIds: ["asset-script"],
+      };
+      expect(() =>
+        validateWorkspaceBackup({
+          format: "markdown-lens-workspace",
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          documents: [document],
+          assets: [
+            {
+              id: "asset-script",
+              documentId: document.id,
+              name: "x",
+              mimeType,
+              dataUrl: `data:${mimeType};base64,PHN2Zz4=`,
+            },
+          ],
+        }),
+      ).toThrow("mimeType");
+    },
+  );
 
   test("enforces the document-count budget", () => {
     const documents = Array.from(

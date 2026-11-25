@@ -140,6 +140,7 @@ import {
   type PdfSettings,
 } from "@/lib/export/print-pdf";
 import { copyRichText } from "@/lib/export/rich-text";
+import { isSafeImageAssetMimeType } from "@/lib/asset-mime";
 
 const MarkdownEditor = dynamic(
   () => import("@/components/workspace/markdown-editor").then((module) => module.MarkdownEditor),
@@ -538,6 +539,8 @@ export function MarkdownLensApp() {
     void getDocumentAssets(activeDocumentId, activeAssetIds).then((assets) => {
       const next: Record<string, string> = {};
       for (const asset of assets) {
+        // Assets saved by older versions may carry scriptable types (SVG); never expose them.
+        if (!isSafeImageAssetMimeType(asset.blob.type)) continue;
         const url = URL.createObjectURL(asset.blob);
         next[asset.name] = url;
         revoked.push(url);

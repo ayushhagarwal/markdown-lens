@@ -120,8 +120,8 @@ describe.sequential("IndexedDB workspace", () => {
           id: "asset-imported",
           documentId: imported.id,
           name: "note.txt",
-          mimeType: "text/plain",
-          dataUrl: "data:text/plain;base64,aGVsbG8=",
+          mimeType: "image/png",
+          dataUrl: "data:image/png;base64,aGVsbG8=",
         },
       ],
     };
@@ -195,8 +195,8 @@ describe.sequential("IndexedDB workspace", () => {
             id: "asset-imported",
             documentId: incomingOwner.id,
             name: "replacement.txt",
-            mimeType: "text/plain",
-            dataUrl: "data:text/plain;base64,YmFk",
+            mimeType: "image/png",
+            dataUrl: "data:image/png;base64,YmFk",
           },
         ],
       }),
@@ -215,8 +215,8 @@ describe.sequential("IndexedDB workspace", () => {
       id: "relationship-asset",
       documentId: incoming.id,
       name: "note.txt",
-      mimeType: "text/plain",
-      dataUrl: "data:text/plain;base64,aGVsbG8=",
+      mimeType: "image/png",
+      dataUrl: "data:image/png;base64,aGVsbG8=",
     };
     const invalidBackups = [
       {

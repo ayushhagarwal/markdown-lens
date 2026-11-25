@@ -9,6 +9,12 @@ const REMOVED_SVG_TAGS = new Set([
   "object",
   "embed",
   "link",
+  // SVG animation can rewrite attributes such as href to javascript: URLs after sanitising.
+  "animate",
+  "animatemotion",
+  "animatetransform",
+  "set",
+  "discard",
 ]);
 
 const FRONT_MATTER = /^([^\S\n\r]*)-{3}\s*[\n\r]([\s\S]*?)[\n\r]\1-{3}\s*[\n\r]+/;

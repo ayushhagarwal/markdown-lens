@@ -9,6 +9,7 @@ import {
   type ConversionLimits,
 } from "@/lib/converters/types";
 import { ConverterError } from "@/lib/converters/error";
+import { isSafeImageAssetMimeType, normalizeMimeType } from "@/lib/asset-mime";
 
 export const WORD_SIZE_LIMIT_BYTES = 100 * 1024 * 1024;
 
@@ -95,6 +96,7 @@ export async function importWordAsMarkdown(
     const arrayBuffer = packageBytes.slice().buffer;
     let imageCount = 0;
     let totalImageBytes = 0;
+    let omittedImageCount = 0;
     const assets: Array<{
       name: string;
       mimeType: string;
@@ -117,7 +119,14 @@ export async function importWordAsMarkdown(
               "This Word document contains too many embedded images.",
             );
           }
-          const extension = extensionForImageType(image.contentType);
+          // The content type comes from the untrusted package; never store a scriptable type
+          // (SVG, HTML) behind a same-origin blob URL.
+          if (!isSafeImageAssetMimeType(image.contentType)) {
+            omittedImageCount += 1;
+            return { src: "", alt: "embedded image omitted (unsupported type)" } as { src: string };
+          }
+          const mimeType = normalizeMimeType(image.contentType);
+          const extension = extensionForImageType(mimeType);
           const name = `embedded-image-${imageCount}.${extension}`;
           const imageBuffer = await image.readAsArrayBuffer();
           if (imageBuffer.byteLength > limits.maxAssetBytes) {
@@ -135,14 +144,14 @@ export async function importWordAsMarkdown(
           }
           assets.push({
             name,
-            mimeType: image.contentType,
-            blob: new Blob([imageBuffer], { type: image.contentType }),
+            mimeType,
+            blob: new Blob([imageBuffer], { type: mimeType }),
             altText: `Embedded image ${imageCount}`,
             sourceLocation: `word/${name}`,
           });
           return {
             src: `assets/${name}`,
-            alt: `embedded image ${imageCount} (${image.contentType})`,
+            alt: `embedded image ${imageCount} (${mimeType})`,
           } as { src: string };
         }),
       },
@@ -175,7 +184,12 @@ export async function importWordAsMarkdown(
       title,
       imageCount,
       assets,
-      warnings: result.messages.map((message) => message.message),
+      warnings: [
+        ...result.messages.map((message) => message.message),
+        ...(omittedImageCount
+          ? [`${omittedImageCount} embedded image(s) used an unsupported type (such as SVG) and were omitted.`]
+          : []),
+      ],
     };
   } catch (error) {
     if (error instanceof WordImportError) throw error;
@@ -207,8 +221,9 @@ export async function importWordAsMarkdown(
 function extensionForImageType(contentType: string) {
   if (contentType === "image/png") return "png";
   if (contentType === "image/gif") return "gif";
-  if (contentType === "image/svg+xml") return "svg";
   if (contentType === "image/webp") return "webp";
+  if (contentType === "image/avif") return "avif";
+  if (contentType === "image/bmp") return "bmp";
   return "jpg";
 }
 

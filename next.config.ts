@@ -20,12 +20,15 @@ const nextConfig: NextConfig = {
     };
   },
   async headers() {
-    const developmentScriptSource = process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
+    const development = process.env.NODE_ENV === "development";
+    const developmentScriptSource = development ? " 'unsafe-eval'" : "";
+    // Same-origin only (plus blob:/data: for local assets); dev adds the HMR websocket.
+    const connectSource = `'self' blob: data:${development ? " ws: wss:" : ""}`;
     return [
       {
         source: "/(.*)",
         headers: [
-          { key: "Content-Security-Policy", value: `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'${developmentScriptSource} 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; media-src 'self' blob:;` },
+          { key: "Content-Security-Policy", value: `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'${developmentScriptSource} 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src ${connectSource}; worker-src 'self' blob:; media-src 'self' blob:;` },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
